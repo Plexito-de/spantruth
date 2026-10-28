@@ -8,6 +8,7 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- OpenLIT is a subject (`openlit==1.45.0`), instrumenting the OpenAI and Anthropic SDKs.
 - A recorded response can be replayed as a scenario, from a fixture in kartsan03/wiretruth's
   `wiretruth.fixture/v1` format. The first is `openai/responses-stream-missing-finish-abort`, the
   first OpenAI Responses API scenario: eight recorded events, then the connection drops.

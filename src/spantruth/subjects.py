@@ -25,6 +25,7 @@ class Subject:
     kind: str = "library"
     env: dict[str, str] = field(default_factory=dict)
     notes: str = ""
+    overrides: bool = False
 
     @property
     def directory(self) -> Path:
@@ -47,6 +48,7 @@ def load(name: str) -> Subject:
         kind=data.get("kind", "library"),
         env=dict(data.get("env", {})),
         notes=data.get("notes", ""),
+        overrides=bool(data.get("overrides", False)),
     )
 
 
@@ -90,9 +92,18 @@ def environment(
             ["uv", "venv", "--quiet", "--clear", "--python", python, str(venv)], check=True
         )
         install = ["uv", "pip", "install", "--quiet", "--python", str(py)]
+        if subject.overrides:
+            base_reqs = [
+                r for r in reqs if package_name(r) in {package_name(b) for b in base()["packages"]}
+            ]
+            overrides_file = venv / ".overrides.txt"
+            overrides_file.write_text("\n".join(base_reqs) + "\n")
+            install.extend(["--overrides", str(overrides_file)])
         subprocess.run([*install, *reqs], check=True)
-        # Editable, so the driver in every cached environment is always the current source.
-        subprocess.run([*install, "--no-deps", "-e", str(REPO)], check=True)
+        subprocess.run(
+            ["uv", "pip", "install", "--quiet", "--python", str(py), "--no-deps", "-e", str(REPO)],
+            check=True,
+        )
         ready.write_text("\n".join(reqs))
     freeze = subprocess.run(
         ["uv", "pip", "freeze", "--python", str(py)], check=True, capture_output=True, text=True
