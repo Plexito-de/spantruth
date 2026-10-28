@@ -1,3 +1,13 @@
 {
-  "signatures": []
+  "signatures": [
+    {
+      "login": "Yash990-bit",
+      "id": 184806562,
+      "version": "plexito-icla-1.0",
+      "signed_at": "2026-10-28T08:32:03Z",
+      "repository": "Plexito-de/spantruth",
+      "pull_request": 15,
+      "comment_url": "https://github.com/Plexito-de/spantruth/pull/15#issuecomment-6464352702"
+    }
+  ]
 }
