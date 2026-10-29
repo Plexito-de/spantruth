@@ -1,0 +1,6 @@
+title = "OpenLIT"
+homepage = "https://github.com/openlit/openlit"
+providers = ["openai", "anthropic"]
+packages = ["openlit==1.45.0"]
+track = ["openlit"]
+overrides = true
