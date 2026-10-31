@@ -60,6 +60,7 @@ target-version = "py311"
 select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]
 
 [tool.pytest.ini_options]
+pythonpath = ["src"]
 testpaths = ["tests"]
 timeout = 120
 markers = [
