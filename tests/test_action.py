@@ -29,9 +29,13 @@ def test_every_action_the_action_uses_is_pinned_to_a_commit():
             assert len(ref) == 40 and int(ref, 16) >= 0, s["uses"]
 
 
-def run_action(tmp_path: Path, **inputs: str) -> tuple[int, dict[str, str], str]:
-    """Run the action's script as a runner would. Return its status, outputs and step summary."""
+def run_action(tmp_path: Path, runner_temp: Path, **inputs: str) -> tuple[int, dict[str, str], str]:
+    """Run the action's script as a runner would. Return its status, outputs and step summary.
+
+    Every step of a job shares one RUNNER_TEMP, so two runs in one job must not collide there.
+    """
     tmp_path.mkdir(parents=True, exist_ok=True)
+    runner_temp.mkdir(parents=True, exist_ok=True)
     script = tmp_path / "run.sh"
     script.write_text(step("run")["run"])
     output, summary = tmp_path / "output", tmp_path / "summary.md"
@@ -40,7 +44,7 @@ def run_action(tmp_path: Path, **inputs: str) -> tuple[int, dict[str, str], str]
     env = {
         "PATH": os.environ["PATH"],
         "HOME": os.environ["HOME"],
-        "RUNNER_TEMP": str(tmp_path / "runner"),
+        "RUNNER_TEMP": str(runner_temp),
         "GITHUB_ACTION_PATH": str(REPO),
         "GITHUB_OUTPUT": str(output),
         "GITHUB_STEP_SUMMARY": str(summary),
@@ -48,7 +52,6 @@ def run_action(tmp_path: Path, **inputs: str) -> tuple[int, dict[str, str], str]
     }
     for name in ("SUBJECT", "WITH", "SCENARIO", "EXPECT", "LATEST", "ARTIFACT_NAME"):
         env.setdefault(name, "")
-    (tmp_path / "runner").mkdir()
     proc = subprocess.run(["bash", str(script)], env=env, cwd=REPO, capture_output=True, text=True)
     assert proc.returncode == 0, proc.stdout + proc.stderr
     outputs = dict(line.split("=", 1) for line in output.read_text().splitlines())
@@ -65,13 +68,16 @@ def test_the_action_compares_with_an_expectation_file(tmp_path):
         "subject": "control-faulty",
         "scenario": "openai/stream-no-usage\n\nanthropic/basic\n",
     }
+    runner_temp = tmp_path / "runner"
     code, outputs, summary = run_action(
-        tmp_path / "a", expect="subjects/control-faulty/expected.toml", **common
+        tmp_path / "a", runner_temp, expect="subjects/control-faulty/expected.toml", **common
     )
     assert code == 0, summary
     assert outputs["artifact-name"] == "spantruth-control-faulty"
     assert Path(outputs["results"]).is_file()
     assert (Path(outputs["results"]).parent / "report.html").is_file()
-    code, _, summary = run_action(tmp_path / "b", expect=str(empty), artifact_name="x", **common)
+    code, _, summary = run_action(
+        tmp_path / "b", runner_temp, expect=str(empty), artifact_name="x", **common
+    )
     assert code == 1
     assert "new failure" in summary and "openai/stream-no-usage" in summary

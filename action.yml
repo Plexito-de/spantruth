@@ -67,8 +67,8 @@ runs:
         ARTIFACT_NAME: ${{ inputs.artifact-name }}
       run: |
         set -euo pipefail
-        out="$RUNNER_TEMP/spantruth"
-        mkdir -p "$out"
+        # One directory per step: a job can run the action more than once.
+        out="$(mktemp -d "$RUNNER_TEMP/spantruth.XXXXXX")"
         uv venv --quiet --no-config --python 3.12 "$out/venv"
         uv pip install --quiet --no-config --python "$out/venv/bin/python" "$GITHUB_ACTION_PATH"
         spantruth="$out/venv/bin/spantruth"
@@ -94,6 +94,7 @@ runs:
         {
           echo "exit-code=$code"
           echo "results=$out/results.json"
+          echo "out-dir=$out"
           echo "artifact-name=$name"
         } >> "$GITHUB_OUTPUT"
 
@@ -102,8 +103,8 @@ runs:
       with:
         name: ${{ steps.run.outputs.artifact-name }}
         path: |
-          ${{ runner.temp }}/spantruth/results.json
-          ${{ runner.temp }}/spantruth/report.html
+          ${{ steps.run.outputs.out-dir }}/results.json
+          ${{ steps.run.outputs.out-dir }}/report.html
         if-no-files-found: ignore
 
     - shell: bash
