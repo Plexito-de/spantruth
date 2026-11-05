@@ -100,7 +100,9 @@ def _openai_create(client: Any, sc: Scenario):
 
 
 def _anthropic_result(r: Any, seen: Seen) -> None:
-    seen.text = "".join(b.text if b.type == "text" else b.name for b in r.content)
+    seen.text = "".join(
+        b.text if b.type == "text" else b.name if b.type == "tool_use" else "" for b in r.content
+    )
     seen.response_id, seen.usage = r.id, r.usage.model_dump()
 
 

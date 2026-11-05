@@ -155,3 +155,12 @@ def test_retry_truth_is_the_successful_call(sid):
     assert t.error is None
     assert (t.input_tokens, t.output_tokens) == (2477, 367)
     assert t.finish_reasons in (("stop",), ("end_turn",))
+
+
+@pytest.mark.parametrize("sid", ["anthropic/thinking", "anthropic/stream-thinking"])
+def test_anthropic_thinking_stays_inside_output_tokens(sid):
+    sc = scenarios.get(sid)
+    t = scenarios.truth(sc)
+    assert t.output_tokens is not None and t.reasoning_tokens is not None
+    assert t.output_tokens > t.reasoning_tokens
+    assert t.cache_read_tokens is None and t.cache_write_tokens is None

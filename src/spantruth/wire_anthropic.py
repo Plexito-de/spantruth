@@ -9,13 +9,22 @@ from __future__ import annotations
 from .model import Event, Response, Truth
 
 
-def _usage(input_tokens: int, output_tokens: int, cache_read: int, cache_write: int) -> dict:
-    return {
+def _usage(
+    input_tokens: int,
+    output_tokens: int,
+    cache_read: int,
+    cache_write: int,
+    thinking: int = 0,
+) -> dict:
+    u: dict = {
         "input_tokens": input_tokens,
         "output_tokens": output_tokens,
         "cache_read_input_tokens": cache_read,
         "cache_creation_input_tokens": cache_write,
     }
+    if thinking:
+        u["output_tokens_details"] = {"thinking_tokens": thinking}
+    return u
 
 
 def message(
@@ -28,9 +37,22 @@ def message(
     output_tokens: int,
     cache_read: int = 0,
     cache_write: int = 0,
+    thinking: str | None = None,
+    signature: str | None = None,
+    thinking_tokens: int = 0,
     tool_uses: tuple[tuple[str, str, dict], ...] = (),
 ) -> Response:
-    content: list[dict] = [{"type": "text", "text": text}] if text else []
+    content: list[dict] = []
+    if thinking is not None:
+        content.append(
+            {
+                "type": "thinking",
+                "thinking": thinking,
+                "signature": signature or "dGVzdC1zaWduYXR1cmU=",
+            }
+        )
+    if text:
+        content.append({"type": "text", "text": text})
     content += [{"type": "tool_use", "id": i, "name": n, "input": a} for i, n, a in tool_uses]
     return Response(
         body={
@@ -41,7 +63,9 @@ def message(
             "content": content,
             "stop_reason": stop,
             "stop_sequence": None,
-            "usage": _usage(input_tokens, output_tokens, cache_read, cache_write),
+            "usage": _usage(
+                input_tokens, output_tokens, cache_read, cache_write, thinking=thinking_tokens
+            ),
         }
     )
 
@@ -56,6 +80,9 @@ def events(
     output_tokens: int,
     cache_read: int = 0,
     cache_write: int = 0,
+    thinking_parts: tuple[str, ...] = (),
+    signature: str | None = None,
+    thinking_tokens: int = 0,
     drop_after: int | None = None,
     cumulative_delta: bool = False,
     error_after: int | None = None,
@@ -81,23 +108,56 @@ def events(
         "stop_sequence": None,
         "usage": _usage(input_tokens, 1, cache_read, cache_write),
     }
-    stream = [
-        ev("message_start", message=start),
-        ev("content_block_start", index=0, content_block={"type": "text", "text": ""}),
-    ]
+    stream = [ev("message_start", message=start)]
+    idx = 0
+    if thinking_parts:
+        stream.append(
+            ev(
+                "content_block_start",
+                index=idx,
+                content_block={"type": "thinking", "thinking": "", "signature": ""},
+            )
+        )
+        stream += [
+            ev("content_block_delta", index=idx, delta={"type": "thinking_delta", "thinking": p})
+            for p in thinking_parts
+        ]
+        stream.append(
+            ev(
+                "content_block_delta",
+                index=idx,
+                delta={
+                    "type": "signature_delta",
+                    "signature": signature or "dGVzdC1zaWduYXR1cmU=",
+                },
+            )
+        )
+        stream.append(ev("content_block_stop", index=idx))
+        idx += 1
+
+    stream.append(ev("content_block_start", index=idx, content_block={"type": "text", "text": ""}))
     stream += [
-        ev("content_block_delta", index=0, delta={"type": "text_delta", "text": p}) for p in parts
+        ev("content_block_delta", index=idx, delta={"type": "text_delta", "text": p}) for p in parts
     ]
+    stream.append(ev("content_block_stop", index=idx))
+
+    delta_usage = (
+        _usage(input_tokens, output_tokens, cache_read, cache_write, thinking=thinking_tokens)
+        if cumulative_delta
+        else (
+            {
+                "output_tokens": output_tokens,
+                "output_tokens_details": {"thinking_tokens": thinking_tokens},
+            }
+            if thinking_tokens
+            else {"output_tokens": output_tokens}
+        )
+    )
     stream += [
-        ev("content_block_stop", index=0),
         ev(
             "message_delta",
             delta={"stop_reason": stop, "stop_sequence": None},
-            usage=(
-                _usage(input_tokens, output_tokens, cache_read, cache_write)
-                if cumulative_delta
-                else {"output_tokens": output_tokens}
-            ),
+            usage=delta_usage,
         ),
         ev("message_stop"),
     ]
@@ -144,22 +204,37 @@ def truth(request_model: str, response: Response, read_events: int | None = None
     delta = next((d for d in reversed(seen) if d["type"] == "message_delta"), None)
     final = next((d for d in reversed(every) if d["type"] == "message_delta"), None)
     output = delta["usage"]["output_tokens"] if delta else None
+    usage = dict(start["usage"]) if start else {}
+    if delta and "output_tokens_details" in delta.get("usage", {}):
+        usage["output_tokens_details"] = delta["usage"]["output_tokens_details"]
+    unread: list[int] = []
+    if final and not delta:
+        unread.append(final["usage"]["output_tokens"])
+        if thinking := final["usage"].get("output_tokens_details", {}).get("thinking_tokens"):
+            unread.append(thinking)
     return Truth(
         request_model=request_model,
         response_model=start["model"] if start else None,
         response_id=start["id"] if start else None,
         finish_reasons=(delta["delta"]["stop_reason"],) if delta else None,
-        unread_counts=(final["usage"]["output_tokens"],) if final and not delta else (),
-        **(_tokens(start["usage"], output) if start else {}),
+        unread_counts=tuple(unread),
+        **(_tokens(usage, output) if start else {}),
     )
 
 
 def _tokens(usage: dict, output_tokens: int | None) -> dict:
     read = usage.get("cache_read_input_tokens") or 0
     write = usage.get("cache_creation_input_tokens") or 0
+    details = usage.get("output_tokens_details") or {}
+    thinking = (
+        details.get("thinking_tokens")
+        if isinstance(details, dict)
+        else getattr(details, "thinking_tokens", None)
+    )
     return {
         "input_tokens": usage["input_tokens"] + read + write,
         "output_tokens": output_tokens,
         "cache_read_tokens": read or None,
         "cache_write_tokens": write or None,
+        "reasoning_tokens": thinking or None,
     }

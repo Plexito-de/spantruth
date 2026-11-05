@@ -125,11 +125,13 @@ def _anthropic_response(call: _Call, r: Any) -> None:
     call.set("gen_ai.response.id", r.id)
     call.finish = [r.stop_reason]
     u = r.usage
+    thinking = getattr(getattr(u, "output_tokens_details", None), "thinking_tokens", 0) or 0
     call.usage(
         u.input_tokens,
         u.output_tokens,
         u.cache_read_input_tokens or 0,
         u.cache_creation_input_tokens or 0,
+        reasoning=thinking,
     )
 
 
@@ -145,6 +147,11 @@ def _anthropic_event(call: _Call, e: Any) -> None:
     elif e.type == "message_delta":
         # Output is cumulative here. Input and cache counts, when repeated, are not added again.
         call.set("gen_ai.usage.output_tokens", e.usage.output_tokens)
+        thinking = (
+            getattr(getattr(e.usage, "output_tokens_details", None), "thinking_tokens", 0) or 0
+        )
+        if thinking:
+            call.set("gen_ai.usage.reasoning.output_tokens", thinking)
         if e.delta.stop_reason:
             call.finish = [e.delta.stop_reason]
     elif e.type == "content_block_delta" and e.delta.type == "text_delta":

@@ -35,6 +35,7 @@ def honest(sid):
         ("output_tokens", "gen_ai.usage.output_tokens"),
         ("cache_read_tokens", "gen_ai.usage.cache_read.input_tokens"),
         ("cache_write_tokens", "gen_ai.usage.cache_creation.input_tokens"),
+        ("reasoning_tokens", "gen_ai.usage.reasoning.output_tokens"),
     ]:
         if getattr(t, fact) is not None:
             attrs[name] = getattr(t, fact)
@@ -65,6 +66,15 @@ def test_cache_reads_counted_twice_is_named():
     attrs["gen_ai.usage.input_tokens"] = 5802 + 4096 + 519
     assert by_id(grade(sc, t, BASE, obs(), [span(attrs)]))["input_tokens"].detail == (
         "cache tokens counted twice"
+    )
+
+
+def test_reasoning_tokens_left_out_of_output_is_named():
+    sc = scenarios.get("anthropic/thinking")
+    t, attrs = honest(sc.id)
+    attrs["gen_ai.usage.output_tokens"] = t.output_tokens - t.reasoning_tokens
+    assert by_id(grade(sc, t, BASE, obs(), [span(attrs)]))["output_tokens"].detail == (
+        "reasoning tokens left out of output"
     )
 
 
