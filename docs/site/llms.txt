@@ -1,0 +1,18 @@
+# spantruth
+
+> spantruth checks whether LLM telemetry is true. A local fake provider serves OpenAI and Anthropic responses to LLM instrumentation libraries, and spantruth compares the token counts, models, finish reasons and errors on their spans, and whether each span ends, with what was sent. It needs no API key and no network.
+
+To check a Python project, run `uvx spantruth doctor --json` in its directory. It reads the lock file and runs the instrumentation libraries it recognizes at the project's versions. Exit code 0 means no problem found, 1 a problem found, 2 nothing to check, 3 spantruth could not run something, which is not a result.
+
+## Docs
+
+- [README](https://github.com/Plexito-de/spantruth/blob/main/README.md): what it does and how to run it
+- [The ten bug classes](https://plexito-de.github.io/spantruth/bugs.html): ghost spans, double spans, phantom tokens and more
+- [Test your own wrapper](https://github.com/Plexito-de/spantruth/blob/main/docs/test-your-wrapper.md): for instrumentation that a project wrote itself
+- [Agent skill](https://github.com/Plexito-de/spantruth/blob/main/skills/spantruth/SKILL.md): when and how a coding agent should run it
+
+## Results
+
+- [Report at pinned versions](https://plexito-de.github.io/spantruth/index.html)
+- [Report at the latest releases](https://plexito-de.github.io/spantruth/latest.html)
+- [What new releases changed](https://plexito-de.github.io/spantruth/changes.html), also as an [Atom feed](https://plexito-de.github.io/spantruth/feed.xml)

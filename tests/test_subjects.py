@@ -1,5 +1,7 @@
 """Requirement resolution, including `--with` overrides, without building an environment."""
 
+from pathlib import Path
+
 import pytest
 
 from spantruth import cli, subjects
@@ -241,3 +243,11 @@ def test_a_directory_subject_remembers_how_it_was_named(tmp_path):
     directory = _copy_subject(tmp_path, source="openllmetry")
     assert subjects.load(str(directory)).ref == str(directory)
     assert subjects.load("openllmetry").ref == "openllmetry"
+
+
+def test_the_wrapper_example_loads_as_a_subject():
+    example = Path(__file__).resolve().parents[1] / "examples" / "in-house-wrapper"
+    subject = subjects.load(str(example / "spantruth"))
+    assert subject.name == "spantruth"
+    assert "acme-llm==0.1.0" in subject.packages
+    assert subjects.resolve_override(str(example)).startswith("acme-llm @ file://")

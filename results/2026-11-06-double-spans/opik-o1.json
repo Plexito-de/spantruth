@@ -1,0 +1,5028 @@
+{
+ "o1-A-ll": {
+  "project": {
+   "id": "01a1b06e-648f-769d-aa95-058bcf324e95",
+   "name": "o1-A-ll",
+   "visibility": "private",
+   "created_at": "2026-11-06T10:36:27.156512Z",
+   "created_by": "admin",
+   "last_updated_at": "2026-11-06T10:36:27.441004Z",
+   "last_updated_by": "admin",
+   "last_updated_trace_at": "2026-11-06T10:36:27.427591Z"
+  },
+  "traces": [
+   {
+    "id": "01a1b06e-646a-76ea-b25c-bf940148bd5d",
+    "project_id": "01a1b06e-648f-769d-aa95-058bcf324e95",
+    "name": "anthropic.messages.create",
+    "start_time": "2026-11-06T10:36:27.114Z",
+    "end_time": "2026-11-06T10:36:27.126Z",
+    "input": {
+     "server.port": 18099,
+     "http.request.method": "POST",
+     "http.route": "/v1/messages",
+     "max_tokens": 256,
+     "url.scheme": "http",
+     "url.path": "/v1/messages",
+     "url.full": "http://127.0.0.1:18099/v1/messages",
+     "anthropic.request.id": "req_stub",
+     "anthropic.message.stop_reason": "end_turn",
+     "http.response.status_code": 200
+    },
+    "metadata": {
+     "providers": [
+      "anthropic"
+     ],
+     "integration": "com.anthropic.sdk.python",
+     "server.address": "127.0.0.1",
+     "gen_ai.operation.name": "chat",
+     "gen_ai.response.id": "msg_stub01"
+    },
+    "usage": {
+     "cache_read.input_tokens": 0,
+     "cache_write.input_tokens": 0,
+     "completion_tokens": 200,
+     "prompt_tokens": 1000,
+     "total_tokens": 1200
+    },
+    "created_at": "2026-11-06T10:36:27.216224829Z",
+    "last_updated_at": "2026-11-06T10:36:27.269960Z",
+    "created_by": "admin",
+    "last_updated_by": "admin",
+    "total_estimated_cost": 0.006,
+    "span_count": 1,
+    "duration": 12.0,
+    "visibility_mode": "default",
+    "llm_span_count": 1,
+    "has_tool_spans": false,
+    "providers": [
+     "anthropic"
+    ],
+    "source": "sdk",
+    "environment": ""
+   },
+   {
+    "id": "01a1b06e-6469-7b30-a88d-aaebbcb355ff",
+    "project_id": "01a1b06e-648f-769d-aa95-058bcf324e95",
+    "name": "anthropic.chat",
+    "start_time": "2026-11-06T10:36:27.113Z",
+    "end_time": "2026-11-06T10:36:27.342Z",
+    "input": {
+     "max_tokens": 256,
+     "messages": [
+      {
+       "role": "user",
+       "parts": [
+        {
+         "type": "text",
+         "content": "ping"
+        }
+       ]
+      }
+     ]
+    },
+    "output": {
+     "messages": [
+      {
+       "role": "assistant",
+       "parts": [
+        {
+         "type": "text",
+         "content": "pong"
+        }
+       ],
+       "finish_reason": "stop"
+      }
+     ]
+    },
+    "metadata": {
+     "providers": [
+      "anthropic"
+     ],
+     "integration": "opentelemetry.instrumentation.anthropic",
+     "gen_ai.operation.name": "chat",
+     "gen_ai.response.id": "msg_stub01",
+     "gen_ai.response.finish_reasons": [
+      "stop"
+     ]
+    },
+    "usage": {
+     "cache_creation.input_tokens": 0,
+     "cache_read.input_tokens": 0,
+     "completion_tokens": 200,
+     "prompt_tokens": 1000,
+     "total_tokens": 1200
+    },
+    "created_at": "2026-11-06T10:36:27.408718421Z",
+    "last_updated_at": "2026-11-06T10:36:27.417064Z",
+    "created_by": "admin",
+    "last_updated_by": "admin",
+    "total_estimated_cost": 0.006,
+    "span_count": 1,
+    "duration": 229.0,
+    "visibility_mode": "default",
+    "llm_span_count": 1,
+    "has_tool_spans": false,
+    "providers": [
+     "anthropic"
+    ],
+    "source": "sdk",
+    "environment": ""
+   }
+  ],
+  "spans": [
+   {
+    "id": "01a1b06e-646a-71f7-aa5b-0b9ec078ebd2",
+    "project_id": "01a1b06e-648f-769d-aa95-058bcf324e95",
+    "trace_id": "01a1b06e-646a-76ea-b25c-bf940148bd5d",
+    "name": "anthropic.messages.create",
+    "type": "llm",
+    "start_time": "2026-11-06T10:36:27.114Z",
+    "end_time": "2026-11-06T10:36:27.126Z",
+    "input": {
+     "server.port": 18099,
+     "http.request.method": "POST",
+     "http.route": "/v1/messages",
+     "max_tokens": 256,
+     "url.scheme": "http",
+     "url.path": "/v1/messages",
+     "url.full": "http://127.0.0.1:18099/v1/messages",
+     "anthropic.request.id": "req_stub",
+     "anthropic.message.stop_reason": "end_turn",
+     "http.response.status_code": 200
+    },
+    "metadata": {
+     "provider": "anthropic",
+     "integration": "com.anthropic.sdk.python",
+     "server.address": "127.0.0.1",
+     "gen_ai.operation.name": "chat",
+     "gen_ai.response.id": "msg_stub01"
+    },
+    "model": "claude-sonnet-4-5-20250929",
+    "provider": "anthropic",
+    "usage": {
+     "total_tokens": 1200,
+     "completion_tokens": 200,
+     "cache_read.input_tokens": 0,
+     "prompt_tokens": 1000,
+     "cache_write.input_tokens": 0
+    },
+    "created_at": "2026-11-06T10:36:27.315191758Z",
+    "last_updated_at": "2026-11-06T10:36:27.309272Z",
+    "created_by": "admin",
+    "last_updated_by": "admin",
+    "total_estimated_cost": 0.006,
+    "total_estimated_cost_version": "1.1",
+    "duration": 12.0,
+    "source": "sdk",
+    "environment": ""
+   },
+   {
+    "id": "01a1b06e-6469-7e4a-b5f2-c995d2194553",
+    "project_id": "01a1b06e-648f-769d-aa95-058bcf324e95",
+    "trace_id": "01a1b06e-6469-7b30-a88d-aaebbcb355ff",
+    "name": "anthropic.chat",
+    "type": "llm",
+    "start_time": "2026-11-06T10:36:27.113Z",
+    "end_time": "2026-11-06T10:36:27.342Z",
+    "input": {
+     "max_tokens": 256,
+     "messages": [
+      {
+       "role": "user",
+       "parts": [
+        {
+         "type": "text",
+         "content": "ping"
+        }
+       ]
+      }
+     ]
+    },
+    "output": {
+     "messages": [
+      {
+       "role": "assistant",
+       "parts": [
+        {
+         "type": "text",
+         "content": "pong"
+        }
+       ],
+       "finish_reason": "stop"
+      }
+     ]
+    },
+    "metadata": {
+     "provider": "anthropic",
+     "integration": "opentelemetry.instrumentation.anthropic",
+     "gen_ai.operation.name": "chat",
+     "gen_ai.response.id": "msg_stub01",
+     "gen_ai.response.finish_reasons": [
+      "stop"
+     ]
+    },
+    "model": "claude-sonnet-4-5-20250929",
+    "provider": "anthropic",
+    "usage": {
+     "total_tokens": 1200,
+     "completion_tokens": 200,
+     "cache_read.input_tokens": 0,
+     "prompt_tokens": 1000,
+     "cache_creation.input_tokens": 0
+    },
+    "created_at": "2026-11-06T10:36:27.573890418Z",
+    "last_updated_at": "2026-11-06T10:36:27.463192Z",
+    "created_by": "admin",
+    "last_updated_by": "admin",
+    "total_estimated_cost": 0.006,
+    "total_estimated_cost_version": "1.1",
+    "duration": 229.0,
+    "source": "sdk",
+    "environment": ""
+   }
+  ],
+  "trace_stats": [
+   {
+    "name": "trace_count",
+    "value": 2,
+    "type": "COUNT"
+   },
+   {
+    "name": "duration",
+    "value": {
+     "p50": 120.5,
+     "p90": 207.299999999,
+     "p99": 226.83
+    },
+    "type": "PERCENTAGE"
+   },
+   {
+    "name": "input",
+    "value": 2,
+    "type": "COUNT"
+   },
+   {
+    "name": "output",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "metadata",
+    "value": 2,
+    "type": "COUNT"
+   },
+   {
+    "name": "tags",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "thread_count",
+    "value": 0,
+    "type": "COUNT"
+   },
+   {
+    "name": "llm_span_count",
+    "value": 1.0,
+    "type": "AVG"
+   },
+   {
+    "name": "span_count",
+    "value": 1.0,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost",
+    "value": 0.006,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost_sum",
+    "value": 0.012,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.cache_creation.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.cache_read.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.cache_write.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.completion_tokens",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.prompt_tokens",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.total_tokens",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.cache_creation.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.cache_read.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.cache_write.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.completion_tokens",
+    "value": 400.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.prompt_tokens",
+    "value": 2000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.total_tokens",
+    "value": 2400.0,
+    "type": "AVG"
+   },
+   {
+    "name": "guardrails_failed_count",
+    "value": 0,
+    "type": "COUNT"
+   },
+   {
+    "name": "error_count",
+    "value": 0,
+    "type": "COUNT"
+   }
+  ],
+  "span_stats": [
+   {
+    "name": "span_count",
+    "value": 2,
+    "type": "COUNT"
+   },
+   {
+    "name": "duration",
+    "value": {
+     "p50": 120.5,
+     "p90": 207.299999999,
+     "p99": 226.83
+    },
+    "type": "PERCENTAGE"
+   },
+   {
+    "name": "input",
+    "value": 2,
+    "type": "COUNT"
+   },
+   {
+    "name": "output",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "metadata",
+    "value": 2,
+    "type": "COUNT"
+   },
+   {
+    "name": "tags",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost",
+    "value": 0.006,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost_sum",
+    "value": 0.012,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.cache_creation.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.cache_read.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.cache_write.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.completion_tokens",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.prompt_tokens",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.total_tokens",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.cache_creation.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.cache_read.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.cache_write.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.completion_tokens",
+    "value": 400.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.prompt_tokens",
+    "value": 2000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.total_tokens",
+    "value": 2400.0,
+    "type": "AVG"
+   },
+   {
+    "name": "error_count",
+    "value": 0,
+    "type": "COUNT"
+   }
+  ]
+ },
+ "o1-A-lllatest": {
+  "project": {
+   "id": "01a1b06e-9c4f-7104-bfe6-1569454fe353",
+   "name": "o1-A-lllatest",
+   "visibility": "private",
+   "created_at": "2026-11-06T10:36:41.433095Z",
+   "created_by": "admin",
+   "last_updated_at": "2026-11-06T10:36:41.770361Z",
+   "last_updated_by": "admin",
+   "last_updated_trace_at": "2026-11-06T10:36:41.760290Z"
+  },
+  "traces": [
+   {
+    "id": "01a1b06e-9c0e-711a-9ae8-ba1532ecfc3b",
+    "project_id": "01a1b06e-9c4f-7104-bfe6-1569454fe353",
+    "name": "anthropic.messages.create",
+    "start_time": "2026-11-06T10:36:41.358Z",
+    "end_time": "2026-11-06T10:36:41.379Z",
+    "input": {
+     "server.port": 18099,
+     "max_tokens": 256,
+     "http.request.method": "POST",
+     "http.route": "/v1/messages",
+     "url.scheme": "http",
+     "url.path": "/v1/messages",
+     "url.full": "http://127.0.0.1:18099/v1/messages",
+     "http.response.status_code": 200,
+     "anthropic.request.id": "req_stub",
+     "anthropic.message.stop_reason": "end_turn"
+    },
+    "metadata": {
+     "providers": [
+      "anthropic"
+     ],
+     "integration": "com.anthropic.sdk.python",
+     "server.address": "127.0.0.1",
+     "gen_ai.operation.name": "chat",
+     "gen_ai.response.id": "msg_stub01"
+    },
+    "usage": {
+     "cache_read.input_tokens": 0,
+     "cache_write.input_tokens": 0,
+     "completion_tokens": 200,
+     "prompt_tokens": 1000,
+     "total_tokens": 1200
+    },
+    "created_at": "2026-11-06T10:36:41.514765340Z",
+    "last_updated_at": "2026-11-06T10:36:41.527253Z",
+    "created_by": "admin",
+    "last_updated_by": "admin",
+    "total_estimated_cost": 0.006,
+    "span_count": 1,
+    "duration": 21.0,
+    "visibility_mode": "default",
+    "llm_span_count": 1,
+    "has_tool_spans": false,
+    "providers": [
+     "anthropic"
+    ],
+    "source": "sdk",
+    "environment": ""
+   },
+   {
+    "id": "01a1b06e-9c0c-781c-8667-7c82dd00627d",
+    "project_id": "01a1b06e-9c4f-7104-bfe6-1569454fe353",
+    "name": "anthropic.chat",
+    "start_time": "2026-11-06T10:36:41.356Z",
+    "end_time": "2026-11-06T10:36:41.620Z",
+    "input": {
+     "max_tokens": 256,
+     "messages": [
+      {
+       "role": "user",
+       "parts": [
+        {
+         "type": "text",
+         "content": "ping"
+        }
+       ]
+      }
+     ]
+    },
+    "output": {
+     "messages": [
+      {
+       "role": "assistant",
+       "parts": [
+        {
+         "type": "text",
+         "content": "pong"
+        }
+       ],
+       "finish_reason": "stop"
+      }
+     ]
+    },
+    "metadata": {
+     "providers": [
+      "anthropic"
+     ],
+     "integration": "opentelemetry.instrumentation.anthropic",
+     "gen_ai.operation.name": "chat",
+     "gen_ai.response.id": "msg_stub01",
+     "gen_ai.response.finish_reasons": [
+      "stop"
+     ]
+    },
+    "usage": {
+     "cache_creation.input_tokens": 0,
+     "cache_read.input_tokens": 0,
+     "completion_tokens": 200,
+     "prompt_tokens": 1000,
+     "total_tokens": 1200
+    },
+    "created_at": "2026-11-06T10:36:41.726241958Z",
+    "last_updated_at": "2026-11-06T10:36:41.742346Z",
+    "created_by": "admin",
+    "last_updated_by": "admin",
+    "total_estimated_cost": 0.006,
+    "span_count": 1,
+    "duration": 264.0,
+    "visibility_mode": "default",
+    "llm_span_count": 1,
+    "has_tool_spans": false,
+    "providers": [
+     "anthropic"
+    ],
+    "source": "sdk",
+    "environment": ""
+   }
+  ],
+  "spans": [
+   {
+    "id": "01a1b06e-9c0e-786d-a1a5-4c90b7a70245",
+    "project_id": "01a1b06e-9c4f-7104-bfe6-1569454fe353",
+    "trace_id": "01a1b06e-9c0e-711a-9ae8-ba1532ecfc3b",
+    "name": "anthropic.messages.create",
+    "type": "llm",
+    "start_time": "2026-11-06T10:36:41.358Z",
+    "end_time": "2026-11-06T10:36:41.379Z",
+    "input": {
+     "server.port": 18099,
+     "max_tokens": 256,
+     "http.request.method": "POST",
+     "http.route": "/v1/messages",
+     "url.scheme": "http",
+     "url.path": "/v1/messages",
+     "url.full": "http://127.0.0.1:18099/v1/messages",
+     "http.response.status_code": 200,
+     "anthropic.request.id": "req_stub",
+     "anthropic.message.stop_reason": "end_turn"
+    },
+    "metadata": {
+     "provider": "anthropic",
+     "integration": "com.anthropic.sdk.python",
+     "server.address": "127.0.0.1",
+     "gen_ai.operation.name": "chat",
+     "gen_ai.response.id": "msg_stub01"
+    },
+    "model": "claude-sonnet-4-5-20250929",
+    "provider": "anthropic",
+    "usage": {
+     "total_tokens": 1200,
+     "completion_tokens": 200,
+     "cache_read.input_tokens": 0,
+     "prompt_tokens": 1000,
+     "cache_write.input_tokens": 0
+    },
+    "created_at": "2026-11-06T10:36:41.594348363Z",
+    "last_updated_at": "2026-11-06T10:36:41.587822Z",
+    "created_by": "admin",
+    "last_updated_by": "admin",
+    "total_estimated_cost": 0.006,
+    "total_estimated_cost_version": "1.1",
+    "duration": 21.0,
+    "source": "sdk",
+    "environment": ""
+   },
+   {
+    "id": "01a1b06e-9c0c-702a-bf1d-16c090877c7b",
+    "project_id": "01a1b06e-9c4f-7104-bfe6-1569454fe353",
+    "trace_id": "01a1b06e-9c0c-781c-8667-7c82dd00627d",
+    "name": "anthropic.chat",
+    "type": "llm",
+    "start_time": "2026-11-06T10:36:41.356Z",
+    "end_time": "2026-11-06T10:36:41.620Z",
+    "input": {
+     "max_tokens": 256,
+     "messages": [
+      {
+       "role": "user",
+       "parts": [
+        {
+         "type": "text",
+         "content": "ping"
+        }
+       ]
+      }
+     ]
+    },
+    "output": {
+     "messages": [
+      {
+       "role": "assistant",
+       "parts": [
+        {
+         "type": "text",
+         "content": "pong"
+        }
+       ],
+       "finish_reason": "stop"
+      }
+     ]
+    },
+    "metadata": {
+     "provider": "anthropic",
+     "integration": "opentelemetry.instrumentation.anthropic",
+     "gen_ai.operation.name": "chat",
+     "gen_ai.response.id": "msg_stub01",
+     "gen_ai.response.finish_reasons": [
+      "stop"
+     ]
+    },
+    "model": "claude-sonnet-4-5-20250929",
+    "provider": "anthropic",
+    "usage": {
+     "total_tokens": 1200,
+     "completion_tokens": 200,
+     "cache_read.input_tokens": 0,
+     "prompt_tokens": 1000,
+     "cache_creation.input_tokens": 0
+    },
+    "created_at": "2026-11-06T10:36:41.916377121Z",
+    "last_updated_at": "2026-11-06T10:36:41.800218Z",
+    "created_by": "admin",
+    "last_updated_by": "admin",
+    "total_estimated_cost": 0.006,
+    "total_estimated_cost_version": "1.1",
+    "duration": 264.0,
+    "source": "sdk",
+    "environment": ""
+   }
+  ],
+  "trace_stats": [
+   {
+    "name": "trace_count",
+    "value": 2,
+    "type": "COUNT"
+   },
+   {
+    "name": "duration",
+    "value": {
+     "p50": 142.5,
+     "p90": 239.7,
+     "p99": 261.57
+    },
+    "type": "PERCENTAGE"
+   },
+   {
+    "name": "input",
+    "value": 2,
+    "type": "COUNT"
+   },
+   {
+    "name": "output",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "metadata",
+    "value": 2,
+    "type": "COUNT"
+   },
+   {
+    "name": "tags",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "thread_count",
+    "value": 0,
+    "type": "COUNT"
+   },
+   {
+    "name": "llm_span_count",
+    "value": 1.0,
+    "type": "AVG"
+   },
+   {
+    "name": "span_count",
+    "value": 1.0,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost",
+    "value": 0.006,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost_sum",
+    "value": 0.012,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.cache_creation.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.cache_read.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.cache_write.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.completion_tokens",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.prompt_tokens",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.total_tokens",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.cache_creation.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.cache_read.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.cache_write.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.completion_tokens",
+    "value": 400.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.prompt_tokens",
+    "value": 2000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.total_tokens",
+    "value": 2400.0,
+    "type": "AVG"
+   },
+   {
+    "name": "guardrails_failed_count",
+    "value": 0,
+    "type": "COUNT"
+   },
+   {
+    "name": "error_count",
+    "value": 0,
+    "type": "COUNT"
+   }
+  ],
+  "span_stats": [
+   {
+    "name": "span_count",
+    "value": 2,
+    "type": "COUNT"
+   },
+   {
+    "name": "duration",
+    "value": {
+     "p50": 142.5,
+     "p90": 239.7,
+     "p99": 261.57
+    },
+    "type": "PERCENTAGE"
+   },
+   {
+    "name": "input",
+    "value": 2,
+    "type": "COUNT"
+   },
+   {
+    "name": "output",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "metadata",
+    "value": 2,
+    "type": "COUNT"
+   },
+   {
+    "name": "tags",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost",
+    "value": 0.006,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost_sum",
+    "value": 0.012,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.cache_creation.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.cache_read.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.cache_write.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.completion_tokens",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.prompt_tokens",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.total_tokens",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.cache_creation.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.cache_read.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.cache_write.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.completion_tokens",
+    "value": 400.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.prompt_tokens",
+    "value": 2000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.total_tokens",
+    "value": 2400.0,
+    "type": "AVG"
+   },
+   {
+    "name": "error_count",
+    "value": 0,
+    "type": "COUNT"
+   }
+  ]
+ },
+ "o1-A-oi": {
+  "project": {
+   "id": "01a1b06e-5169-72df-a850-8e2a11321c8f",
+   "name": "o1-A-oi",
+   "visibility": "private",
+   "created_at": "2026-11-06T10:36:22.276049Z",
+   "created_by": "admin",
+   "last_updated_at": "2026-11-06T10:36:22.471199Z",
+   "last_updated_by": "admin",
+   "last_updated_trace_at": "2026-11-06T10:36:22.435051Z"
+  },
+  "traces": [
+   {
+    "id": "01a1b06e-5107-7197-a1a0-e8799cad867c",
+    "project_id": "01a1b06e-5169-72df-a850-8e2a11321c8f",
+    "name": "messages.create",
+    "start_time": "2026-11-06T10:36:22.151Z",
+    "end_time": "2026-11-06T10:36:22.171Z",
+    "input": {
+     "llm.provider": "anthropic",
+     "llm.system": "anthropic",
+     "value": {
+      "model": "claude-sonnet-4-5-20250929",
+      "max_tokens": 256,
+      "messages": [
+       {
+        "role": "user",
+        "content": "ping"
+       }
+      ]
+     },
+     "mime_type": "application/json",
+     "llm.input_messages.0.message.role": "user",
+     "llm.input_messages.0.message.content": "ping",
+     "llm.invocation_parameters": {
+      "max_tokens": 256
+     },
+     "llm.output_messages.0.message.role": "assistant",
+     "llm.finish_reason": "end_turn",
+     "llm.output_messages.0.message.contents.0.message_content.type": "text",
+     "llm.output_messages.0.message.contents.0.message_content.text": "pong",
+     "openinference.span.kind": "LLM"
+    },
+    "output": {
+     "value": {
+      "id": "msg_stub01",
+      "container": null,
+      "content": [
+       {
+        "citations": null,
+        "text": "pong",
+        "type": "text"
+       }
+      ],
+      "diagnostics": null,
+      "model": "claude-sonnet-4-5-20250929",
+      "role": "assistant",
+      "stop_details": null,
+      "stop_reason": "end_turn",
+      "stop_sequence": null,
+      "type": "message",
+      "usage": {
+       "cache_creation": null,
+       "cache_creation_input_tokens": 0,
+       "cache_read_input_tokens": 0,
+       "inference_geo": null,
+       "input_tokens": 1000,
+       "output_tokens": 200,
+       "output_tokens_details": null,
+       "server_tool_use": null,
+       "service_tier": null,
+       "speed": null
+      }
+     },
+     "mime_type": "application/json"
+    },
+    "metadata": {
+     "integration": "openinference.instrumentation.anthropic",
+     "model_name": "claude-sonnet-4-5-20250929"
+    },
+    "usage": {
+     "completion": 200,
+     "prompt": 1000,
+     "total": 1200
+    },
+    "created_at": "2026-11-06T10:36:22.417671852Z",
+    "last_updated_at": "2026-11-06T10:36:22.424372Z",
+    "created_by": "admin",
+    "last_updated_by": "admin",
+    "span_count": 1,
+    "duration": 20.0,
+    "visibility_mode": "default",
+    "llm_span_count": 1,
+    "has_tool_spans": false,
+    "providers": [],
+    "source": "sdk",
+    "environment": ""
+   }
+  ],
+  "spans": [
+   {
+    "id": "01a1b06e-5107-7db2-b8b8-c183557dfc5e",
+    "project_id": "01a1b06e-5169-72df-a850-8e2a11321c8f",
+    "trace_id": "01a1b06e-5107-7197-a1a0-e8799cad867c",
+    "name": "messages.create",
+    "type": "llm",
+    "start_time": "2026-11-06T10:36:22.151Z",
+    "end_time": "2026-11-06T10:36:22.171Z",
+    "input": {
+     "llm.provider": "anthropic",
+     "llm.system": "anthropic",
+     "value": {
+      "model": "claude-sonnet-4-5-20250929",
+      "max_tokens": 256,
+      "messages": [
+       {
+        "role": "user",
+        "content": "ping"
+       }
+      ]
+     },
+     "mime_type": "application/json",
+     "llm.input_messages.0.message.role": "user",
+     "llm.input_messages.0.message.content": "ping",
+     "llm.invocation_parameters": {
+      "max_tokens": 256
+     },
+     "llm.output_messages.0.message.role": "assistant",
+     "llm.finish_reason": "end_turn",
+     "llm.output_messages.0.message.contents.0.message_content.type": "text",
+     "llm.output_messages.0.message.contents.0.message_content.text": "pong",
+     "openinference.span.kind": "LLM"
+    },
+    "output": {
+     "value": {
+      "id": "msg_stub01",
+      "container": null,
+      "content": [
+       {
+        "citations": null,
+        "text": "pong",
+        "type": "text"
+       }
+      ],
+      "diagnostics": null,
+      "model": "claude-sonnet-4-5-20250929",
+      "role": "assistant",
+      "stop_details": null,
+      "stop_reason": "end_turn",
+      "stop_sequence": null,
+      "type": "message",
+      "usage": {
+       "cache_creation": null,
+       "cache_creation_input_tokens": 0,
+       "cache_read_input_tokens": 0,
+       "inference_geo": null,
+       "input_tokens": 1000,
+       "output_tokens": 200,
+       "output_tokens_details": null,
+       "server_tool_use": null,
+       "service_tier": null,
+       "speed": null
+      }
+     },
+     "mime_type": "application/json"
+    },
+    "metadata": {
+     "integration": "openinference.instrumentation.anthropic",
+     "model_name": "claude-sonnet-4-5-20250929"
+    },
+    "model": "claude-sonnet-4-5-20250929",
+    "usage": {
+     "completion": 200,
+     "prompt": 1000,
+     "total": 1200
+    },
+    "created_at": "2026-11-06T10:36:22.605046774Z",
+    "last_updated_at": "2026-11-06T10:36:22.487592Z",
+    "created_by": "admin",
+    "last_updated_by": "admin",
+    "duration": 20.0,
+    "source": "sdk",
+    "environment": ""
+   }
+  ],
+  "trace_stats": [
+   {
+    "name": "trace_count",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "duration",
+    "value": {
+     "p50": 20.0,
+     "p90": 20.0,
+     "p99": 20.0
+    },
+    "type": "PERCENTAGE"
+   },
+   {
+    "name": "input",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "output",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "metadata",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "tags",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "thread_count",
+    "value": 0,
+    "type": "COUNT"
+   },
+   {
+    "name": "llm_span_count",
+    "value": 1.0,
+    "type": "AVG"
+   },
+   {
+    "name": "span_count",
+    "value": 1.0,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost_sum",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.completion",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.prompt",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.total",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.completion",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.prompt",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.total",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "guardrails_failed_count",
+    "value": 0,
+    "type": "COUNT"
+   },
+   {
+    "name": "error_count",
+    "value": 0,
+    "type": "COUNT"
+   }
+  ],
+  "span_stats": [
+   {
+    "name": "span_count",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "duration",
+    "value": {
+     "p50": 20.0,
+     "p90": 20.0,
+     "p99": 20.0
+    },
+    "type": "PERCENTAGE"
+   },
+   {
+    "name": "input",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "output",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "metadata",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "tags",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost_sum",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.completion",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.prompt",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.total",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.completion",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.prompt",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.total",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "error_count",
+    "value": 0,
+    "type": "COUNT"
+   }
+  ]
+ },
+ "o1-A-oi310": {
+  "project": {
+   "id": "01a1b06e-829c-7659-8654-0a7df416f746",
+   "name": "o1-A-oi310",
+   "visibility": "private",
+   "created_at": "2026-11-06T10:36:34.849036Z",
+   "created_by": "admin",
+   "last_updated_at": "2026-11-06T10:36:35.026903Z",
+   "last_updated_by": "admin",
+   "last_updated_trace_at": "2026-11-06T10:36:35.012646Z"
+  },
+  "traces": [
+   {
+    "id": "01a1b06e-826f-7987-bd13-1dd768fc4251",
+    "project_id": "01a1b06e-829c-7659-8654-0a7df416f746",
+    "name": "messages.create",
+    "start_time": "2026-11-06T10:36:34.798Z",
+    "end_time": "2026-11-06T10:36:34.924Z",
+    "input": {
+     "llm.provider": "anthropic",
+     "llm.system": "anthropic",
+     "value": {
+      "model": "claude-sonnet-4-5-20250929",
+      "max_tokens": 256,
+      "messages": [
+       {
+        "role": "user",
+        "content": "ping"
+       }
+      ]
+     },
+     "mime_type": "application/json",
+     "llm.input_messages.0.message.role": "user",
+     "llm.input_messages.0.message.content": "ping",
+     "llm.invocation_parameters": {
+      "max_tokens": 256
+     },
+     "llm.output_messages.0.message.role": "assistant",
+     "llm.finish_reason": "end_turn",
+     "llm.output_messages.0.message.contents.0.message_content.type": "text",
+     "llm.output_messages.0.message.contents.0.message_content.text": "pong",
+     "openinference.span.kind": "LLM"
+    },
+    "output": {
+     "value": {
+      "id": "msg_stub01",
+      "container": null,
+      "content": [
+       {
+        "citations": null,
+        "text": "pong",
+        "type": "text"
+       }
+      ],
+      "diagnostics": null,
+      "model": "claude-sonnet-4-5-20250929",
+      "role": "assistant",
+      "stop_details": null,
+      "stop_reason": "end_turn",
+      "stop_sequence": null,
+      "type": "message",
+      "usage": {
+       "cache_creation": null,
+       "cache_creation_input_tokens": 0,
+       "cache_read_input_tokens": 0,
+       "inference_geo": null,
+       "input_tokens": 1000,
+       "output_tokens": 200,
+       "output_tokens_details": null,
+       "server_tool_use": null,
+       "service_tier": null,
+       "speed": null
+      }
+     },
+     "mime_type": "application/json"
+    },
+    "metadata": {
+     "providers": [
+      "anthropic"
+     ],
+     "integration": "openinference.instrumentation.anthropic",
+     "model_name": "claude-sonnet-4-5-20250929"
+    },
+    "usage": {
+     "cache_read.input_tokens": 0,
+     "cache_write.input_tokens": 0,
+     "completion": 200,
+     "completion_tokens": 200,
+     "prompt": 1000,
+     "prompt_tokens": 1000,
+     "total": 1200,
+     "total_tokens": 1200
+    },
+    "created_at": "2026-11-06T10:36:34.987638788Z",
+    "last_updated_at": "2026-11-06T10:36:34.999770Z",
+    "created_by": "admin",
+    "last_updated_by": "admin",
+    "total_estimated_cost": 0.006,
+    "span_count": 2,
+    "duration": 126.0,
+    "visibility_mode": "default",
+    "llm_span_count": 2,
+    "has_tool_spans": false,
+    "providers": [
+     "anthropic"
+    ],
+    "source": "sdk",
+    "environment": ""
+   }
+  ],
+  "spans": [
+   {
+    "id": "01a1b06e-826f-7485-9005-2eb40835f598",
+    "project_id": "01a1b06e-829c-7659-8654-0a7df416f746",
+    "trace_id": "01a1b06e-826f-7987-bd13-1dd768fc4251",
+    "name": "messages.create",
+    "type": "llm",
+    "start_time": "2026-11-06T10:36:34.798Z",
+    "end_time": "2026-11-06T10:36:34.924Z",
+    "input": {
+     "llm.provider": "anthropic",
+     "llm.system": "anthropic",
+     "value": {
+      "model": "claude-sonnet-4-5-20250929",
+      "max_tokens": 256,
+      "messages": [
+       {
+        "role": "user",
+        "content": "ping"
+       }
+      ]
+     },
+     "mime_type": "application/json",
+     "llm.input_messages.0.message.role": "user",
+     "llm.input_messages.0.message.content": "ping",
+     "llm.invocation_parameters": {
+      "max_tokens": 256
+     },
+     "llm.output_messages.0.message.role": "assistant",
+     "llm.finish_reason": "end_turn",
+     "llm.output_messages.0.message.contents.0.message_content.type": "text",
+     "llm.output_messages.0.message.contents.0.message_content.text": "pong",
+     "openinference.span.kind": "LLM"
+    },
+    "output": {
+     "value": {
+      "id": "msg_stub01",
+      "container": null,
+      "content": [
+       {
+        "citations": null,
+        "text": "pong",
+        "type": "text"
+       }
+      ],
+      "diagnostics": null,
+      "model": "claude-sonnet-4-5-20250929",
+      "role": "assistant",
+      "stop_details": null,
+      "stop_reason": "end_turn",
+      "stop_sequence": null,
+      "type": "message",
+      "usage": {
+       "cache_creation": null,
+       "cache_creation_input_tokens": 0,
+       "cache_read_input_tokens": 0,
+       "inference_geo": null,
+       "input_tokens": 1000,
+       "output_tokens": 200,
+       "output_tokens_details": null,
+       "server_tool_use": null,
+       "service_tier": null,
+       "speed": null
+      }
+     },
+     "mime_type": "application/json"
+    },
+    "metadata": {
+     "integration": "openinference.instrumentation.anthropic",
+     "model_name": "claude-sonnet-4-5-20250929"
+    },
+    "model": "claude-sonnet-4-5-20250929",
+    "usage": {
+     "completion": 200,
+     "prompt": 1000,
+     "total": 1200
+    },
+    "created_at": "2026-11-06T10:36:35.154348613Z",
+    "last_updated_at": "2026-11-06T10:36:35.042808Z",
+    "created_by": "admin",
+    "last_updated_by": "admin",
+    "duration": 126.0,
+    "source": "sdk",
+    "environment": ""
+   },
+   {
+    "id": "01a1b06e-826f-712f-a0e7-f4cb25551c6a",
+    "project_id": "01a1b06e-829c-7659-8654-0a7df416f746",
+    "trace_id": "01a1b06e-826f-7987-bd13-1dd768fc4251",
+    "parent_span_id": "01a1b06e-826f-7485-9005-2eb40835f598",
+    "name": "anthropic.messages.create",
+    "type": "llm",
+    "start_time": "2026-11-06T10:36:34.799Z",
+    "end_time": "2026-11-06T10:36:34.818Z",
+    "input": {
+     "server.port": 18099,
+     "http.request.method": "POST",
+     "http.route": "/v1/messages",
+     "max_tokens": 256,
+     "url.scheme": "http",
+     "url.path": "/v1/messages",
+     "url.full": "http://127.0.0.1:18099/v1/messages",
+     "anthropic.request.id": "req_stub",
+     "anthropic.message.stop_reason": "end_turn",
+     "http.response.status_code": 200
+    },
+    "metadata": {
+     "provider": "anthropic",
+     "integration": "com.anthropic.sdk.python",
+     "server.address": "127.0.0.1",
+     "gen_ai.operation.name": "chat",
+     "gen_ai.response.id": "msg_stub01"
+    },
+    "model": "claude-sonnet-4-5-20250929",
+    "provider": "anthropic",
+    "usage": {
+     "total_tokens": 1200,
+     "completion_tokens": 200,
+     "cache_read.input_tokens": 0,
+     "prompt_tokens": 1000,
+     "cache_write.input_tokens": 0
+    },
+    "created_at": "2026-11-06T10:36:34.900848164Z",
+    "last_updated_at": "2026-11-06T10:36:34.894518Z",
+    "created_by": "admin",
+    "last_updated_by": "admin",
+    "total_estimated_cost": 0.006,
+    "total_estimated_cost_version": "1.1",
+    "duration": 19.0,
+    "source": "sdk",
+    "environment": ""
+   }
+  ],
+  "trace_stats": [
+   {
+    "name": "trace_count",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "duration",
+    "value": {
+     "p50": 126.0,
+     "p90": 126.0,
+     "p99": 126.0
+    },
+    "type": "PERCENTAGE"
+   },
+   {
+    "name": "input",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "output",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "metadata",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "tags",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "thread_count",
+    "value": 0,
+    "type": "COUNT"
+   },
+   {
+    "name": "llm_span_count",
+    "value": 2.0,
+    "type": "AVG"
+   },
+   {
+    "name": "span_count",
+    "value": 2.0,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost",
+    "value": 0.006,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost_sum",
+    "value": 0.006,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.cache_read.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.cache_write.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.completion",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.completion_tokens",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.prompt",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.prompt_tokens",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.total",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.total_tokens",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.cache_read.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.cache_write.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.completion",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.completion_tokens",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.prompt",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.prompt_tokens",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.total",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.total_tokens",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "guardrails_failed_count",
+    "value": 0,
+    "type": "COUNT"
+   },
+   {
+    "name": "error_count",
+    "value": 0,
+    "type": "COUNT"
+   }
+  ],
+  "span_stats": [
+   {
+    "name": "span_count",
+    "value": 2,
+    "type": "COUNT"
+   },
+   {
+    "name": "duration",
+    "value": {
+     "p50": 72.5,
+     "p90": 115.3,
+     "p99": 124.93
+    },
+    "type": "PERCENTAGE"
+   },
+   {
+    "name": "input",
+    "value": 2,
+    "type": "COUNT"
+   },
+   {
+    "name": "output",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "metadata",
+    "value": 2,
+    "type": "COUNT"
+   },
+   {
+    "name": "tags",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost",
+    "value": 0.006,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost_sum",
+    "value": 0.006,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.cache_read.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.cache_write.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.completion",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.completion_tokens",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.prompt",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.prompt_tokens",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.total",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.total_tokens",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.cache_read.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.cache_write.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.completion",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.completion_tokens",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.prompt",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.prompt_tokens",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.total",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.total_tokens",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "error_count",
+    "value": 0,
+    "type": "COUNT"
+   }
+  ]
+ },
+ "o1-A-oilatest": {
+  "project": {
+   "id": "01a1b06e-93f8-70fb-8c55-0f3d2a36ca6d",
+   "name": "o1-A-oilatest",
+   "visibility": "private",
+   "created_at": "2026-11-06T10:36:39.293268Z",
+   "created_by": "admin",
+   "last_updated_at": "2026-11-06T10:36:39.396Z",
+   "last_updated_by": "admin",
+   "last_updated_trace_at": "2026-11-06T10:36:39.388720Z"
+  },
+  "traces": [
+   {
+    "id": "01a1b06e-93cc-7e10-b526-e35a8a5f8b7b",
+    "project_id": "01a1b06e-93f8-70fb-8c55-0f3d2a36ca6d",
+    "name": "messages.create",
+    "start_time": "2026-11-06T10:36:39.244Z",
+    "end_time": "2026-11-06T10:36:39.265Z",
+    "input": {
+     "llm.provider": "anthropic",
+     "llm.system": "anthropic",
+     "value": {
+      "model": "claude-sonnet-4-5-20250929",
+      "max_tokens": 256,
+      "messages": [
+       {
+        "role": "user",
+        "content": "ping"
+       }
+      ]
+     },
+     "mime_type": "application/json",
+     "llm.input_messages.0.message.role": "user",
+     "llm.input_messages.0.message.content": "ping",
+     "llm.invocation_parameters": {
+      "max_tokens": 256
+     },
+     "llm.output_messages.0.message.role": "assistant",
+     "llm.finish_reason": "end_turn",
+     "llm.output_messages.0.message.contents.0.message_content.type": "text",
+     "llm.output_messages.0.message.contents.0.message_content.text": "pong",
+     "openinference.span.kind": "LLM"
+    },
+    "output": {
+     "value": {
+      "id": "msg_stub01",
+      "container": null,
+      "content": [
+       {
+        "citations": null,
+        "text": "pong",
+        "type": "text"
+       }
+      ],
+      "diagnostics": null,
+      "model": "claude-sonnet-4-5-20250929",
+      "role": "assistant",
+      "stop_details": null,
+      "stop_reason": "end_turn",
+      "stop_sequence": null,
+      "type": "message",
+      "usage": {
+       "cache_creation": null,
+       "cache_creation_input_tokens": 0,
+       "cache_read_input_tokens": 0,
+       "inference_geo": null,
+       "input_tokens": 1000,
+       "output_tokens": 200,
+       "output_tokens_details": null,
+       "server_tool_use": null,
+       "service_tier": null,
+       "speed": null
+      }
+     },
+     "mime_type": "application/json"
+    },
+    "metadata": {
+     "integration": "openinference.instrumentation.anthropic",
+     "model_name": "claude-sonnet-4-5-20250929"
+    },
+    "usage": {
+     "completion": 200,
+     "prompt": 1000,
+     "total": 1200
+    },
+    "created_at": "2026-11-06T10:36:39.362089789Z",
+    "last_updated_at": "2026-11-06T10:36:39.373343Z",
+    "created_by": "admin",
+    "last_updated_by": "admin",
+    "span_count": 1,
+    "duration": 21.0,
+    "visibility_mode": "default",
+    "llm_span_count": 1,
+    "has_tool_spans": false,
+    "providers": [],
+    "source": "sdk",
+    "environment": ""
+   }
+  ],
+  "spans": [
+   {
+    "id": "01a1b06e-93cc-7a95-9514-a423139239d5",
+    "project_id": "01a1b06e-93f8-70fb-8c55-0f3d2a36ca6d",
+    "trace_id": "01a1b06e-93cc-7e10-b526-e35a8a5f8b7b",
+    "name": "messages.create",
+    "type": "llm",
+    "start_time": "2026-11-06T10:36:39.244Z",
+    "end_time": "2026-11-06T10:36:39.265Z",
+    "input": {
+     "llm.provider": "anthropic",
+     "llm.system": "anthropic",
+     "value": {
+      "model": "claude-sonnet-4-5-20250929",
+      "max_tokens": 256,
+      "messages": [
+       {
+        "role": "user",
+        "content": "ping"
+       }
+      ]
+     },
+     "mime_type": "application/json",
+     "llm.input_messages.0.message.role": "user",
+     "llm.input_messages.0.message.content": "ping",
+     "llm.invocation_parameters": {
+      "max_tokens": 256
+     },
+     "llm.output_messages.0.message.role": "assistant",
+     "llm.finish_reason": "end_turn",
+     "llm.output_messages.0.message.contents.0.message_content.type": "text",
+     "llm.output_messages.0.message.contents.0.message_content.text": "pong",
+     "openinference.span.kind": "LLM"
+    },
+    "output": {
+     "value": {
+      "id": "msg_stub01",
+      "container": null,
+      "content": [
+       {
+        "citations": null,
+        "text": "pong",
+        "type": "text"
+       }
+      ],
+      "diagnostics": null,
+      "model": "claude-sonnet-4-5-20250929",
+      "role": "assistant",
+      "stop_details": null,
+      "stop_reason": "end_turn",
+      "stop_sequence": null,
+      "type": "message",
+      "usage": {
+       "cache_creation": null,
+       "cache_creation_input_tokens": 0,
+       "cache_read_input_tokens": 0,
+       "inference_geo": null,
+       "input_tokens": 1000,
+       "output_tokens": 200,
+       "output_tokens_details": null,
+       "server_tool_use": null,
+       "service_tier": null,
+       "speed": null
+      }
+     },
+     "mime_type": "application/json"
+    },
+    "metadata": {
+     "integration": "openinference.instrumentation.anthropic",
+     "model_name": "claude-sonnet-4-5-20250929"
+    },
+    "model": "claude-sonnet-4-5-20250929",
+    "usage": {
+     "completion": 200,
+     "prompt": 1000,
+     "total": 1200
+    },
+    "created_at": "2026-11-06T10:36:39.438502353Z",
+    "last_updated_at": "2026-11-06T10:36:39.427042Z",
+    "created_by": "admin",
+    "last_updated_by": "admin",
+    "duration": 21.0,
+    "source": "sdk",
+    "environment": ""
+   }
+  ],
+  "trace_stats": [
+   {
+    "name": "trace_count",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "duration",
+    "value": {
+     "p50": 21.0,
+     "p90": 21.0,
+     "p99": 21.0
+    },
+    "type": "PERCENTAGE"
+   },
+   {
+    "name": "input",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "output",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "metadata",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "tags",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "thread_count",
+    "value": 0,
+    "type": "COUNT"
+   },
+   {
+    "name": "llm_span_count",
+    "value": 1.0,
+    "type": "AVG"
+   },
+   {
+    "name": "span_count",
+    "value": 1.0,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost_sum",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.completion",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.prompt",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.total",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.completion",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.prompt",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.total",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "guardrails_failed_count",
+    "value": 0,
+    "type": "COUNT"
+   },
+   {
+    "name": "error_count",
+    "value": 0,
+    "type": "COUNT"
+   }
+  ],
+  "span_stats": [
+   {
+    "name": "span_count",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "duration",
+    "value": {
+     "p50": 21.0,
+     "p90": 21.0,
+     "p99": 21.0
+    },
+    "type": "PERCENTAGE"
+   },
+   {
+    "name": "input",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "output",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "metadata",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "tags",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost_sum",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.completion",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.prompt",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.total",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.completion",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.prompt",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.total",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "error_count",
+    "value": 0,
+    "type": "COUNT"
+   }
+  ]
+ },
+ "o1-A-otel": {
+  "project": {
+   "id": "01a1b06e-729d-71ec-a311-a06e1993ae0c",
+   "name": "o1-A-otel",
+   "visibility": "private",
+   "created_at": "2026-11-06T10:36:30.754894Z",
+   "created_by": "admin",
+   "last_updated_at": "2026-11-06T10:36:30.919395Z",
+   "last_updated_by": "admin",
+   "last_updated_trace_at": "2026-11-06T10:36:30.908255Z"
+  },
+  "traces": [
+   {
+    "id": "01a1b06e-727a-78cc-937a-7dffe6163808",
+    "project_id": "01a1b06e-729d-71ec-a311-a06e1993ae0c",
+    "name": "chat claude-sonnet-4-5-20250929",
+    "start_time": "2026-11-06T10:36:30.713Z",
+    "end_time": "2026-11-06T10:36:30.831Z",
+    "input": {
+     "server.port": 18099,
+     "max_tokens": 256
+    },
+    "metadata": {
+     "providers": [
+      "anthropic"
+     ],
+     "integration": "opentelemetry.instrumentation.genai.anthropic",
+     "gen_ai.operation.name": "chat",
+     "server.address": "127.0.0.1",
+     "gen_ai.response.finish_reasons": [
+      "stop"
+     ],
+     "gen_ai.response.id": "msg_stub01"
+    },
+    "usage": {
+     "cache_read.input_tokens": 0,
+     "cache_write.input_tokens": 0,
+     "completion_tokens": 400,
+     "prompt_tokens": 2000,
+     "total_tokens": 2400
+    },
+    "created_at": "2026-11-06T10:36:30.889716113Z",
+    "last_updated_at": "2026-11-06T10:36:30.897325Z",
+    "created_by": "admin",
+    "last_updated_by": "admin",
+    "total_estimated_cost": 0.012,
+    "span_count": 2,
+    "duration": 118.0,
+    "visibility_mode": "default",
+    "llm_span_count": 2,
+    "has_tool_spans": false,
+    "providers": [
+     "anthropic"
+    ],
+    "source": "sdk",
+    "environment": ""
+   }
+  ],
+  "spans": [
+   {
+    "id": "01a1b06e-727a-7c6b-b798-ef7aa1f30311",
+    "project_id": "01a1b06e-729d-71ec-a311-a06e1993ae0c",
+    "trace_id": "01a1b06e-727a-78cc-937a-7dffe6163808",
+    "parent_span_id": "01a1b06e-727a-7507-b8e2-426a4095396e",
+    "name": "anthropic.messages.create",
+    "type": "llm",
+    "start_time": "2026-11-06T10:36:30.714Z",
+    "end_time": "2026-11-06T10:36:30.725Z",
+    "input": {
+     "server.port": 18099,
+     "http.request.method": "POST",
+     "http.route": "/v1/messages",
+     "max_tokens": 256,
+     "url.scheme": "http",
+     "url.path": "/v1/messages",
+     "url.full": "http://127.0.0.1:18099/v1/messages",
+     "anthropic.request.id": "req_stub",
+     "anthropic.message.stop_reason": "end_turn",
+     "http.response.status_code": 200
+    },
+    "metadata": {
+     "provider": "anthropic",
+     "integration": "com.anthropic.sdk.python",
+     "server.address": "127.0.0.1",
+     "gen_ai.operation.name": "chat",
+     "gen_ai.response.id": "msg_stub01"
+    },
+    "model": "claude-sonnet-4-5-20250929",
+    "provider": "anthropic",
+    "usage": {
+     "total_tokens": 1200,
+     "completion_tokens": 200,
+     "cache_read.input_tokens": 0,
+     "prompt_tokens": 1000,
+     "cache_write.input_tokens": 0
+    },
+    "created_at": "2026-11-06T10:36:30.810339115Z",
+    "last_updated_at": "2026-11-06T10:36:30.803235Z",
+    "created_by": "admin",
+    "last_updated_by": "admin",
+    "total_estimated_cost": 0.006,
+    "total_estimated_cost_version": "1.1",
+    "duration": 11.0,
+    "source": "sdk",
+    "environment": ""
+   },
+   {
+    "id": "01a1b06e-727a-7507-b8e2-426a4095396e",
+    "project_id": "01a1b06e-729d-71ec-a311-a06e1993ae0c",
+    "trace_id": "01a1b06e-727a-78cc-937a-7dffe6163808",
+    "name": "chat claude-sonnet-4-5-20250929",
+    "type": "llm",
+    "start_time": "2026-11-06T10:36:30.713Z",
+    "end_time": "2026-11-06T10:36:30.831Z",
+    "input": {
+     "server.port": 18099,
+     "max_tokens": 256
+    },
+    "metadata": {
+     "provider": "anthropic",
+     "integration": "opentelemetry.instrumentation.genai.anthropic",
+     "gen_ai.operation.name": "chat",
+     "server.address": "127.0.0.1",
+     "gen_ai.response.finish_reasons": [
+      "stop"
+     ],
+     "gen_ai.response.id": "msg_stub01"
+    },
+    "model": "claude-sonnet-4-5-20250929",
+    "provider": "anthropic",
+    "usage": {
+     "total_tokens": 1200,
+     "completion_tokens": 200,
+     "prompt_tokens": 1000
+    },
+    "created_at": "2026-11-06T10:36:31.043343441Z",
+    "last_updated_at": "2026-11-06T10:36:30.934359Z",
+    "created_by": "admin",
+    "last_updated_by": "admin",
+    "total_estimated_cost": 0.006,
+    "total_estimated_cost_version": "1.1",
+    "duration": 118.0,
+    "source": "sdk",
+    "environment": ""
+   }
+  ],
+  "trace_stats": [
+   {
+    "name": "trace_count",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "duration",
+    "value": {
+     "p50": 118.0,
+     "p90": 118.0,
+     "p99": 118.0
+    },
+    "type": "PERCENTAGE"
+   },
+   {
+    "name": "input",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "output",
+    "value": 0,
+    "type": "COUNT"
+   },
+   {
+    "name": "metadata",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "tags",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "thread_count",
+    "value": 0,
+    "type": "COUNT"
+   },
+   {
+    "name": "llm_span_count",
+    "value": 2.0,
+    "type": "AVG"
+   },
+   {
+    "name": "span_count",
+    "value": 2.0,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost",
+    "value": 0.012,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost_sum",
+    "value": 0.012,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.cache_read.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.cache_write.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.completion_tokens",
+    "value": 400.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.prompt_tokens",
+    "value": 2000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.total_tokens",
+    "value": 2400.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.cache_read.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.cache_write.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.completion_tokens",
+    "value": 400.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.prompt_tokens",
+    "value": 2000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.total_tokens",
+    "value": 2400.0,
+    "type": "AVG"
+   },
+   {
+    "name": "guardrails_failed_count",
+    "value": 0,
+    "type": "COUNT"
+   },
+   {
+    "name": "error_count",
+    "value": 0,
+    "type": "COUNT"
+   }
+  ],
+  "span_stats": [
+   {
+    "name": "span_count",
+    "value": 2,
+    "type": "COUNT"
+   },
+   {
+    "name": "duration",
+    "value": {
+     "p50": 64.5,
+     "p90": 107.3,
+     "p99": 116.93
+    },
+    "type": "PERCENTAGE"
+   },
+   {
+    "name": "input",
+    "value": 2,
+    "type": "COUNT"
+   },
+   {
+    "name": "output",
+    "value": 0,
+    "type": "COUNT"
+   },
+   {
+    "name": "metadata",
+    "value": 2,
+    "type": "COUNT"
+   },
+   {
+    "name": "tags",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost",
+    "value": 0.006,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost_sum",
+    "value": 0.012,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.cache_read.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.cache_write.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.completion_tokens",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.prompt_tokens",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.total_tokens",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.cache_read.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.cache_write.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.completion_tokens",
+    "value": 400.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.prompt_tokens",
+    "value": 2000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.total_tokens",
+    "value": 2400.0,
+    "type": "AVG"
+   },
+   {
+    "name": "error_count",
+    "value": 0,
+    "type": "COUNT"
+   }
+  ]
+ },
+ "o1-A-otellatest": {
+  "project": {
+   "id": "01a1b06e-a6dc-7273-abb1-6388b9df8471",
+   "name": "o1-A-otellatest",
+   "visibility": "private",
+   "created_at": "2026-11-06T10:36:44.130322Z",
+   "created_by": "admin",
+   "last_updated_at": "2026-11-06T10:36:44.379354Z",
+   "last_updated_by": "admin",
+   "last_updated_trace_at": "2026-11-06T10:36:44.366962Z"
+  },
+  "traces": [
+   {
+    "id": "01a1b06e-a6b1-7394-a470-dfdb56bb0d11",
+    "project_id": "01a1b06e-a6dc-7273-abb1-6388b9df8471",
+    "name": "chat claude-sonnet-4-5-20250929",
+    "start_time": "2026-11-06T10:36:44.080Z",
+    "end_time": "2026-11-06T10:36:44.241Z",
+    "input": {
+     "server.port": 18099,
+     "max_tokens": 256
+    },
+    "metadata": {
+     "providers": [
+      "anthropic"
+     ],
+     "integration": "opentelemetry.instrumentation.genai.anthropic",
+     "gen_ai.operation.name": "chat",
+     "server.address": "127.0.0.1",
+     "gen_ai.response.finish_reasons": [
+      "stop"
+     ],
+     "gen_ai.response.id": "msg_stub01"
+    },
+    "usage": {
+     "cache_read.input_tokens": 0,
+     "cache_write.input_tokens": 0,
+     "completion_tokens": 400,
+     "prompt_tokens": 2000,
+     "total_tokens": 2400
+    },
+    "created_at": "2026-11-06T10:36:44.337928479Z",
+    "last_updated_at": "2026-11-06T10:36:44.350766Z",
+    "created_by": "admin",
+    "last_updated_by": "admin",
+    "total_estimated_cost": 0.012,
+    "span_count": 2,
+    "duration": 161.0,
+    "visibility_mode": "default",
+    "llm_span_count": 2,
+    "has_tool_spans": false,
+    "providers": [
+     "anthropic"
+    ],
+    "source": "sdk",
+    "environment": ""
+   }
+  ],
+  "spans": [
+   {
+    "id": "01a1b06e-a6b1-7dc7-b433-825fea35161d",
+    "project_id": "01a1b06e-a6dc-7273-abb1-6388b9df8471",
+    "trace_id": "01a1b06e-a6b1-7394-a470-dfdb56bb0d11",
+    "name": "chat claude-sonnet-4-5-20250929",
+    "type": "llm",
+    "start_time": "2026-11-06T10:36:44.080Z",
+    "end_time": "2026-11-06T10:36:44.241Z",
+    "input": {
+     "server.port": 18099,
+     "max_tokens": 256
+    },
+    "metadata": {
+     "provider": "anthropic",
+     "integration": "opentelemetry.instrumentation.genai.anthropic",
+     "gen_ai.operation.name": "chat",
+     "server.address": "127.0.0.1",
+     "gen_ai.response.finish_reasons": [
+      "stop"
+     ],
+     "gen_ai.response.id": "msg_stub01"
+    },
+    "model": "claude-sonnet-4-5-20250929",
+    "provider": "anthropic",
+    "usage": {
+     "total_tokens": 1200,
+     "completion_tokens": 200,
+     "prompt_tokens": 1000
+    },
+    "created_at": "2026-11-06T10:36:44.527608471Z",
+    "last_updated_at": "2026-11-06T10:36:44.413397Z",
+    "created_by": "admin",
+    "last_updated_by": "admin",
+    "total_estimated_cost": 0.006,
+    "total_estimated_cost_version": "1.1",
+    "duration": 161.0,
+    "source": "sdk",
+    "environment": ""
+   },
+   {
+    "id": "01a1b06e-a6b1-703d-b75b-6d80cf5e5097",
+    "project_id": "01a1b06e-a6dc-7273-abb1-6388b9df8471",
+    "trace_id": "01a1b06e-a6b1-7394-a470-dfdb56bb0d11",
+    "parent_span_id": "01a1b06e-a6b1-7dc7-b433-825fea35161d",
+    "name": "anthropic.messages.create",
+    "type": "llm",
+    "start_time": "2026-11-06T10:36:44.081Z",
+    "end_time": "2026-11-06T10:36:44.098Z",
+    "input": {
+     "server.port": 18099,
+     "max_tokens": 256,
+     "http.request.method": "POST",
+     "http.route": "/v1/messages",
+     "url.scheme": "http",
+     "url.path": "/v1/messages",
+     "url.full": "http://127.0.0.1:18099/v1/messages",
+     "http.response.status_code": 200,
+     "anthropic.request.id": "req_stub",
+     "anthropic.message.stop_reason": "end_turn"
+    },
+    "metadata": {
+     "provider": "anthropic",
+     "integration": "com.anthropic.sdk.python",
+     "server.address": "127.0.0.1",
+     "gen_ai.operation.name": "chat",
+     "gen_ai.response.id": "msg_stub01"
+    },
+    "model": "claude-sonnet-4-5-20250929",
+    "provider": "anthropic",
+    "usage": {
+     "total_tokens": 1200,
+     "completion_tokens": 200,
+     "cache_read.input_tokens": 0,
+     "prompt_tokens": 1000,
+     "cache_write.input_tokens": 0
+    },
+    "created_at": "2026-11-06T10:36:44.205012299Z",
+    "last_updated_at": "2026-11-06T10:36:44.195648Z",
+    "created_by": "admin",
+    "last_updated_by": "admin",
+    "total_estimated_cost": 0.006,
+    "total_estimated_cost_version": "1.1",
+    "duration": 17.0,
+    "source": "sdk",
+    "environment": ""
+   }
+  ],
+  "trace_stats": [
+   {
+    "name": "trace_count",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "duration",
+    "value": {
+     "p50": 161.0,
+     "p90": 161.0,
+     "p99": 161.0
+    },
+    "type": "PERCENTAGE"
+   },
+   {
+    "name": "input",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "output",
+    "value": 0,
+    "type": "COUNT"
+   },
+   {
+    "name": "metadata",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "tags",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "thread_count",
+    "value": 0,
+    "type": "COUNT"
+   },
+   {
+    "name": "llm_span_count",
+    "value": 2.0,
+    "type": "AVG"
+   },
+   {
+    "name": "span_count",
+    "value": 2.0,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost",
+    "value": 0.012,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost_sum",
+    "value": 0.012,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.cache_read.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.cache_write.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.completion_tokens",
+    "value": 400.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.prompt_tokens",
+    "value": 2000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.total_tokens",
+    "value": 2400.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.cache_read.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.cache_write.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.completion_tokens",
+    "value": 400.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.prompt_tokens",
+    "value": 2000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.total_tokens",
+    "value": 2400.0,
+    "type": "AVG"
+   },
+   {
+    "name": "guardrails_failed_count",
+    "value": 0,
+    "type": "COUNT"
+   },
+   {
+    "name": "error_count",
+    "value": 0,
+    "type": "COUNT"
+   }
+  ],
+  "span_stats": [
+   {
+    "name": "span_count",
+    "value": 2,
+    "type": "COUNT"
+   },
+   {
+    "name": "duration",
+    "value": {
+     "p50": 89.0,
+     "p90": 146.6,
+     "p99": 159.559999999
+    },
+    "type": "PERCENTAGE"
+   },
+   {
+    "name": "input",
+    "value": 2,
+    "type": "COUNT"
+   },
+   {
+    "name": "output",
+    "value": 0,
+    "type": "COUNT"
+   },
+   {
+    "name": "metadata",
+    "value": 2,
+    "type": "COUNT"
+   },
+   {
+    "name": "tags",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost",
+    "value": 0.006,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost_sum",
+    "value": 0.012,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.cache_read.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.cache_write.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.completion_tokens",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.prompt_tokens",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.total_tokens",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.cache_read.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.cache_write.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.completion_tokens",
+    "value": 400.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.prompt_tokens",
+    "value": 2000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.total_tokens",
+    "value": 2400.0,
+    "type": "AVG"
+   },
+   {
+    "name": "error_count",
+    "value": 0,
+    "type": "COUNT"
+   }
+  ]
+ },
+ "o1-B-ll": {
+  "project": {
+   "id": "01a1b06e-6bd7-77a5-afe3-1c5b04efd365",
+   "name": "o1-B-ll",
+   "visibility": "private",
+   "created_at": "2026-11-06T10:36:29.022120Z",
+   "created_by": "admin",
+   "last_updated_at": "2026-11-06T10:36:29.187186Z",
+   "last_updated_by": "admin",
+   "last_updated_trace_at": "2026-11-06T10:36:29.171788Z"
+  },
+  "traces": [
+   {
+    "id": "01a1b06e-6bae-7cf3-b88f-5ce7f21f5148",
+    "project_id": "01a1b06e-6bd7-77a5-afe3-1c5b04efd365",
+    "name": "anthropic.chat",
+    "start_time": "2026-11-06T10:36:28.974Z",
+    "end_time": "2026-11-06T10:36:28.989Z",
+    "input": {
+     "max_tokens": 256,
+     "messages": [
+      {
+       "role": "user",
+       "parts": [
+        {
+         "type": "text",
+         "content": "ping"
+        }
+       ]
+      }
+     ]
+    },
+    "output": {
+     "messages": [
+      {
+       "role": "assistant",
+       "parts": [
+        {
+         "type": "text",
+         "content": "pong"
+        }
+       ],
+       "finish_reason": "stop"
+      }
+     ]
+    },
+    "metadata": {
+     "providers": [
+      "anthropic"
+     ],
+     "integration": "opentelemetry.instrumentation.anthropic",
+     "gen_ai.operation.name": "chat",
+     "gen_ai.response.id": "msg_stub01",
+     "gen_ai.response.finish_reasons": [
+      "stop"
+     ]
+    },
+    "usage": {
+     "cache_creation.input_tokens": 0,
+     "cache_read.input_tokens": 0,
+     "completion_tokens": 200,
+     "prompt_tokens": 1000,
+     "total_tokens": 1200
+    },
+    "created_at": "2026-11-06T10:36:29.130942799Z",
+    "last_updated_at": "2026-11-06T10:36:29.140280Z",
+    "created_by": "admin",
+    "last_updated_by": "admin",
+    "total_estimated_cost": 0.006,
+    "span_count": 1,
+    "duration": 15.0,
+    "visibility_mode": "default",
+    "llm_span_count": 1,
+    "has_tool_spans": false,
+    "providers": [
+     "anthropic"
+    ],
+    "source": "sdk",
+    "environment": ""
+   }
+  ],
+  "spans": [
+   {
+    "id": "01a1b06e-6bae-7a8f-839e-6862ba4ec658",
+    "project_id": "01a1b06e-6bd7-77a5-afe3-1c5b04efd365",
+    "trace_id": "01a1b06e-6bae-7cf3-b88f-5ce7f21f5148",
+    "name": "anthropic.chat",
+    "type": "llm",
+    "start_time": "2026-11-06T10:36:28.974Z",
+    "end_time": "2026-11-06T10:36:28.989Z",
+    "input": {
+     "max_tokens": 256,
+     "messages": [
+      {
+       "role": "user",
+       "parts": [
+        {
+         "type": "text",
+         "content": "ping"
+        }
+       ]
+      }
+     ]
+    },
+    "output": {
+     "messages": [
+      {
+       "role": "assistant",
+       "parts": [
+        {
+         "type": "text",
+         "content": "pong"
+        }
+       ],
+       "finish_reason": "stop"
+      }
+     ]
+    },
+    "metadata": {
+     "provider": "anthropic",
+     "integration": "opentelemetry.instrumentation.anthropic",
+     "gen_ai.operation.name": "chat",
+     "gen_ai.response.id": "msg_stub01",
+     "gen_ai.response.finish_reasons": [
+      "stop"
+     ]
+    },
+    "model": "claude-sonnet-4-5-20250929",
+    "provider": "anthropic",
+    "usage": {
+     "total_tokens": 1200,
+     "completion_tokens": 200,
+     "cache_read.input_tokens": 0,
+     "prompt_tokens": 1000,
+     "cache_creation.input_tokens": 0
+    },
+    "created_at": "2026-11-06T10:36:29.222094102Z",
+    "last_updated_at": "2026-11-06T10:36:29.212825Z",
+    "created_by": "admin",
+    "last_updated_by": "admin",
+    "total_estimated_cost": 0.006,
+    "total_estimated_cost_version": "1.1",
+    "duration": 15.0,
+    "source": "sdk",
+    "environment": ""
+   }
+  ],
+  "trace_stats": [
+   {
+    "name": "trace_count",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "duration",
+    "value": {
+     "p50": 15.0,
+     "p90": 15.0,
+     "p99": 15.0
+    },
+    "type": "PERCENTAGE"
+   },
+   {
+    "name": "input",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "output",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "metadata",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "tags",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "thread_count",
+    "value": 0,
+    "type": "COUNT"
+   },
+   {
+    "name": "llm_span_count",
+    "value": 1.0,
+    "type": "AVG"
+   },
+   {
+    "name": "span_count",
+    "value": 1.0,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost",
+    "value": 0.006,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost_sum",
+    "value": 0.006,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.cache_creation.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.cache_read.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.completion_tokens",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.prompt_tokens",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.total_tokens",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.cache_creation.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.cache_read.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.completion_tokens",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.prompt_tokens",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.total_tokens",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "guardrails_failed_count",
+    "value": 0,
+    "type": "COUNT"
+   },
+   {
+    "name": "error_count",
+    "value": 0,
+    "type": "COUNT"
+   }
+  ],
+  "span_stats": [
+   {
+    "name": "span_count",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "duration",
+    "value": {
+     "p50": 15.0,
+     "p90": 15.0,
+     "p99": 15.0
+    },
+    "type": "PERCENTAGE"
+   },
+   {
+    "name": "input",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "output",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "metadata",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "tags",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost",
+    "value": 0.006,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost_sum",
+    "value": 0.006,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.cache_creation.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.cache_read.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.completion_tokens",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.prompt_tokens",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.total_tokens",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.cache_creation.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.cache_read.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.completion_tokens",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.prompt_tokens",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.total_tokens",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "error_count",
+    "value": 0,
+    "type": "COUNT"
+   }
+  ]
+ },
+ "o1-B-oi": {
+  "project": {
+   "id": "01a1b06e-586a-73d5-9abf-0c59d177f93d",
+   "name": "o1-B-oi",
+   "visibility": "private",
+   "created_at": "2026-11-06T10:36:24.057343Z",
+   "created_by": "admin",
+   "last_updated_at": "2026-11-06T10:36:24.162734Z",
+   "last_updated_by": "admin",
+   "last_updated_trace_at": "2026-11-06T10:36:24.151353Z"
+  },
+  "traces": [
+   {
+    "id": "01a1b06e-584b-7f1c-b167-8c6145a9bd8a",
+    "project_id": "01a1b06e-586a-73d5-9abf-0c59d177f93d",
+    "name": "messages.create",
+    "start_time": "2026-11-06T10:36:24.011Z",
+    "end_time": "2026-11-06T10:36:24.023Z",
+    "input": {
+     "llm.provider": "anthropic",
+     "llm.system": "anthropic",
+     "value": {
+      "model": "claude-sonnet-4-5-20250929",
+      "max_tokens": 256,
+      "messages": [
+       {
+        "role": "user",
+        "content": "ping"
+       }
+      ]
+     },
+     "mime_type": "application/json",
+     "llm.input_messages.0.message.role": "user",
+     "llm.input_messages.0.message.content": "ping",
+     "llm.invocation_parameters": {
+      "max_tokens": 256
+     },
+     "llm.output_messages.0.message.role": "assistant",
+     "llm.finish_reason": "end_turn",
+     "llm.output_messages.0.message.contents.0.message_content.type": "text",
+     "llm.output_messages.0.message.contents.0.message_content.text": "pong",
+     "openinference.span.kind": "LLM"
+    },
+    "output": {
+     "value": {
+      "id": "msg_stub01",
+      "container": null,
+      "content": [
+       {
+        "citations": null,
+        "text": "pong",
+        "type": "text"
+       }
+      ],
+      "diagnostics": null,
+      "model": "claude-sonnet-4-5-20250929",
+      "role": "assistant",
+      "stop_details": null,
+      "stop_reason": "end_turn",
+      "stop_sequence": null,
+      "type": "message",
+      "usage": {
+       "cache_creation": null,
+       "cache_creation_input_tokens": 0,
+       "cache_read_input_tokens": 0,
+       "inference_geo": null,
+       "input_tokens": 1000,
+       "output_tokens": 200,
+       "output_tokens_details": null,
+       "server_tool_use": null,
+       "service_tier": null,
+       "speed": null
+      }
+     },
+     "mime_type": "application/json"
+    },
+    "metadata": {
+     "integration": "openinference.instrumentation.anthropic",
+     "model_name": "claude-sonnet-4-5-20250929"
+    },
+    "usage": {
+     "completion": 200,
+     "prompt": 1000,
+     "total": 1200
+    },
+    "created_at": "2026-11-06T10:36:24.119689689Z",
+    "last_updated_at": "2026-11-06T10:36:24.142946Z",
+    "created_by": "admin",
+    "last_updated_by": "admin",
+    "span_count": 1,
+    "duration": 12.0,
+    "visibility_mode": "default",
+    "llm_span_count": 1,
+    "has_tool_spans": false,
+    "providers": [],
+    "source": "sdk",
+    "environment": ""
+   }
+  ],
+  "spans": [
+   {
+    "id": "01a1b06e-584b-728e-9678-7deea4465fbf",
+    "project_id": "01a1b06e-586a-73d5-9abf-0c59d177f93d",
+    "trace_id": "01a1b06e-584b-7f1c-b167-8c6145a9bd8a",
+    "name": "messages.create",
+    "type": "llm",
+    "start_time": "2026-11-06T10:36:24.011Z",
+    "end_time": "2026-11-06T10:36:24.023Z",
+    "input": {
+     "llm.provider": "anthropic",
+     "llm.system": "anthropic",
+     "value": {
+      "model": "claude-sonnet-4-5-20250929",
+      "max_tokens": 256,
+      "messages": [
+       {
+        "role": "user",
+        "content": "ping"
+       }
+      ]
+     },
+     "mime_type": "application/json",
+     "llm.input_messages.0.message.role": "user",
+     "llm.input_messages.0.message.content": "ping",
+     "llm.invocation_parameters": {
+      "max_tokens": 256
+     },
+     "llm.output_messages.0.message.role": "assistant",
+     "llm.finish_reason": "end_turn",
+     "llm.output_messages.0.message.contents.0.message_content.type": "text",
+     "llm.output_messages.0.message.contents.0.message_content.text": "pong",
+     "openinference.span.kind": "LLM"
+    },
+    "output": {
+     "value": {
+      "id": "msg_stub01",
+      "container": null,
+      "content": [
+       {
+        "citations": null,
+        "text": "pong",
+        "type": "text"
+       }
+      ],
+      "diagnostics": null,
+      "model": "claude-sonnet-4-5-20250929",
+      "role": "assistant",
+      "stop_details": null,
+      "stop_reason": "end_turn",
+      "stop_sequence": null,
+      "type": "message",
+      "usage": {
+       "cache_creation": null,
+       "cache_creation_input_tokens": 0,
+       "cache_read_input_tokens": 0,
+       "inference_geo": null,
+       "input_tokens": 1000,
+       "output_tokens": 200,
+       "output_tokens_details": null,
+       "server_tool_use": null,
+       "service_tier": null,
+       "speed": null
+      }
+     },
+     "mime_type": "application/json"
+    },
+    "metadata": {
+     "integration": "openinference.instrumentation.anthropic",
+     "model_name": "claude-sonnet-4-5-20250929"
+    },
+    "model": "claude-sonnet-4-5-20250929",
+    "usage": {
+     "completion": 200,
+     "prompt": 1000,
+     "total": 1200
+    },
+    "created_at": "2026-11-06T10:36:24.192633552Z",
+    "last_updated_at": "2026-11-06T10:36:24.183682Z",
+    "created_by": "admin",
+    "last_updated_by": "admin",
+    "duration": 12.0,
+    "source": "sdk",
+    "environment": ""
+   }
+  ],
+  "trace_stats": [
+   {
+    "name": "trace_count",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "duration",
+    "value": {
+     "p50": 12.0,
+     "p90": 12.0,
+     "p99": 12.0
+    },
+    "type": "PERCENTAGE"
+   },
+   {
+    "name": "input",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "output",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "metadata",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "tags",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "thread_count",
+    "value": 0,
+    "type": "COUNT"
+   },
+   {
+    "name": "llm_span_count",
+    "value": 1.0,
+    "type": "AVG"
+   },
+   {
+    "name": "span_count",
+    "value": 1.0,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost_sum",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.completion",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.prompt",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.total",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.completion",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.prompt",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.total",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "guardrails_failed_count",
+    "value": 0,
+    "type": "COUNT"
+   },
+   {
+    "name": "error_count",
+    "value": 0,
+    "type": "COUNT"
+   }
+  ],
+  "span_stats": [
+   {
+    "name": "span_count",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "duration",
+    "value": {
+     "p50": 12.0,
+     "p90": 12.0,
+     "p99": 12.0
+    },
+    "type": "PERCENTAGE"
+   },
+   {
+    "name": "input",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "output",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "metadata",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "tags",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost_sum",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.completion",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.prompt",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.total",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.completion",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.prompt",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.total",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "error_count",
+    "value": 0,
+    "type": "COUNT"
+   }
+  ]
+ },
+ "o1-B-oi310": {
+  "project": {
+   "id": "01a1b06e-8b68-7672-8739-50e5ad4f69a8",
+   "name": "o1-B-oi310",
+   "visibility": "private",
+   "created_at": "2026-11-06T10:36:37.101695Z",
+   "created_by": "admin",
+   "last_updated_at": "2026-11-06T10:36:37.211424Z",
+   "last_updated_by": "admin",
+   "last_updated_trace_at": "2026-11-06T10:36:37.197684Z"
+  },
+  "traces": [
+   {
+    "id": "01a1b06e-8b3d-7a29-8dbf-2c479d911743",
+    "project_id": "01a1b06e-8b68-7672-8739-50e5ad4f69a8",
+    "name": "messages.create",
+    "start_time": "2026-11-06T10:36:37.053Z",
+    "end_time": "2026-11-06T10:36:37.074Z",
+    "input": {
+     "llm.provider": "anthropic",
+     "llm.system": "anthropic",
+     "value": {
+      "model": "claude-sonnet-4-5-20250929",
+      "max_tokens": 256,
+      "messages": [
+       {
+        "role": "user",
+        "content": "ping"
+       }
+      ]
+     },
+     "mime_type": "application/json",
+     "llm.input_messages.0.message.role": "user",
+     "llm.input_messages.0.message.content": "ping",
+     "llm.invocation_parameters": {
+      "max_tokens": 256
+     },
+     "llm.output_messages.0.message.role": "assistant",
+     "llm.finish_reason": "end_turn",
+     "llm.output_messages.0.message.contents.0.message_content.type": "text",
+     "llm.output_messages.0.message.contents.0.message_content.text": "pong",
+     "openinference.span.kind": "LLM"
+    },
+    "output": {
+     "value": {
+      "id": "msg_stub01",
+      "container": null,
+      "content": [
+       {
+        "citations": null,
+        "text": "pong",
+        "type": "text"
+       }
+      ],
+      "diagnostics": null,
+      "model": "claude-sonnet-4-5-20250929",
+      "role": "assistant",
+      "stop_details": null,
+      "stop_reason": "end_turn",
+      "stop_sequence": null,
+      "type": "message",
+      "usage": {
+       "cache_creation": null,
+       "cache_creation_input_tokens": 0,
+       "cache_read_input_tokens": 0,
+       "inference_geo": null,
+       "input_tokens": 1000,
+       "output_tokens": 200,
+       "output_tokens_details": null,
+       "server_tool_use": null,
+       "service_tier": null,
+       "speed": null
+      }
+     },
+     "mime_type": "application/json"
+    },
+    "metadata": {
+     "integration": "openinference.instrumentation.anthropic",
+     "model_name": "claude-sonnet-4-5-20250929"
+    },
+    "usage": {
+     "completion": 200,
+     "prompt": 1000,
+     "total": 1200
+    },
+    "created_at": "2026-11-06T10:36:37.163892528Z",
+    "last_updated_at": "2026-11-06T10:36:37.176711Z",
+    "created_by": "admin",
+    "last_updated_by": "admin",
+    "span_count": 1,
+    "duration": 21.0,
+    "visibility_mode": "default",
+    "llm_span_count": 1,
+    "has_tool_spans": false,
+    "providers": [],
+    "source": "sdk",
+    "environment": ""
+   }
+  ],
+  "spans": [
+   {
+    "id": "01a1b06e-8b3d-78cc-bc1d-34b22bd25c1d",
+    "project_id": "01a1b06e-8b68-7672-8739-50e5ad4f69a8",
+    "trace_id": "01a1b06e-8b3d-7a29-8dbf-2c479d911743",
+    "name": "messages.create",
+    "type": "llm",
+    "start_time": "2026-11-06T10:36:37.053Z",
+    "end_time": "2026-11-06T10:36:37.074Z",
+    "input": {
+     "llm.provider": "anthropic",
+     "llm.system": "anthropic",
+     "value": {
+      "model": "claude-sonnet-4-5-20250929",
+      "max_tokens": 256,
+      "messages": [
+       {
+        "role": "user",
+        "content": "ping"
+       }
+      ]
+     },
+     "mime_type": "application/json",
+     "llm.input_messages.0.message.role": "user",
+     "llm.input_messages.0.message.content": "ping",
+     "llm.invocation_parameters": {
+      "max_tokens": 256
+     },
+     "llm.output_messages.0.message.role": "assistant",
+     "llm.finish_reason": "end_turn",
+     "llm.output_messages.0.message.contents.0.message_content.type": "text",
+     "llm.output_messages.0.message.contents.0.message_content.text": "pong",
+     "openinference.span.kind": "LLM"
+    },
+    "output": {
+     "value": {
+      "id": "msg_stub01",
+      "container": null,
+      "content": [
+       {
+        "citations": null,
+        "text": "pong",
+        "type": "text"
+       }
+      ],
+      "diagnostics": null,
+      "model": "claude-sonnet-4-5-20250929",
+      "role": "assistant",
+      "stop_details": null,
+      "stop_reason": "end_turn",
+      "stop_sequence": null,
+      "type": "message",
+      "usage": {
+       "cache_creation": null,
+       "cache_creation_input_tokens": 0,
+       "cache_read_input_tokens": 0,
+       "inference_geo": null,
+       "input_tokens": 1000,
+       "output_tokens": 200,
+       "output_tokens_details": null,
+       "server_tool_use": null,
+       "service_tier": null,
+       "speed": null
+      }
+     },
+     "mime_type": "application/json"
+    },
+    "metadata": {
+     "integration": "openinference.instrumentation.anthropic",
+     "model_name": "claude-sonnet-4-5-20250929"
+    },
+    "model": "claude-sonnet-4-5-20250929",
+    "usage": {
+     "completion": 200,
+     "prompt": 1000,
+     "total": 1200
+    },
+    "created_at": "2026-11-06T10:36:37.236710352Z",
+    "last_updated_at": "2026-11-06T10:36:37.225355Z",
+    "created_by": "admin",
+    "last_updated_by": "admin",
+    "duration": 21.0,
+    "source": "sdk",
+    "environment": ""
+   }
+  ],
+  "trace_stats": [
+   {
+    "name": "trace_count",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "duration",
+    "value": {
+     "p50": 21.0,
+     "p90": 21.0,
+     "p99": 21.0
+    },
+    "type": "PERCENTAGE"
+   },
+   {
+    "name": "input",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "output",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "metadata",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "tags",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "thread_count",
+    "value": 0,
+    "type": "COUNT"
+   },
+   {
+    "name": "llm_span_count",
+    "value": 1.0,
+    "type": "AVG"
+   },
+   {
+    "name": "span_count",
+    "value": 1.0,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost_sum",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.completion",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.prompt",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.total",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.completion",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.prompt",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.total",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "guardrails_failed_count",
+    "value": 0,
+    "type": "COUNT"
+   },
+   {
+    "name": "error_count",
+    "value": 0,
+    "type": "COUNT"
+   }
+  ],
+  "span_stats": [
+   {
+    "name": "span_count",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "duration",
+    "value": {
+     "p50": 21.0,
+     "p90": 21.0,
+     "p99": 21.0
+    },
+    "type": "PERCENTAGE"
+   },
+   {
+    "name": "input",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "output",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "metadata",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "tags",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost_sum",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.completion",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.prompt",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.total",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.completion",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.prompt",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.total",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "error_count",
+    "value": 0,
+    "type": "COUNT"
+   }
+  ]
+ },
+ "o1-B-otel": {
+  "project": {
+   "id": "01a1b06e-797b-7683-82ee-46105264591a",
+   "name": "o1-B-otel",
+   "visibility": "private",
+   "created_at": "2026-11-06T10:36:32.511985Z",
+   "created_by": "admin",
+   "last_updated_at": "2026-11-06T10:36:32.610161Z",
+   "last_updated_by": "admin",
+   "last_updated_trace_at": "2026-11-06T10:36:32.601623Z"
+  },
+  "traces": [
+   {
+    "id": "01a1b06e-7957-72f0-8bda-5263bd3ff1db",
+    "project_id": "01a1b06e-797b-7683-82ee-46105264591a",
+    "name": "chat claude-sonnet-4-5-20250929",
+    "start_time": "2026-11-06T10:36:32.471Z",
+    "end_time": "2026-11-06T10:36:32.484Z",
+    "input": {
+     "server.port": 18099,
+     "max_tokens": 256
+    },
+    "metadata": {
+     "providers": [
+      "anthropic"
+     ],
+     "integration": "opentelemetry.instrumentation.genai.anthropic",
+     "gen_ai.operation.name": "chat",
+     "server.address": "127.0.0.1",
+     "gen_ai.response.finish_reasons": [
+      "stop"
+     ],
+     "gen_ai.response.id": "msg_stub01"
+    },
+    "usage": {
+     "completion_tokens": 200,
+     "prompt_tokens": 1000,
+     "total_tokens": 1200
+    },
+    "created_at": "2026-11-06T10:36:32.575604841Z",
+    "last_updated_at": "2026-11-06T10:36:32.585970Z",
+    "created_by": "admin",
+    "last_updated_by": "admin",
+    "total_estimated_cost": 0.006,
+    "span_count": 1,
+    "duration": 13.0,
+    "visibility_mode": "default",
+    "llm_span_count": 1,
+    "has_tool_spans": false,
+    "providers": [
+     "anthropic"
+    ],
+    "source": "sdk",
+    "environment": ""
+   }
+  ],
+  "spans": [
+   {
+    "id": "01a1b06e-7957-7552-8e4d-0ccd5a2d85a4",
+    "project_id": "01a1b06e-797b-7683-82ee-46105264591a",
+    "trace_id": "01a1b06e-7957-72f0-8bda-5263bd3ff1db",
+    "name": "chat claude-sonnet-4-5-20250929",
+    "type": "llm",
+    "start_time": "2026-11-06T10:36:32.471Z",
+    "end_time": "2026-11-06T10:36:32.484Z",
+    "input": {
+     "server.port": 18099,
+     "max_tokens": 256
+    },
+    "metadata": {
+     "provider": "anthropic",
+     "integration": "opentelemetry.instrumentation.genai.anthropic",
+     "gen_ai.operation.name": "chat",
+     "server.address": "127.0.0.1",
+     "gen_ai.response.finish_reasons": [
+      "stop"
+     ],
+     "gen_ai.response.id": "msg_stub01"
+    },
+    "model": "claude-sonnet-4-5-20250929",
+    "provider": "anthropic",
+    "usage": {
+     "total_tokens": 1200,
+     "completion_tokens": 200,
+     "prompt_tokens": 1000
+    },
+    "created_at": "2026-11-06T10:36:32.750492641Z",
+    "last_updated_at": "2026-11-06T10:36:32.633765Z",
+    "created_by": "admin",
+    "last_updated_by": "admin",
+    "total_estimated_cost": 0.006,
+    "total_estimated_cost_version": "1.1",
+    "duration": 13.0,
+    "source": "sdk",
+    "environment": ""
+   }
+  ],
+  "trace_stats": [
+   {
+    "name": "trace_count",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "duration",
+    "value": {
+     "p50": 13.0,
+     "p90": 13.0,
+     "p99": 13.0
+    },
+    "type": "PERCENTAGE"
+   },
+   {
+    "name": "input",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "output",
+    "value": 0,
+    "type": "COUNT"
+   },
+   {
+    "name": "metadata",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "tags",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "thread_count",
+    "value": 0,
+    "type": "COUNT"
+   },
+   {
+    "name": "llm_span_count",
+    "value": 1.0,
+    "type": "AVG"
+   },
+   {
+    "name": "span_count",
+    "value": 1.0,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost",
+    "value": 0.006,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost_sum",
+    "value": 0.006,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.completion_tokens",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.prompt_tokens",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.total_tokens",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.completion_tokens",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.prompt_tokens",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.total_tokens",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "guardrails_failed_count",
+    "value": 0,
+    "type": "COUNT"
+   },
+   {
+    "name": "error_count",
+    "value": 0,
+    "type": "COUNT"
+   }
+  ],
+  "span_stats": [
+   {
+    "name": "span_count",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "duration",
+    "value": {
+     "p50": 13.0,
+     "p90": 13.0,
+     "p99": 13.0
+    },
+    "type": "PERCENTAGE"
+   },
+   {
+    "name": "input",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "output",
+    "value": 0,
+    "type": "COUNT"
+   },
+   {
+    "name": "metadata",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "tags",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost",
+    "value": 0.006,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost_sum",
+    "value": 0.006,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.completion_tokens",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.prompt_tokens",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.total_tokens",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.completion_tokens",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.prompt_tokens",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.total_tokens",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "error_count",
+    "value": 0,
+    "type": "COUNT"
+   }
+  ]
+ },
+ "o1-C-sdk": {
+  "project": {
+   "id": "01a1b06e-5e73-7335-8621-ef23472b326e",
+   "name": "o1-C-sdk",
+   "visibility": "private",
+   "created_at": "2026-11-06T10:36:25.594327Z",
+   "created_by": "admin",
+   "last_updated_at": "2026-11-06T10:36:25.688435Z",
+   "last_updated_by": "admin",
+   "last_updated_trace_at": "2026-11-06T10:36:25.678264Z"
+  },
+  "traces": [
+   {
+    "id": "01a1b06e-5e46-784b-a4f2-ad82af57587e",
+    "project_id": "01a1b06e-5e73-7335-8621-ef23472b326e",
+    "name": "anthropic.messages.create",
+    "start_time": "2026-11-06T10:36:25.542Z",
+    "end_time": "2026-11-06T10:36:25.557Z",
+    "input": {
+     "server.port": 18099,
+     "http.request.method": "POST",
+     "http.route": "/v1/messages",
+     "max_tokens": 256,
+     "url.scheme": "http",
+     "url.path": "/v1/messages",
+     "url.full": "http://127.0.0.1:18099/v1/messages",
+     "anthropic.request.id": "req_stub",
+     "anthropic.message.stop_reason": "end_turn",
+     "http.response.status_code": 200
+    },
+    "metadata": {
+     "providers": [
+      "anthropic"
+     ],
+     "integration": "com.anthropic.sdk.python",
+     "server.address": "127.0.0.1",
+     "gen_ai.operation.name": "chat",
+     "gen_ai.response.id": "msg_stub01"
+    },
+    "usage": {
+     "cache_read.input_tokens": 0,
+     "cache_write.input_tokens": 0,
+     "completion_tokens": 200,
+     "prompt_tokens": 1000,
+     "total_tokens": 1200
+    },
+    "created_at": "2026-11-06T10:36:25.661901146Z",
+    "last_updated_at": "2026-11-06T10:36:25.669629Z",
+    "created_by": "admin",
+    "last_updated_by": "admin",
+    "total_estimated_cost": 0.006,
+    "span_count": 1,
+    "duration": 15.0,
+    "visibility_mode": "default",
+    "llm_span_count": 1,
+    "has_tool_spans": false,
+    "providers": [
+     "anthropic"
+    ],
+    "source": "sdk",
+    "environment": ""
+   }
+  ],
+  "spans": [
+   {
+    "id": "01a1b06e-5e46-7d54-8694-9f02a6a967e0",
+    "project_id": "01a1b06e-5e73-7335-8621-ef23472b326e",
+    "trace_id": "01a1b06e-5e46-784b-a4f2-ad82af57587e",
+    "name": "anthropic.messages.create",
+    "type": "llm",
+    "start_time": "2026-11-06T10:36:25.542Z",
+    "end_time": "2026-11-06T10:36:25.557Z",
+    "input": {
+     "server.port": 18099,
+     "http.request.method": "POST",
+     "http.route": "/v1/messages",
+     "max_tokens": 256,
+     "url.scheme": "http",
+     "url.path": "/v1/messages",
+     "url.full": "http://127.0.0.1:18099/v1/messages",
+     "anthropic.request.id": "req_stub",
+     "anthropic.message.stop_reason": "end_turn",
+     "http.response.status_code": 200
+    },
+    "metadata": {
+     "provider": "anthropic",
+     "integration": "com.anthropic.sdk.python",
+     "server.address": "127.0.0.1",
+     "gen_ai.operation.name": "chat",
+     "gen_ai.response.id": "msg_stub01"
+    },
+    "model": "claude-sonnet-4-5-20250929",
+    "provider": "anthropic",
+    "usage": {
+     "total_tokens": 1200,
+     "completion_tokens": 200,
+     "cache_read.input_tokens": 0,
+     "prompt_tokens": 1000,
+     "cache_write.input_tokens": 0
+    },
+    "created_at": "2026-11-06T10:36:25.720629997Z",
+    "last_updated_at": "2026-11-06T10:36:25.706367Z",
+    "created_by": "admin",
+    "last_updated_by": "admin",
+    "total_estimated_cost": 0.006,
+    "total_estimated_cost_version": "1.1",
+    "duration": 15.0,
+    "source": "sdk",
+    "environment": ""
+   }
+  ],
+  "trace_stats": [
+   {
+    "name": "trace_count",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "duration",
+    "value": {
+     "p50": 15.0,
+     "p90": 15.0,
+     "p99": 15.0
+    },
+    "type": "PERCENTAGE"
+   },
+   {
+    "name": "input",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "output",
+    "value": 0,
+    "type": "COUNT"
+   },
+   {
+    "name": "metadata",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "tags",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "thread_count",
+    "value": 0,
+    "type": "COUNT"
+   },
+   {
+    "name": "llm_span_count",
+    "value": 1.0,
+    "type": "AVG"
+   },
+   {
+    "name": "span_count",
+    "value": 1.0,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost",
+    "value": 0.006,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost_sum",
+    "value": 0.006,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.cache_read.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.cache_write.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.completion_tokens",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.prompt_tokens",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.total_tokens",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.cache_read.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.cache_write.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.completion_tokens",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.prompt_tokens",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.total_tokens",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "guardrails_failed_count",
+    "value": 0,
+    "type": "COUNT"
+   },
+   {
+    "name": "error_count",
+    "value": 0,
+    "type": "COUNT"
+   }
+  ],
+  "span_stats": [
+   {
+    "name": "span_count",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "duration",
+    "value": {
+     "p50": 15.0,
+     "p90": 15.0,
+     "p99": 15.0
+    },
+    "type": "PERCENTAGE"
+   },
+   {
+    "name": "input",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "output",
+    "value": 0,
+    "type": "COUNT"
+   },
+   {
+    "name": "metadata",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "tags",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost",
+    "value": 0.006,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost_sum",
+    "value": 0.006,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.cache_read.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.cache_write.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.completion_tokens",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.prompt_tokens",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.total_tokens",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.cache_read.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.cache_write.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.completion_tokens",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.prompt_tokens",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.total_tokens",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "error_count",
+    "value": 0,
+    "type": "COUNT"
+   }
+  ]
+ },
+ "o1-C-sdk26": {
+  "project": {
+   "id": "01a1b06e-afff-75d7-a4f6-cde9f716bd2f",
+   "name": "o1-C-sdk26",
+   "visibility": "private",
+   "created_at": "2026-11-06T10:36:46.468496Z",
+   "created_by": "admin",
+   "last_updated_at": "2026-11-06T10:36:46.575618Z",
+   "last_updated_by": "admin",
+   "last_updated_trace_at": "2026-11-06T10:36:46.568710Z"
+  },
+  "traces": [
+   {
+    "id": "01a1b06e-afd1-72bd-af71-ae9f7bb5f7ac",
+    "project_id": "01a1b06e-afff-75d7-a4f6-cde9f716bd2f",
+    "name": "anthropic.messages.create",
+    "start_time": "2026-11-06T10:36:46.417Z",
+    "end_time": "2026-11-06T10:36:46.437Z",
+    "input": {
+     "server.port": 18099,
+     "max_tokens": 256,
+     "http.request.method": "POST",
+     "http.route": "/v1/messages",
+     "url.scheme": "http",
+     "url.path": "/v1/messages",
+     "url.full": "http://127.0.0.1:18099/v1/messages",
+     "http.response.status_code": 200,
+     "anthropic.request.id": "req_stub",
+     "anthropic.message.stop_reason": "end_turn"
+    },
+    "metadata": {
+     "providers": [
+      "anthropic"
+     ],
+     "integration": "com.anthropic.sdk.python",
+     "server.address": "127.0.0.1",
+     "gen_ai.operation.name": "chat",
+     "gen_ai.response.id": "msg_stub01"
+    },
+    "usage": {
+     "cache_read.input_tokens": 0,
+     "cache_write.input_tokens": 0,
+     "completion_tokens": 200,
+     "prompt_tokens": 1000,
+     "total_tokens": 1200
+    },
+    "created_at": "2026-11-06T10:36:46.538666465Z",
+    "last_updated_at": "2026-11-06T10:36:46.553282Z",
+    "created_by": "admin",
+    "last_updated_by": "admin",
+    "total_estimated_cost": 0.006,
+    "span_count": 1,
+    "duration": 20.0,
+    "visibility_mode": "default",
+    "llm_span_count": 1,
+    "has_tool_spans": false,
+    "providers": [
+     "anthropic"
+    ],
+    "source": "sdk",
+    "environment": ""
+   }
+  ],
+  "spans": [
+   {
+    "id": "01a1b06e-afd1-7400-a2ce-f753857d43af",
+    "project_id": "01a1b06e-afff-75d7-a4f6-cde9f716bd2f",
+    "trace_id": "01a1b06e-afd1-72bd-af71-ae9f7bb5f7ac",
+    "name": "anthropic.messages.create",
+    "type": "llm",
+    "start_time": "2026-11-06T10:36:46.417Z",
+    "end_time": "2026-11-06T10:36:46.437Z",
+    "input": {
+     "server.port": 18099,
+     "max_tokens": 256,
+     "http.request.method": "POST",
+     "http.route": "/v1/messages",
+     "url.scheme": "http",
+     "url.path": "/v1/messages",
+     "url.full": "http://127.0.0.1:18099/v1/messages",
+     "http.response.status_code": 200,
+     "anthropic.request.id": "req_stub",
+     "anthropic.message.stop_reason": "end_turn"
+    },
+    "metadata": {
+     "provider": "anthropic",
+     "integration": "com.anthropic.sdk.python",
+     "server.address": "127.0.0.1",
+     "gen_ai.operation.name": "chat",
+     "gen_ai.response.id": "msg_stub01"
+    },
+    "model": "claude-sonnet-4-5-20250929",
+    "provider": "anthropic",
+    "usage": {
+     "total_tokens": 1200,
+     "completion_tokens": 200,
+     "cache_read.input_tokens": 0,
+     "prompt_tokens": 1000,
+     "cache_write.input_tokens": 0
+    },
+    "created_at": "2026-11-06T10:36:46.624502495Z",
+    "last_updated_at": "2026-11-06T10:36:46.614271Z",
+    "created_by": "admin",
+    "last_updated_by": "admin",
+    "total_estimated_cost": 0.006,
+    "total_estimated_cost_version": "1.1",
+    "duration": 20.0,
+    "source": "sdk",
+    "environment": ""
+   }
+  ],
+  "trace_stats": [
+   {
+    "name": "trace_count",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "duration",
+    "value": {
+     "p50": 20.0,
+     "p90": 20.0,
+     "p99": 20.0
+    },
+    "type": "PERCENTAGE"
+   },
+   {
+    "name": "input",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "output",
+    "value": 0,
+    "type": "COUNT"
+   },
+   {
+    "name": "metadata",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "tags",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "thread_count",
+    "value": 0,
+    "type": "COUNT"
+   },
+   {
+    "name": "llm_span_count",
+    "value": 1.0,
+    "type": "AVG"
+   },
+   {
+    "name": "span_count",
+    "value": 1.0,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost",
+    "value": 0.006,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost_sum",
+    "value": 0.006,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.cache_read.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.cache_write.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.completion_tokens",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.prompt_tokens",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.total_tokens",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.cache_read.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.cache_write.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.completion_tokens",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.prompt_tokens",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.total_tokens",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "guardrails_failed_count",
+    "value": 0,
+    "type": "COUNT"
+   },
+   {
+    "name": "error_count",
+    "value": 0,
+    "type": "COUNT"
+   }
+  ],
+  "span_stats": [
+   {
+    "name": "span_count",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "duration",
+    "value": {
+     "p50": 20.0,
+     "p90": 20.0,
+     "p99": 20.0
+    },
+    "type": "PERCENTAGE"
+   },
+   {
+    "name": "input",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "output",
+    "value": 0,
+    "type": "COUNT"
+   },
+   {
+    "name": "metadata",
+    "value": 1,
+    "type": "COUNT"
+   },
+   {
+    "name": "tags",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost",
+    "value": 0.006,
+    "type": "AVG"
+   },
+   {
+    "name": "total_estimated_cost_sum",
+    "value": 0.006,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.cache_read.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.cache_write.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.completion_tokens",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.prompt_tokens",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage.total_tokens",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.cache_read.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.cache_write.input_tokens",
+    "value": 0.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.completion_tokens",
+    "value": 200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.prompt_tokens",
+    "value": 1000.0,
+    "type": "AVG"
+   },
+   {
+    "name": "usage_sum.total_tokens",
+    "value": 1200.0,
+    "type": "AVG"
+   },
+   {
+    "name": "error_count",
+    "value": 0,
+    "type": "COUNT"
+   }
+  ]
+ }
+}

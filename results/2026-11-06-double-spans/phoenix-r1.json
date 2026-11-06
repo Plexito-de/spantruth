@@ -1,0 +1,544 @@
+[
+ {
+  "name": "r1-A-oi",
+  "traceCount": 1,
+  "recordCount": 1,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.006,
+    "tokens": 1200.0
+   },
+   "prompt": {
+    "cost": 0.003,
+    "tokens": 1000.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "messages.create",
+      "spanKind": "llm",
+      "parentId": null,
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       }
+      },
+      "trace": {
+       "traceId": "48376c4140d4e8c276adee4b7c093c59",
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        }
+       }
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "r1-B-oi",
+  "traceCount": 1,
+  "recordCount": 1,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.006,
+    "tokens": 1200.0
+   },
+   "prompt": {
+    "cost": 0.003,
+    "tokens": 1000.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "messages.create",
+      "spanKind": "llm",
+      "parentId": null,
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       }
+      },
+      "trace": {
+       "traceId": "8c12229cc286a365d1a1488e97a12e94",
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        }
+       }
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "r1-C-sdk",
+  "traceCount": 1,
+  "recordCount": 1,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.006,
+    "tokens": 1200.0
+   },
+   "prompt": {
+    "cost": 0.003,
+    "tokens": 1000.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "anthropic.messages.create",
+      "spanKind": "llm",
+      "parentId": null,
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       }
+      },
+      "trace": {
+       "traceId": "a6d1f0ef215da646858a0b43df16901e",
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        }
+       }
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "r1-A-ll",
+  "traceCount": 2,
+  "recordCount": 2,
+  "tokenCountTotal": 2400.0,
+  "tokenCountPrompt": 2000.0,
+  "tokenCountCompletion": 400.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.012,
+    "tokens": 2400.0
+   },
+   "prompt": {
+    "cost": 0.006,
+    "tokens": 2000.0
+   },
+   "completion": {
+    "cost": 0.006,
+    "tokens": 400.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "anthropic.messages.create",
+      "spanKind": "llm",
+      "parentId": null,
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       }
+      },
+      "trace": {
+       "traceId": "1ca4835a50eef4b4d2c5b061d77d3c6d",
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        }
+       }
+      }
+     }
+    },
+    {
+     "node": {
+      "name": "anthropic.chat",
+      "spanKind": "llm",
+      "parentId": null,
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       }
+      },
+      "trace": {
+       "traceId": "352ceec9a599251921b5f5ed8777947f",
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        }
+       }
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "r1-B-ll",
+  "traceCount": 1,
+  "recordCount": 1,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.006,
+    "tokens": 1200.0
+   },
+   "prompt": {
+    "cost": 0.003,
+    "tokens": 1000.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "anthropic.chat",
+      "spanKind": "llm",
+      "parentId": null,
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       }
+      },
+      "trace": {
+       "traceId": "26f3266d30ff2d894a5ebb1a547790c8",
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        }
+       }
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "r1-C-sdk-ll",
+  "traceCount": 1,
+  "recordCount": 1,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.006,
+    "tokens": 1200.0
+   },
+   "prompt": {
+    "cost": 0.003,
+    "tokens": 1000.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "anthropic.messages.create",
+      "spanKind": "llm",
+      "parentId": null,
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       }
+      },
+      "trace": {
+       "traceId": "ccde79d6b950da11dd453c18cbd3103b",
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        }
+       }
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "r1-A-otel",
+  "traceCount": 1,
+  "recordCount": 2,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.012,
+    "tokens": 2400.0
+   },
+   "prompt": {
+    "cost": 0.006,
+    "tokens": 2000.0
+   },
+   "completion": {
+    "cost": 0.006,
+    "tokens": 400.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "anthropic.messages.create",
+      "spanKind": "llm",
+      "parentId": "44feb5298d771038",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       }
+      },
+      "trace": {
+       "traceId": "ea66afdbeaddb07c510759f99b4b0723",
+       "costSummary": {
+        "total": {
+         "cost": 0.012,
+         "tokens": 2400.0
+        }
+       }
+      }
+     }
+    },
+    {
+     "node": {
+      "name": "chat claude-sonnet-4-5-20250929",
+      "spanKind": "llm",
+      "parentId": null,
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "cumulativeTokenCountTotal": 2400.0,
+      "cumulativeTokenCountPrompt": 2000.0,
+      "cumulativeTokenCountCompletion": 400.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       }
+      },
+      "trace": {
+       "traceId": "ea66afdbeaddb07c510759f99b4b0723",
+       "costSummary": {
+        "total": {
+         "cost": 0.012,
+         "tokens": 2400.0
+        }
+       }
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "r1-B-otel",
+  "traceCount": 1,
+  "recordCount": 1,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.006,
+    "tokens": 1200.0
+   },
+   "prompt": {
+    "cost": 0.003,
+    "tokens": 1000.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "chat claude-sonnet-4-5-20250929",
+      "spanKind": "llm",
+      "parentId": null,
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       }
+      },
+      "trace": {
+       "traceId": "7a3f1e9304129dbb53cf91f6681aa51c",
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        }
+       }
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "r1-C-sdk-otel",
+  "traceCount": 1,
+  "recordCount": 1,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.006,
+    "tokens": 1200.0
+   },
+   "prompt": {
+    "cost": 0.003,
+    "tokens": 1000.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "anthropic.messages.create",
+      "spanKind": "llm",
+      "parentId": null,
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       }
+      },
+      "trace": {
+       "traceId": "8c407f9aecb3e37d82f851bd8dece199",
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        }
+       }
+      }
+     }
+    }
+   ]
+  }
+ }
+]
