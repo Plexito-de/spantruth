@@ -84,7 +84,7 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v5
-      - uses: Plexito-de/spantruth@v0.4.1
+      - uses: Plexito-de/spantruth@v0.4.2
         with:
           subject: ./spantruth
           with: .

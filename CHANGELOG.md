@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-11-06
+
 ### Fixed
 
 - `doctor` left the Anthropic SDK's own tracing off when a project got `anthropic` through a
@@ -200,7 +202,8 @@ All notable changes to this project are documented here. The format follows
 - Subjects: the OpenTelemetry GenAI instrumentation, OpenLLMetry and OpenInference.
 - A Markdown and a static HTML report.
 
-[Unreleased]: https://github.com/Plexito-de/spantruth/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/Plexito-de/spantruth/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/Plexito-de/spantruth/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/Plexito-de/spantruth/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/Plexito-de/spantruth/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Plexito-de/spantruth/compare/v0.2.0...v0.3.0
