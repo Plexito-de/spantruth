@@ -8,7 +8,7 @@ import tomllib
 from pathlib import Path
 from typing import Any
 
-from . import paths
+from . import bugclasses, impact, paths
 
 KNOWN = paths.data("known_issues.toml")
 
@@ -33,6 +33,9 @@ LEGEND = {
 
 NOT_GRADED = ("inconclusive", "n/a")
 
+# An absolute address: the action's HTML report is an artifact, with no page beside it.
+BUGS_URL = "https://plexito-de.github.io/spantruth/bugs.html"
+
 
 def _subjects(doc: dict) -> list[str]:
     # Libraries first, controls last, each group in name order. No ranking.
@@ -55,8 +58,8 @@ def reproduce(subject: str, scenario: str) -> str:
 
 
 def findings(doc: dict, known: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
-    """Every check that did not pass, with its anchor, the command that reproduces it, and the
-    upstream issue that tracks it, if any."""
+    """Every check that did not pass, with its anchor, the command that reproduces it, the upstream
+    issue that tracks it, if any, its bug class, and what the cell does to a cost figure."""
     known = known_issues() if known is None else known
     out = []
     for name in _subjects(doc):
@@ -64,6 +67,8 @@ def findings(doc: dict, known: list[dict[str, Any]] | None = None) -> list[dict[
         # Known issues describe the built-in subjects. A directory subject only shares a name.
         relevant = known if ref == name else []
         for sid, cell in doc["subjects"][name]["cells"].items():
+            truth = doc["scenarios"].get(sid, {}).get("truth")
+            cost = impact.cell_cost(truth, cell["checks"])
             for c in cell["checks"]:
                 if c["verdict"] in ("pass", "n/a"):
                     continue
@@ -83,6 +88,11 @@ def findings(doc: dict, known: list[dict[str, Any]] | None = None) -> list[dict[
                         "issue": issue,
                         "anchor": finding_id(name, sid, c["id"]),
                         "reproduce": reproduce(ref, sid),
+                        "bug_class": (bug := bugclasses.classify(c)),
+                        "cost": cost,
+                        "class_cost": impact.class_cost(truth, cell["checks"], bug.id)
+                        if bug
+                        else None,
                     }
                 )
     return out
@@ -133,6 +143,11 @@ def _fence(text: str) -> str:
     return f"{fence}\n{text}\n{fence}"
 
 
+def _bug(finding: dict[str, Any]) -> str:
+    bug = finding["bug_class"]
+    return f"[{bug.id} {bug.name}]({BUGS_URL}#{bug.id})" if bug else "—"
+
+
 def _fmt(value: Any) -> str:
     return "—" if value is None else _cell(_code(str(value)))
 
@@ -157,13 +172,14 @@ def markdown(doc: dict) -> str:
     if found:
         lines += [
             "",
-            "| Subject | Scenario | Check | Verdict | Expected | Reported | Read from | Note "
+            "| Subject | Scenario | Check | Bug | Verdict | Expected | Reported | Read from | Note "
             "| Upstream |",
-            "| --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+            "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
         ]
         for f in found:
             lines.append(
-                f"| {_cell(f['subject'])} | `{f['scenario']}` | {f['id']} | {f['verdict']} | "
+                f"| {_cell(f['subject'])} | `{f['scenario']}` | {f['id']} | {_bug(f)} | "
+                f"{f['verdict']} | "
                 f"{_fmt(f['expected'])} | {_fmt(f['got'])} | {_fmt(f['where'])} | "
                 f"{_cell(_code(f['detail'][:160])) if f['detail'] else ''} | "
                 f"{_link(f['issue'])} |"
@@ -177,3 +193,9 @@ def html(doc: dict) -> str:
     from .site import render
 
     return render(doc)
+
+
+def bugs_html(doc: dict, findings_page: str = "index.html") -> str:
+    from .site import render_bugs
+
+    return render_bugs(doc, findings_page)

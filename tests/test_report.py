@@ -62,7 +62,8 @@ def test_known_issue_is_linked_from_its_finding():
 def test_markdown_lists_libraries_before_controls_and_shows_the_finding():
     md = report.markdown(doc())
     assert "| Scenario | lib | control-honest |" in md
-    assert "| lib | `anthropic/stream` | output_tokens | wrong | `419` | `420` |" in md
+    assert "| lib | `anthropic/stream` | output_tokens | " in md
+    assert "| wrong | `419` | `420` |" in md
 
 
 def test_html_escapes_every_value_from_the_results():
@@ -140,7 +141,7 @@ def test_a_markdown_value_cannot_break_the_table():
     check = d["subjects"]["lib"]["cells"]["anthropic/stream"]["checks"][0]
     check["got"], check["where"] = "a|b`c", "x|y"
     (row,) = [line for line in report.markdown(d).splitlines() if line.startswith("| lib |")]
-    assert row.count("|") - row.count("\\|") == 10
+    assert row.count("|") - row.count("\\|") == 11
 
 
 def test_a_script_address_is_never_a_link():
@@ -182,3 +183,59 @@ def test_known_issues_only_annotate_built_in_subjects():
     d = doc()
     d["subjects"]["lib"]["ref"] = "./lib"
     assert report.findings(d, known)[0]["issue"] is None
+
+
+def priced_doc():
+    d = doc()
+    d["scenarios"]["anthropic/stream"]["truth"] = {
+        "request_model": "claude-sonnet-5-5",
+        "input_tokens": 1000,
+        "output_tokens": 419,
+        "error": None,
+    }
+    return d
+
+
+def test_a_finding_names_its_bug_class():
+    (found,) = [f for f in report.findings(doc()) if f["id"] == "output_tokens"]
+    assert found["bug_class"].name == "Phantom tokens"
+
+
+def test_a_finding_shows_what_it_does_to_the_cost():
+    page = report.html(priced_doc())
+    assert "bugs.html#ST04" in page
+    assert "Phantom tokens" in page
+    assert "<dt>Cost</dt>" in page
+    assert "at list price" in page
+
+
+def test_a_document_without_truth_renders_with_no_cost():
+    assert "<dt>Cost</dt>" not in report.html(doc())
+
+
+def test_markdown_names_the_bug_class():
+    assert "ST04 Phantom tokens" in report.markdown(doc())
+
+
+def test_the_bug_page_lists_every_class_with_its_anchor_and_escapes_values():
+    page = report.bugs_html(doc())
+    assert "<script>" not in page
+    for n in range(1, 11):
+        assert f'id="ST{n:02}"' in page
+    assert "uvx spantruth doctor" in page
+
+
+def test_the_bug_page_counts_cells_and_libraries_and_never_names_a_ranking():
+    page = report.bugs_html(doc())
+    assert "1 cell in 1 library" in page
+    assert "rank" not in page.lower()
+
+
+def test_the_bug_page_leaves_the_controls_out():
+    d = doc()
+    d["subjects"]["lib"]["kind"] = "control"
+    assert "cell in" not in report.bugs_html(d).split('id="ST04"')[1].split("</section>")[0]
+
+
+def test_the_bug_page_credits_who_reported_each_public_instance():
+    assert "arthi-arumugam-git" in report.bugs_html(doc())

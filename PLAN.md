@@ -149,6 +149,10 @@ Why: bets 2 and 3. Each scenario names its public instance.
 
 Start after #16 is merged, because it changes the scenario registry, the fake provider and the model.
 
+Moved on 2026-11-06: the rest of this table goes to 0.5, and contributors keep adding to it through issues.
+Release 0.4 goes to the people who pay the bill instead:
+[.plans/PLAN_FEAT_take-off.md](.plans/PLAN_FEAT_take-off.md).
+
 ### E4. Providers (Q1 and Q2 2027)
 
 - Google Gemini through `google-genai`: `generateContent` and its SSE stream. Gemini reports thought
