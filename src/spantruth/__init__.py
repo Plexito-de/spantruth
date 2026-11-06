@@ -1,3 +1,3 @@
 """spantruth: check LLM telemetry values against the provider wire."""
 
-__version__ = "0.4.0"
+__version__ = "0.4.1"
