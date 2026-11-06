@@ -53,19 +53,30 @@ FACTS: dict[str, Fact] = {
     ),
     "cache_read_tokens": Fact(
         "gen_ai.usage.cache_read.input_tokens",
-        ("gen_ai.usage.cache_read_input_tokens", "llm.token_count.prompt_details.cache_read"),
+        (
+            "gen_ai.usage.cache_read_input_tokens",
+            "gen_ai.usage.input_tokens.cached",  # Sentry
+            "llm.token_count.prompt_details.cache_read",
+        ),
     ),
     "cache_write_tokens": Fact(
         "gen_ai.usage.cache_write.input_tokens",
         (
             "gen_ai.usage.cache_creation.input_tokens",
             "gen_ai.usage.cache_creation_input_tokens",
+            "gen_ai.usage.input_tokens.cache_write",  # Sentry
+            "gen_ai.usage.cache_write_input_tokens",  # ddtrace
             "llm.token_count.prompt_details.cache_write",
         ),
     ),
     "reasoning_tokens": Fact(
         "gen_ai.usage.reasoning.output_tokens",
-        ("gen_ai.usage.reasoning_tokens", "llm.token_count.completion_details.reasoning"),
+        (
+            "gen_ai.usage.reasoning_tokens",
+            "gen_ai.usage.output_tokens.reasoning",  # Sentry
+            "gen_ai.usage.reasoning_output_tokens",  # ddtrace
+            "llm.token_count.completion_details.reasoning",
+        ),
     ),
 }
 

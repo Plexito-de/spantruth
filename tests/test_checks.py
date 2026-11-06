@@ -1,7 +1,10 @@
 """Every verdict the checks can return, on hand-built records. No subprocess, no network."""
 
+import pytest
+
 from spantruth import scenarios
 from spantruth.checks import cell_verdict, grade
+from spantruth.conventions import lookup
 from spantruth.receiver import SpanRecord
 
 TRACE, PARENT = "a" * 32, "b" * 16
@@ -76,6 +79,20 @@ def test_reasoning_tokens_left_out_of_output_is_named():
     assert by_id(grade(sc, t, BASE, obs(), [span(attrs)]))["output_tokens"].detail == (
         "reasoning tokens left out of output"
     )
+
+
+@pytest.mark.parametrize(
+    ("fact", "name"),
+    [
+        ("cache_read_tokens", "gen_ai.usage.input_tokens.cached"),
+        ("cache_write_tokens", "gen_ai.usage.input_tokens.cache_write"),
+        ("cache_write_tokens", "gen_ai.usage.cache_write_input_tokens"),
+        ("reasoning_tokens", "gen_ai.usage.output_tokens.reasoning"),
+        ("reasoning_tokens", "gen_ai.usage.reasoning_output_tokens"),
+    ],
+)
+def test_a_vendor_name_for_a_count_is_read(fact, name):
+    assert lookup({name: 5}, fact) == (name, 5)
 
 
 def test_absent_value_is_missing_not_wrong():

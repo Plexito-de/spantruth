@@ -122,6 +122,17 @@ def test_a_library_that_covers_anthropic_replaces_the_sdk_subject():
     assert [s.name for s in doctor.match(versions)] == ["openinference"]
 
 
+def test_a_library_with_other_uses_needs_a_provider_sdk_too():
+    assert doctor.match({"sentry-sdk": "2.74.0", "ddtrace": "4.16.3", "mlflow": "3.18.0"}) == []
+    names = {
+        s.name
+        for s in doctor.match(
+            {"sentry-sdk": "2.74.0", "ddtrace": "4.16.3", "mlflow": "3.18.0", "openai": "3.0"}
+        )
+    }
+    assert names == {"sentry", "ddtrace", "mlflow"}
+
+
 def test_text_says_when_it_could_not_apply_the_project_version():
     doc = result_doc()
     versions = {"anthropic": "2.5.0", "openinference-instrumentation-anthropic": None}
