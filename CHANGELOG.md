@@ -6,6 +6,13 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-11-06
+
+### Added
+
+- `openai/stream-reasoning` scenario for a streamed chat completion whose last chunk carries
+  reasoning tokens.
+
 ### Fixed
 
 - `spantruth doctor` no longer fails with exit code 3 on a project that pins `opentelemetry-sdk` but
@@ -23,8 +30,6 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
-- `openai/stream-reasoning` scenario for a streamed chat completion whose last chunk carries
-  reasoning tokens.
 - `anthropic/thinking` and `anthropic/stream-thinking` scenarios for Anthropic extended thinking:
   a response with thinking content blocks, non-streamed and streamed.
 - Ten named bug classes, `ST01` Ghost span to `ST10` Observer effect, on a new page
@@ -190,7 +195,8 @@ All notable changes to this project are documented here. The format follows
 - Subjects: the OpenTelemetry GenAI instrumentation, OpenLLMetry and OpenInference.
 - A Markdown and a static HTML report.
 
-[Unreleased]: https://github.com/Plexito-de/spantruth/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/Plexito-de/spantruth/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/Plexito-de/spantruth/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/Plexito-de/spantruth/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Plexito-de/spantruth/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Plexito-de/spantruth/compare/v0.1.0...v0.2.0
