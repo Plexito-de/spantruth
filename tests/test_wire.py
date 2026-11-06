@@ -94,9 +94,19 @@ def test_openai_prompt_tokens_already_include_cached_tokens():
     assert (t.input_tokens, t.cache_read_tokens, t.output_tokens) == (7213, 6144, 511)
 
 
-def test_openai_reasoning_stays_inside_output_tokens():
-    t = scenarios.truth(scenarios.get("openai/reasoning"))
-    assert (t.output_tokens, t.reasoning_tokens) == (2219, 1792)
+@pytest.mark.parametrize(
+    ("sid", "output", "reasoning"),
+    [
+        ("openai/reasoning", 2219, 1792),
+        ("openai/stream-reasoning", 2459, 1931),
+    ],
+)
+def test_openai_reasoning_stays_inside_output_tokens(sid, output, reasoning):
+    sc = scenarios.get(sid)
+    t = scenarios.truth(sc)
+    assert (t.output_tokens, t.reasoning_tokens) == (output, reasoning)
+    assert t.output_tokens > t.reasoning_tokens
+    assert t.cache_read_tokens is None and t.cache_write_tokens is None
 
 
 def test_openai_early_exit_holds_no_usage_and_marks_the_unread_counts():

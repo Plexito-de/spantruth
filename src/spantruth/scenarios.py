@@ -149,6 +149,19 @@ def _openai() -> list[Scenario]:
                 id="chatcmpl-wt-reason", prompt=1601, completion_tokens=2219, reasoning=1792, **body
             ),
         ),
+        sc(
+            "stream-reasoning",
+            "Reasoning tokens, streamed",
+            "reasoning tokens lost from output in a stream",
+            oa.chunks(
+                id="chatcmpl-wt-sreason",
+                prompt=2089,
+                completion_tokens=2459,
+                reasoning=1931,
+                **stream,
+            ),
+            stream=True,
+        ),
     ]
 
 
