@@ -8,7 +8,7 @@ import sys
 import traceback
 from pathlib import Path
 
-from . import __version__, expectations, paths, report, runner, scenarios, subjects
+from . import __version__, doctor, expectations, paths, report, runner, scenarios, subjects
 
 # GitHub caps a step summary at 1 MiB. Stay below it, and say where the rest is.
 SUMMARY_LIMIT = 1_000_000
@@ -119,6 +119,20 @@ def _run(args: argparse.Namespace) -> int:
     return exit_code(doc, differences)
 
 
+def _doctor(args: argparse.Namespace) -> int:
+    try:
+        return doctor.run(
+            Path(args.path),
+            Path(args.out),
+            Path(args.cache),
+            jobs=args.jobs,
+            scenario=args.scenario,
+            as_json=args.json,
+        )
+    except doctor.DoctorError as exc:
+        return _usage(exc)
+
+
 def _report(args: argparse.Namespace) -> int:
     doc = json.loads(Path(args.results).read_text())
     if args.html:
@@ -193,6 +207,29 @@ def parser() -> argparse.ArgumentParser:
         help="append the Markdown report to this file, such as $GITHUB_STEP_SUMMARY",
     )
     run.set_defaults(func=_run)
+    doc = sub.add_parser(
+        "doctor",
+        help="read your project's lock file and show what your versions get wrong",
+        description="Read the versions of a project, run its instrumentation libraries at those "
+        "versions against the fake provider, and say what they get wrong. It does not run your "
+        "application. Exit code: 0 no problem found, 1 a problem found, 2 nothing to check, 3 "
+        "spantruth could not run something.",
+    )
+    doc.add_argument("path", nargs="?", default=".", help="the project directory (default: .)")
+    doc.add_argument("--json", action="store_true", help="print the result as JSON")
+    doc.add_argument("--scenario", action="append", help="scenario id, repeatable")
+    doc.add_argument(
+        "--out",
+        default=str(cache / "results" / "doctor.json"),
+        help="where to write the results document (default: %(default)s)",
+    )
+    doc.add_argument(
+        "--cache",
+        default=str(cache / "venvs"),
+        help="where to keep the subject environments (default: %(default)s)",
+    )
+    doc.add_argument("--jobs", type=int, default=4)
+    doc.set_defaults(func=_doctor)
     rep = sub.add_parser("report", help="render a results document")
     rep.add_argument("results")
     rep.add_argument("--html", help="write a static HTML report to this path")

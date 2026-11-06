@@ -6,3 +6,8 @@ packages = [
   "opentelemetry-instrumentation-anthropic==0.62.4",
 ]
 track = ["opentelemetry-instrumentation-openai", "opentelemetry-instrumentation-anthropic"]
+detect = [
+  "opentelemetry-instrumentation-openai",
+  "opentelemetry-instrumentation-anthropic",
+  "traceloop-sdk",
+]
