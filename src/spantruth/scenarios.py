@@ -307,6 +307,39 @@ def _anthropic() -> list[Scenario]:
             ),
             stream=True,
         ),
+        sc(
+            "thinking",
+            "Extended thinking",
+            "thinking tokens lost from output",
+            an.message(
+                id="msg_wt_thinking",
+                input_tokens=1627,
+                output_tokens=1273,
+                thinking=(
+                    "Let me think about the capital of France. The capital of France is Paris."
+                ),
+                thinking_tokens=947,
+                **body,
+            ),
+        ),
+        sc(
+            "stream-thinking",
+            "Extended thinking, streamed",
+            "thinking tokens lost from output in a stream",
+            an.events(
+                id="msg_wt_sthink",
+                input_tokens=1831,
+                output_tokens=1439,
+                thinking_parts=(
+                    "Let me think about",
+                    " the capital of France.",
+                    " The capital is Paris.",
+                ),
+                thinking_tokens=1103,
+                **stream,
+            ),
+            stream=True,
+        ),
     ]
 
 

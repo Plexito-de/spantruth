@@ -72,6 +72,11 @@ def _formula(fact: str, got: int, t: Truth) -> str:
         }
         if got in guesses and read + write:
             return guesses[got]
+    if fact == "output_tokens" and t.output_tokens is not None and t.reasoning_tokens:
+        if got == t.output_tokens - t.reasoning_tokens:
+            return "reasoning tokens left out of output"
+        if got == t.output_tokens + t.reasoning_tokens:
+            return "reasoning tokens added twice"
     for other in TOKENS:
         if other != fact and getattr(t, other) == got:
             return f"equals {other.replace('_', ' ')}"
