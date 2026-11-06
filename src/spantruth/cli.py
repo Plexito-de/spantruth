@@ -56,6 +56,8 @@ def _run(args: argparse.Namespace) -> int:
         return _usage(exc)
     except KeyError as exc:
         return _usage(exc.args[0])
+    if args.comment and len(selected) != 1:
+        return _usage("--comment takes exactly one --subject")
     if (args.expect or args.write_expect) and len(selected) != 1:
         return _usage("--expect and --write-expect take exactly one --subject")
     if (args.expect or args.write_expect) and not any(
@@ -114,6 +116,10 @@ def _run(args: argparse.Namespace) -> int:
         print(f"wrote {written}")
     if args.summary:
         _append_summary(Path(args.summary), text)
+    if args.comment:
+        compared = differences if expected is not None and not gaps else None
+        body = report.comment(doc, selected[0].name, compared, args.comment_link or "")
+        Path(args.comment).write_text(body)
     for gap in gaps:
         print(f"spantruth: incomplete run: {gap}", file=sys.stderr)
     return exit_code(doc, differences)
@@ -206,6 +212,12 @@ def parser() -> argparse.ArgumentParser:
         metavar="FILE",
         help="append the Markdown report to this file, such as $GITHUB_STEP_SUMMARY",
     )
+    run.add_argument(
+        "--comment",
+        metavar="FILE",
+        help="write a short pull request comment for the one selected subject to this file",
+    )
+    run.add_argument("--comment-link", metavar="URL", help="the page the comment links to")
     run.set_defaults(func=_run)
     doc = sub.add_parser(
         "doctor",
