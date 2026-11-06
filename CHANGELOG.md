@@ -11,6 +11,8 @@ All notable changes to this project are documented here. The format follows
 - `anthropic/thinking` and `anthropic/stream-thinking` scenarios for Anthropic extended thinking:
   a response with thinking content blocks, non-streamed and streamed.
 - OpenLIT is a subject (`openlit==1.45.0`), instrumenting the OpenAI and Anthropic SDKs.
+- Pydantic Logfire is a subject (`logfire==5.4.0`), instrumenting the OpenAI and Anthropic SDKs
+  with no Logfire account.
 - `openai/retry-429` and `anthropic/retry-429` scenarios where the SDK's own retry runs:
   HTTP 429 with `retry-after`, then a successful response. Per-scenario state in the mock
   server ensures cells stay independent.

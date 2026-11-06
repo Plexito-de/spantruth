@@ -28,6 +28,17 @@ def test_an_override_replaces_only_the_package_it_names():
     ]
 
 
+def test_logfire_is_pinned_and_tracked():
+    lib = subjects.load("logfire")
+    assert lib.title == "Pydantic Logfire"
+    assert lib.providers == ("openai", "anthropic")
+    assert lib.homepage == "https://github.com/pydantic/logfire"
+    assert "logfire==5.4.0" in subjects.requirements(lib, latest=False)
+    latest = subjects.requirements(lib, latest=True)
+    assert "logfire" in latest
+    assert "logfire==5.4.0" not in latest
+
+
 def test_a_subject_package_replaces_the_base_package_of_the_same_name():
     lib = subjects.Subject(
         name="old-sdk",

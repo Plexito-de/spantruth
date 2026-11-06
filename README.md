@@ -196,10 +196,11 @@ endpoint per library, at `https://plexito-de.github.io/spantruth/badges/<subject
 - **Subjects:** the [OpenTelemetry GenAI instrumentation](https://github.com/open-telemetry/opentelemetry-python-genai),
   [OpenLLMetry](https://github.com/traceloop/openllmetry),
   [OpenInference](https://github.com/Arize-ai/openinference),
-  [OpenLIT](https://github.com/openlit/openlit), and the built-in tracing of the
+  [OpenLIT](https://github.com/openlit/openlit),
+  [Pydantic Logfire](https://github.com/pydantic/logfire), and the built-in tracing of the
   [Anthropic SDK](https://github.com/anthropics/anthropic-sdk-python), plus the two controls.
 
-Next, from the [plan](PLAN.md): Logfire, the bug classes that repeat (tool calls and
+Next, from the [plan](PLAN.md): the bug classes that repeat (tool calls and
 reasoning tokens in a stream, the SDK helpers such as `messages.stream()`, the rest of the OpenAI
 Responses API), Google Gemini, frameworks such as LiteLLM and Pydantic AI, and the JavaScript
 libraries. [Help is welcome](CONTRIBUTING.md#ways-to-help).
