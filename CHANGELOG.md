@@ -8,6 +8,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- `openai/stream-reasoning` scenario for a streamed chat completion whose last chunk carries
+  reasoning tokens.
 - `anthropic/thinking` and `anthropic/stream-thinking` scenarios for Anthropic extended thinking:
   a response with thinking content blocks, non-streamed and streamed.
 - OpenLIT is a subject (`openlit==1.45.0`), instrumenting the OpenAI and Anthropic SDKs.
