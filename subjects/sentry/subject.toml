@@ -1,0 +1,8 @@
+title = "Sentry SDK"
+homepage = "https://github.com/getsentry/sentry-python"
+providers = ["openai", "anthropic"]
+packages = ["sentry-sdk==2.74.0"]
+track = ["sentry-sdk"]
+# Many projects use Sentry for errors only, so `spantruth doctor` needs a provider SDK as well.
+detect_with = ["openai", "anthropic"]
+notes = "Sentry spans are not OpenTelemetry spans, and the SDK has no OTLP export for them (its OTLP integration sends OpenTelemetry spans to Sentry). A local adapter in instrument.py shows the SDK's own gen_ai spans to the harness: span data keys and values are unchanged, a Sentry status other than ok becomes ERROR, and a span the SDK never finishes stays open and is lost. span.parented comes from the adapter, not from Sentry, whose spans form their own trace. No DSN and no account: without a DSN the SDK has no transport, so nothing is sent."
