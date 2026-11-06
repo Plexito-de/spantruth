@@ -41,7 +41,7 @@ jobs:
           if [ "$rc" -eq 3 ]; then echo "::warning::incomplete latest run"; elif [ "$rc" -ne 0 ]; then exit "$rc"; fi
       - name: Render
         run: |
-          uv run spantruth report site/pinned.json --html site/index.html
+          uv run spantruth report site/pinned.json --html site/index.html --bugs site/bugs.html
           uv run spantruth report site/latest.json --html site/latest.html --badges site/badges
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
