@@ -39,6 +39,21 @@ jobs:
           rc=0
           uv run spantruth run --latest --out site/latest.json || rc=$?
           if [ "$rc" -eq 3 ]; then echo "::warning::incomplete latest run"; elif [ "$rc" -ne 0 ]; then exit "$rc"; fi
+      # The history and the feed live on the site. A missing file (404) means the first run. Any
+      # other failure stops the job: publishing without the old files would lose the history.
+      - name: Fetch the last published state
+        run: |
+          mkdir -p state
+          for file in latest.json history.jsonl changes.jsonl; do
+            code=$(curl -sS -L -o "state/$file" -w '%{http_code}' "https://plexito-de.github.io/spantruth/$file")
+            case "$code" in
+              200) ;;
+              404) rm -f "state/$file" ;;
+              *) echo "::error::$file answered $code"; exit 1 ;;
+            esac
+          done
+      - name: Compare with the last run
+        run: uv run spantruth watch site/latest.json --state state --out site
       - name: Render
         run: |
           uv run spantruth report site/pinned.json --html site/index.html --bugs site/bugs.html

@@ -375,6 +375,7 @@ def render(doc: dict) -> str:
 {ICON}
 <meta property="og:title" content="spantruth: does your LLM telemetry tell the truth?">
 {SOCIAL}
+<link rel="alternate" type="application/atom+xml" href="feed.xml" title="spantruth changes">
 <meta name="description" content="Does LLM telemetry match what the provider sent?
 Wire traffic replayed through instrumentation libraries, checked value by value.">
 <style>{CSS}</style></head>
@@ -385,8 +386,9 @@ sent? Each cell replays one provider response through one library and checks eve
 against the wire.</p>
 <p class="muted">{meta} · <a href="https://github.com/Plexito-de/spantruth">source</a></p>
 <p>Pages: <a href="index.html">pinned versions</a> · <a href="latest.html">latest releases</a> ·
-<a href="bugs.html">the ten bug classes</a>. A fix that ships upstream turns its cell green on
-the latest-releases page first.</p>
+<a href="bugs.html">the ten bug classes</a> ·
+<a href="changes.html">what new releases changed</a>. A fix that ships upstream turns its cell
+green on the latest-releases page first.</p>
 <div class="legend">{legend}</div>
 {_matrix(doc, names, first)}
 <p class="muted">The controls run the suite's own reference instrumentation.
