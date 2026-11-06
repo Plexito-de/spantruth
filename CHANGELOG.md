@@ -6,6 +6,11 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- `doctor` left the Anthropic SDK's own tracing off when a project got `anthropic` through a
+  dependency and did not name it, so it missed the double span and could report no problem.
+
 ## [0.4.1] - 2026-11-06
 
 ### Added
