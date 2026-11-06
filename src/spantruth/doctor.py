@@ -187,9 +187,10 @@ def as_the_app_runs(
 ) -> subjects.Subject:
     """The subject with the SDK's own tracing as the app has it: on, unless the caller said off.
 
-    The base file turns it off so that libraries are graded alone. An app does not.
+    The base file turns it off so that libraries are graded alone. An app does not. The project
+    need not name `anthropic`: a dependency can bring it, so what counts is that Anthropic scenarios run.
     """
-    if "anthropic" not in versions:
+    if not any(scenarios.get(i).provider == "anthropic" for i in scenario_ids(versions)):
         return subject
     return replace(subject, env={**subject.env, SELF_TRACING: environ.get(SELF_TRACING, "true")})
 

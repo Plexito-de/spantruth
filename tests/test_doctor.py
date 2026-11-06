@@ -180,6 +180,12 @@ def test_an_exporter_the_project_pins_itself_is_left_alone():
     assert "opentelemetry-exporter-otlp-proto-http==1.44.1" in specs
 
 
+def test_doctor_leaves_sdk_tracing_on_when_a_dependency_brings_anthropic():
+    subject = subjects.load("otel-official")
+    on = doctor.as_the_app_runs(subject, {"langchain-anthropic": "1.7.4"}, environ={})
+    assert on.env["ANTHROPIC_OPEN_TELEMETRY"] == "true"
+
+
 def test_doctor_leaves_sdk_tracing_on_unless_the_caller_turned_it_off():
     subject = subjects.load("openinference")
     versions = {"anthropic": "2.5.0"}
