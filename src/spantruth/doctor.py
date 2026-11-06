@@ -20,6 +20,7 @@ from typing import Any
 from . import bugclasses, report, runner, scenarios, subjects
 
 SELF_TRACING = "ANTHROPIC_OPEN_TELEMETRY"
+EXPORTER = "opentelemetry-exporter-otlp-proto-http"
 GUIDE = "https://github.com/Plexito-de/spantruth/blob/main/docs/test-your-wrapper.md"
 
 
@@ -171,7 +172,12 @@ def overrides(
     installed = {
         subjects.package_name(r) for s in selected for r in subjects.requirements(s, False)
     }
-    return tuple(sorted(f"{n}=={versions[n]}" for n in installed if versions.get(n)))
+    pins = {n: versions[n] for n in installed if versions.get(n)}
+    # The harness exports over OTLP, and that exporter requires the SDK of its own version. A
+    # project can pin the SDK alone, or use the gRPC exporter, so the HTTP exporter follows the SDK.
+    if "opentelemetry-sdk" in pins and EXPORTER in installed:
+        pins.setdefault(EXPORTER, pins["opentelemetry-sdk"])
+    return tuple(sorted(f"{name}=={version}" for name, version in pins.items()))
 
 
 def as_the_app_runs(
@@ -302,7 +308,8 @@ def render_text(found: Found, summary: list[dict[str, Any]], results: str) -> st
         ]
     lines += [
         "This checks your library versions against a local fake provider. It does not run your "
-        "application.",
+        "application, so it cannot see settings in your code, such as open_telemetry=False, and it "
+        "knows nothing about your backend.",
         f"Results: {results}",
         f"Open a report: spantruth report {results} --html report.html",
     ]

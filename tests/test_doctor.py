@@ -161,6 +161,25 @@ def test_overrides_pin_every_package_the_subject_installs_and_nothing_else():
     assert sorted(specs) == ["anthropic==2.5.0", "openinference-instrumentation-anthropic==3.3.1"]
 
 
+def test_the_exporter_follows_the_sdk_version_of_the_project():
+    # The harness needs the OTLP exporter, and the exporter pins the SDK of its own version. A
+    # project that pins only the SDK, or uses the gRPC exporter, has no exporter version to apply.
+    specs = doctor.overrides([subjects.load("openinference")], {"opentelemetry-sdk": "1.44.0"})
+    assert sorted(specs) == [
+        "opentelemetry-exporter-otlp-proto-http==1.44.0",
+        "opentelemetry-sdk==1.44.0",
+    ]
+
+
+def test_an_exporter_the_project_pins_itself_is_left_alone():
+    versions = {
+        "opentelemetry-sdk": "1.44.0",
+        "opentelemetry-exporter-otlp-proto-http": "1.44.1",
+    }
+    specs = doctor.overrides([subjects.load("openinference")], versions)
+    assert "opentelemetry-exporter-otlp-proto-http==1.44.1" in specs
+
+
 def test_doctor_leaves_sdk_tracing_on_unless_the_caller_turned_it_off():
     subject = subjects.load("openinference")
     versions = {"anthropic": "2.5.0"}
