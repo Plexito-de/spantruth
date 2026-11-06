@@ -6,6 +6,17 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- `spantruth doctor` no longer fails with exit code 3 on a project that pins `opentelemetry-sdk` but
+  not the OTLP HTTP exporter, or that uses the gRPC exporter. The harness's exporter now follows the
+  project's SDK version.
+
+### Changed
+
+- The output of `spantruth doctor` says that it cannot see settings in the application's code or its
+  backend.
+
 ## [0.4.0] - 2026-11-06
 
 ### Added
