@@ -10,6 +10,28 @@ All notable changes to this project are documented here. The format follows
 
 - `anthropic/thinking` and `anthropic/stream-thinking` scenarios for Anthropic extended thinking:
   a response with thinking content blocks, non-streamed and streamed.
+- Ten named bug classes, `ST01` Ghost span to `ST10` Observer effect, on a new page
+  (`spantruth report --bugs FILE`, published as `bugs.html`). Each finding names its class. A class is
+  a reading of a check, so results documents of any age get classes, and a class ID never changes
+  meaning.
+- A finding shows what it does to a cost figure, at list price, for the token mix of its scenario.
+  `prices.toml` holds the prices, with their sources and their date.
+- `spantruth doctor` reads a project's lock file, runs the instrumentation libraries it recognizes at those
+  versions, and says what they get wrong, by bug class. It leaves the Anthropic SDK's own tracing on, as an
+  application does. `--json` prints a result for a script or a coding agent.
+- `comment: "true"` on the GitHub Action keeps one comment on each pull request with the checks that
+  changed. `spantruth run --comment FILE` writes the text.
+- `spantruth watch` compares a run with the last one. The nightly run publishes a history, a
+  [page](https://plexito-de.github.io/spantruth/changes.html) and an
+  [Atom feed](https://plexito-de.github.io/spantruth/feed.xml) of new releases that change a result.
+- [A guide](docs/test-your-wrapper.md) and an example for testing an in-house LLM wrapper.
+- An agent skill, `skills/spantruth`, and `llms.txt` on the report site.
+- Three subjects: the Sentry SDK and Datadog ddtrace through a local adapter that copies their span data
+  unchanged, and MLflow Tracing through its own GenAI export. The suite also reads the names that Sentry
+  and ddtrace use for cache and reasoning counts.
+- `otel-official-sdk-on`, the OpenTelemetry GenAI instrumentation with the Anthropic SDK's own tracing
+  left on. The library passes every scenario alone, so this subject shows what the SDK's tracing does:
+  14 of its 19 cells report usage on two spans.
 - OpenLIT is a subject (`openlit==1.45.0`), instrumenting the OpenAI and Anthropic SDKs.
 - `openai/retry-429` and `anthropic/retry-429` scenarios where the SDK's own retry runs:
   HTTP 429 with `retry-after`, then a successful response. Per-scenario state in the mock
@@ -19,6 +41,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- `--with` with a version no longer rebuilds the environment on each run. A git ref or a checkout still
+  does.
 - spantruth is on PyPI, so the README quick start is `uvx spantruth`.
 - CI tests Python 3.13 and 3.14 as well as 3.11 and 3.12. Subject environments stay on 3.12.
 

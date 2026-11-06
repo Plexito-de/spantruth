@@ -1,0 +1,5 @@
+title = "Acme's in-house LLM wrapper"
+homepage = "https://github.com/Plexito-de/spantruth/tree/main/examples/in-house-wrapper"
+providers = ["openai"]
+# `--with ../` replaces this with your checkout, so the version here never installs.
+packages = ["acme-llm==0.1.0"]

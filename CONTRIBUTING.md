@@ -46,6 +46,9 @@ uv run ruff check . && uv run ruff format --check .
        return None
    ```
 
+   The subject's `track` packages also tell `spantruth doctor` that a project uses this library. Set
+   `detect` in `subject.toml` when other packages mean the same, such as a meta-package.
+
    Use the setup that the library's own documentation shows first. Return nothing, or a list of
    extra tracer providers to flush when the library makes its own.
 
