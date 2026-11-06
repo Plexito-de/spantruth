@@ -1,6 +1,6 @@
 """The Markdown and HTML renderers, on a small hand-built results document."""
 
-from spantruth import report
+from spantruth import expectations, report
 
 HOSTILE = "<script>alert(1)</script>"
 
@@ -239,3 +239,53 @@ def test_the_bug_page_leaves_the_controls_out():
 
 def test_the_bug_page_credits_who_reported_each_public_instance():
     assert "arthi-arumugam-git" in report.bugs_html(doc())
+
+
+def test_comment_starts_with_a_marker_that_no_subject_name_can_break():
+    text = report.comment(doc(), "lib")
+    assert text.startswith("<!-- spantruth:lib -->\n")
+    assert report.comment_marker("a-->b c") == "<!-- spantruth:a___b_c -->"
+
+
+def test_comment_without_an_expectation_file_counts_cells_and_names_classes():
+    text = report.comment(doc(), "lib")
+    assert "0 of 1 cells pass" in text
+    assert "ST04" in text
+
+
+def test_comment_with_no_difference_says_so():
+    assert "No change" in report.comment(doc(), "lib", differences=[])
+
+
+def test_comment_lists_each_difference_with_its_bug_class():
+    new = expectations.Difference("anthropic/stream", "output_tokens", None, "wrong")
+    gone = expectations.Difference("anthropic/stream", "span.ended", "lost", None)
+    text = report.comment(doc(), "lib", differences=[new, gone])
+    assert "2 checks changed" in text
+    assert "newly failing: wrong" in text
+    assert "now passes, was lost" in text
+    assert "ST01 Ghost span" in text
+
+
+def test_comment_leaves_out_what_a_library_can_control():
+    d = doc()
+    d["subjects"]["lib"]["title"] = "[y](javascript:alert(1))"
+    d["subjects"]["lib"]["cells"]["anthropic/stream"]["checks"][0]["detail"] = "[z](https://x.test)"
+    text = report.comment(d, "lib")
+    assert "javascript" not in text
+    assert "x.test" not in text
+
+
+def test_comment_keeps_a_subject_name_as_code():
+    assert "`lib`" in report.comment(doc(), "lib")
+
+
+def test_comment_links_the_run_only_when_it_is_a_web_address():
+    assert "https://example.com/run" in report.comment(doc(), "lib", link="https://example.com/run")
+    assert "javascript" not in report.comment(doc(), "lib", link="javascript:alert(1)")
+
+
+def test_comment_says_when_the_run_is_incomplete():
+    d = doc()
+    d["subjects"]["lib"]["error"] = "environment build failed"
+    assert "could not run" in report.comment(d, "lib", differences=[])

@@ -19,7 +19,7 @@ def step(step_id: str) -> dict:
 def test_inputs_reach_the_script_only_through_the_environment():
     script = step("run")["run"]
     assert "${{" not in script
-    assert set(step("run")["env"]) >= {"SUBJECT", "WITH", "SCENARIO", "EXPECT", "LATEST"}
+    assert set(step("run")["env"]) >= {"SUBJECT", "WITH", "SCENARIO", "EXPECT", "LATEST", "COMMENT"}
 
 
 def test_every_action_the_action_uses_is_pinned_to_a_commit():
@@ -50,12 +50,74 @@ def run_action(tmp_path: Path, runner_temp: Path, **inputs: str) -> tuple[int, d
         "GITHUB_STEP_SUMMARY": str(summary),
         **{k.upper(): v for k, v in inputs.items()},
     }
-    for name in ("SUBJECT", "WITH", "SCENARIO", "EXPECT", "LATEST", "ARTIFACT_NAME"):
+    for name in ("SUBJECT", "WITH", "SCENARIO", "EXPECT", "LATEST", "ARTIFACT_NAME", "COMMENT"):
         env.setdefault(name, "")
     proc = subprocess.run(["bash", str(script)], env=env, cwd=REPO, capture_output=True, text=True)
     assert proc.returncode == 0, proc.stdout + proc.stderr
     outputs = dict(line.split("=", 1) for line in output.read_text().splitlines())
     return int(outputs["exit-code"]), outputs, summary.read_text()
+
+
+def fake_gh(tmp_path: Path, existing: str = "", fail_post: bool = False) -> tuple[Path, Path]:
+    """A `gh` that records its arguments and answers the comment listing with `existing`."""
+    calls = tmp_path / "calls"
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    gh = bin_dir / "gh"
+    fail = "exit 1" if fail_post else ":"
+    gh.write_text(
+        f"""#!/bin/bash
+echo "$*" >> {calls}
+if [[ "$*" == *--paginate* ]]; then echo "{existing}"; exit 0; fi
+if [[ "$*" == *"-X POST"* ]]; then {fail}; fi
+exit 0
+"""
+    )
+    gh.chmod(0o755)
+    return bin_dir, calls
+
+
+def run_comment(tmp_path: Path, bin_dir: Path) -> subprocess.CompletedProcess:
+    body = tmp_path / "comment.md"
+    body.write_text("<!-- spantruth:x -->\nhello")
+    script = tmp_path / "comment.sh"
+    script.write_text(step("comment")["run"])
+    env = {
+        "PATH": f"{bin_dir}:{os.environ['PATH']}",
+        "GH_TOKEN": "t",
+        "PR_NUMBER": "7",
+        "REPOSITORY": "o/r",
+        "COMMENT_FILE": str(body),
+        "MARKER": "<!-- spantruth:x -->",
+    }
+    return subprocess.run(["bash", str(script)], env=env, capture_output=True, text=True)
+
+
+def test_the_comment_step_creates_a_comment_when_there_is_none(tmp_path):
+    bin_dir, calls = fake_gh(tmp_path)
+    assert run_comment(tmp_path, bin_dir).returncode == 0
+    assert "-X POST repos/o/r/issues/7/comments" in calls.read_text()
+
+
+def test_the_comment_step_updates_its_own_comment(tmp_path):
+    bin_dir, calls = fake_gh(tmp_path, existing="123")
+    assert run_comment(tmp_path, bin_dir).returncode == 0
+    text = calls.read_text()
+    assert "-X PATCH repos/o/r/issues/comments/123" in text
+    assert "-X POST" not in text
+
+
+def test_a_read_only_token_warns_and_never_fails_the_job(tmp_path):
+    bin_dir, _ = fake_gh(tmp_path, fail_post=True)
+    proc = run_comment(tmp_path, bin_dir)
+    assert proc.returncode == 0
+    assert "::warning::" in proc.stdout
+
+
+def test_the_comment_step_takes_its_values_from_the_environment_only():
+    comment = step("comment")
+    assert "${{" not in comment["run"]
+    assert set(comment["env"]) >= {"GH_TOKEN", "PR_NUMBER", "REPOSITORY", "COMMENT_FILE", "MARKER"}
 
 
 @pytest.mark.slow
@@ -103,6 +165,7 @@ def test_a_failed_install_still_reports_exit_code_3(tmp_path):
         "EXPECT": "",
         "LATEST": "",
         "ARTIFACT_NAME": "",
+        "COMMENT": "",
     }
     proc = subprocess.run(["bash", str(script)], env=env, cwd=REPO, capture_output=True, text=True)
     assert proc.returncode != 0

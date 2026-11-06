@@ -35,6 +35,17 @@ inputs:
     description: The name of the artifact with the results and the HTML report.
     required: false
     default: ""
+  comment:
+    description: >-
+      On a pull request, keep one comment up to date with what changed. It needs
+      `pull-requests: write`. A fork's pull request has a read-only token, so the step warns and
+      the job goes on.
+    required: false
+    default: "false"
+  token:
+    description: The token that writes the comment.
+    required: false
+    default: ${{ github.token }}
 
 outputs:
   exit-code:
@@ -65,6 +76,7 @@ runs:
         EXPECT: ${{ inputs.expect }}
         LATEST: ${{ inputs.latest }}
         ARTIFACT_NAME: ${{ inputs.artifact-name }}
+        COMMENT: ${{ inputs.comment }}
       run: |
         set -euo pipefail
         # When installing spantruth fails, the run could not happen: report exit code 3.
@@ -84,6 +96,10 @@ runs:
         done <<< "$SCENARIO"
         if [ -n "$EXPECT" ]; then args+=(--expect "$EXPECT"); fi
         if [ "$LATEST" = "true" ]; then args+=(--latest); fi
+        if [ "$COMMENT" = "true" ]; then
+          args+=(--comment "$out/comment.md")
+          args+=(--comment-link "${GITHUB_SERVER_URL:-}/${GITHUB_REPOSITORY:-}/actions/runs/${GITHUB_RUN_ID:-}")
+        fi
 
         code=0
         "$spantruth" "${args[@]}" || code=$?
@@ -98,6 +114,10 @@ runs:
           echo "results=$out/results.json"
           echo "out-dir=$out"
           echo "artifact-name=$name"
+          if [ -f "$out/comment.md" ]; then
+            echo "comment-file=$out/comment.md"
+            echo "comment-marker=$(head -n 1 "$out/comment.md")"
+          fi
         } >> "$GITHUB_OUTPUT"
 
     - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -108,6 +128,27 @@ runs:
           ${{ steps.run.outputs.out-dir }}/results.json
           ${{ steps.run.outputs.out-dir }}/report.html
         if-no-files-found: ignore
+
+    # A comment is a convenience: nothing here can fail the job.
+    - id: comment
+      if: always() && github.event.pull_request.number && steps.run.outputs.comment-file != ''
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        REPOSITORY: ${{ github.repository }}
+        COMMENT_FILE: ${{ steps.run.outputs.comment-file }}
+        MARKER: ${{ steps.run.outputs.comment-marker }}
+      run: |
+        comments="repos/$REPOSITORY/issues/$PR_NUMBER/comments"
+        id="$(gh api --paginate "$comments" --jq '.[] | select(.body | startswith(env.MARKER)) | .id' | head -n 1)"
+        if [ -n "$id" ] && gh api -X PATCH "repos/$REPOSITORY/issues/comments/$id" -F "body=@$COMMENT_FILE" > /dev/null; then
+          exit 0
+        fi
+        if ! gh api -X POST "$comments" -F "body=@$COMMENT_FILE" > /dev/null; then
+          echo "::warning::spantruth could not comment. The token needs pull-requests: write, and a pull request from a fork has a read-only token."
+        fi
+        exit 0
 
     - shell: bash
       env:
