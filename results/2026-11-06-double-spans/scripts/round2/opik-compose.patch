@@ -1,0 +1,191 @@
+diff --color -ru dl/opik/deployment/docker-compose/clickhouse_config/additional_config.xml out/opik-compose-x2/clickhouse_config/additional_config.xml
+--- dl/opik/deployment/docker-compose/clickhouse_config/additional_config.xml	2026-11-06 08:05:39.000000000 +0100
++++ out/opik-compose-x2/clickhouse_config/additional_config.xml	2026-11-06 11:29:47.149519736 +0100
+@@ -1,4 +1,5 @@
+ <clickhouse>
++    <listen_host>0.0.0.0</listen_host>
+     <!-- Permits SQL_-prefixed custom settings (SQL_workspace_id / SQL_project_id) used by the Agent Insights
+          read-only user's settings profile and row policies. Inert unless that user/profile is provisioned
+          (dev-runner with TOGGLE_OLLIE_ENABLED=true, or prod via OPIK-6846). No effect otherwise. -->
+diff --color -ru dl/opik/deployment/docker-compose/docker-compose.yaml out/opik-compose-x2/docker-compose.yaml
+--- dl/opik/deployment/docker-compose/docker-compose.yaml	2026-11-06 08:05:39.000000000 +0100
++++ out/opik-compose-x2/docker-compose.yaml	2026-11-06 16:26:25.427006588 +0100
+@@ -2,8 +2,8 @@
+ 
+ services:
+   mysql:
+-    image: mysql:8.4.2
+-    pull_policy: always
++    image: docker.io/library/mysql:8.4.2
++    pull_policy: never
+     hostname: mysql
+     environment:
+       MYSQL_ROOT_PASSWORD: opik
+@@ -16,11 +16,11 @@
+       interval: 1s
+       retries: 300
+     volumes:
+-      - mysql:/var/lib/mysql/:type=volume,source=~/opik/mysql
++      - mysql:/var/lib/mysql/
+ 
+   redis:
+-    image: redis:7.2.4-alpine3.19
+-    pull_policy: always
++    image: docker.io/library/redis:7.2.4-alpine3.19
++    pull_policy: never
+     hostname: redis
+     command: redis-server --requirepass opik
+     healthcheck:
+@@ -33,7 +33,7 @@
+       - redis-data:/data
+ 
+   clickhouse-init:
+-    image: alpine:latest
++    image: docker.io/library/alpine:latest
+     volumes:
+       - ./clickhouse_config:/clickhouse_config_files
+       - clickhouse-config:/config
+@@ -43,8 +43,8 @@
+         chown -R 1000:1000 /config
+       "
+   clickhouse:
+-    image: clickhouse/clickhouse-server:26.3.62.3-alpine
+-    pull_policy: always
++    image: docker.io/clickhouse/clickhouse-server:26.3.62.3-alpine
++    pull_policy: never
+     hostname: clickhouse
+     environment:
+       CLICKHOUSE_DB: opik
+@@ -54,8 +54,8 @@
+       # https://clickhouse.com/docs/en/operations/access-rights#enabling-access-control
+       CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+     volumes:
+-      - clickhouse:/var/lib/clickhouse/:type=volume,source=~/opik/clickhouse/data
+-      - clickhouse-server:/var/log/clickhouse-server/:type=volume,source=~/opik/clickhouse/logs
++      - clickhouse:/var/lib/clickhouse/
++      - clickhouse-server:/var/log/clickhouse-server/
+       - clickhouse-config:/etc/clickhouse-server/config.d
+       - ./clickhouse_config/users.d/enable_time_type.xml:/etc/clickhouse-server/users.d/enable_time_type.xml
+       - ./clickhouse_config/users.d/distributed_insert_queue.xml:/etc/clickhouse-server/users.d/distributed_insert_queue.xml
+@@ -75,8 +75,8 @@
+         condition: service_completed_successfully
+ 
+   zookeeper:
+-    image: zookeeper:3.9.4
+-    pull_policy: always
++    image: docker.io/library/zookeeper:3.9.4
++    pull_policy: never
+     hostname: zookeeper
+     user: root
+     entrypoint:
+@@ -115,7 +115,7 @@
+   # to write to the volume.
+   minio-init:
+     image: &minio-image docker.io/cloudpirates/image-minio:RELEASE.2025-10-15T17-29-55Z-hardened
+-    pull_policy: always
++    pull_policy: never
+     user: "0:0"
+     entrypoint: [ "/bin/sh", "-c" ]
+     command: [ "chown -R --from=0 1001:1001 /data || echo 'minio-init: could not re-own /data to 1001:1001; see the self-host troubleshooting guide' >&2" ]
+@@ -125,7 +125,7 @@
+ 
+   minio:
+     image: *minio-image
+-    pull_policy: always
++    pull_policy: never
+     depends_on:
+       minio-init:
+         condition: service_completed_successfully
+@@ -147,7 +147,7 @@
+   mc:
+     # reuses the MinIO image, which bundles the mc client at /usr/bin/mc; minio/mc is no longer anonymously pullable
+     image: *minio-image
+-    pull_policy: always
++    pull_policy: never
+     depends_on:
+       minio:
+         condition: service_healthy
+@@ -164,7 +164,7 @@
+ 
+   backend:
+     image: ghcr.io/comet-ml/opik/opik-backend:${OPIK_VERSION:-latest}
+-    pull_policy: ${OPIK_BACKEND_PULL_POLICY:-always}
++    pull_policy: ${OPIK_BACKEND_PULL_POLICY:-never}
+     profiles:
+       - backend
+       - opik
+@@ -175,7 +175,7 @@
+       args:
+         OPIK_VERSION: ${OPIK_VERSION:-latest}
+     hostname: backend
+-    command: [ "bash", "-c", "./run_db_migrations.sh && ./provision_agent_insights_readonly_user.sh && ./entrypoint.sh" ]
++    command: [ "bash", "-c", "until curl -sf http://clickhouse:8123/ping; do sleep 2; done; ./run_db_migrations.sh && ./provision_agent_insights_readonly_user.sh && ./entrypoint.sh" ]
+     environment:
+       # WARNING: Do not set OPIK_VERSION as env var here. It's a multi-stage build, so build and runtime values can differ.
+       DOCKER_BUILDKIT: 1
+@@ -286,8 +286,6 @@
+       CORS: ${CORS:-false}
+       ATTACHMENTS_STRIP_MIN_SIZE: ${ATTACHMENTS_STRIP_MIN_SIZE:-256000}
+       JACKSON_MAX_STRING_LENGTH: ${JACKSON_MAX_STRING_LENGTH:-104857600}
+-    ports:
+-      - "3003" # OpenAPI specification port
+     healthcheck:
+       test: [ "CMD", "curl", "-f", "http://localhost:8080/health-check" ]
+       interval: 1s
+@@ -309,7 +307,7 @@
+   python-backend:
+     image: ghcr.io/comet-ml/opik/opik-python-backend:${OPIK_VERSION:-latest}
+     # change to 'build' when developing python-backend
+-    pull_policy: ${PYTHON_BACKEND_PULL_POLICY:-always}
++    pull_policy: ${PYTHON_BACKEND_PULL_POLICY:-never}
+     profiles:
+       - backend
+       - opik
+@@ -365,7 +363,7 @@
+   # multi-arch CPU-only image built from source.
+   guardrails-backend:
+     image: ghcr.io/comet-ml/opik/opik-guardrails-backend:${OPIK_VERSION:-latest}
+-    pull_policy: ${OPIK_GUARDRAILS_BACKEND_PULL_POLICY:-always}
++    pull_policy: ${OPIK_GUARDRAILS_BACKEND_PULL_POLICY:-never}
+     profiles:
+       - guardrails
+     build:
+@@ -415,7 +413,7 @@
+ 
+   demo-data-generator:
+     image: ghcr.io/comet-ml/opik/opik-python-backend:${OPIK_VERSION:-latest}
+-    pull_policy: always
++    pull_policy: never
+     profiles:
+       - opik
+       - local-be-fe
+@@ -438,7 +436,7 @@
+ 
+   frontend:
+     image: ghcr.io/comet-ml/opik/opik-frontend:${OPIK_VERSION:-latest}
+-    pull_policy: ${OPIK_FRONTEND_PULL_POLICY:-always}
++    pull_policy: ${OPIK_FRONTEND_PULL_POLICY:-never}
+     profiles:
+       - opik
+       - local-be
+@@ -457,7 +455,7 @@
+       #   - type=local,dest=./.cache
+     hostname: frontend
+     ports:
+-      - "${NGINX_PORT:-5173}:${NGINX_PORT:-5173}" # Frontend server port (configurable via NGINX_PORT env var)
++      - "127.0.0.1:15173:5173" # Frontend server port (configurable via NGINX_PORT env var)
+     volumes:
+       - ./nginx_${OPIK_FRONTEND_FLAVOR:-default}_local.conf:/etc/nginx/templates/default.conf.template:ro
+     depends_on:
+diff --color -ru dl/opik/deployment/docker-compose/nginx_default_local.conf out/opik-compose-x2/nginx_default_local.conf
+--- dl/opik/deployment/docker-compose/nginx_default_local.conf	2026-11-06 08:05:39.000000000 +0100
++++ out/opik-compose-x2/nginx_default_local.conf	2026-11-06 11:35:59.934876295 +0100
+@@ -5,7 +5,7 @@
+ # Resolver allows nginx to re-resolve DNS periodically (every 30s)
+ # This allows nginx to start even if backend service is not yet available
+ # Docker's internal DNS resolver is typically at 127.0.0.11
+-resolver 127.0.0.11 valid=30s;
++resolver 10.89.3.1 valid=30s;
+ resolver_timeout 2s;
+ 
+ upstream backend {

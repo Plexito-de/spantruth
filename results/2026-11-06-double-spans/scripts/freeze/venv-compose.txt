@@ -1,0 +1,4 @@
+# Python 3.12.14 venv-compose
+podman-compose==1.6.0
+python-dotenv==1.2.4
+pyyaml==6.0.3
