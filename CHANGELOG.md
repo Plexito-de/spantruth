@@ -6,6 +6,10 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `openai/stream-helper` scenario for a stream consumed via `with_streaming_response.create`.
+
 ## [0.4.2] - 2026-11-06
 
 ### Fixed
