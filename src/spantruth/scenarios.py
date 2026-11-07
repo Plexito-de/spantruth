@@ -111,6 +111,25 @@ def _openai() -> list[Scenario]:
             tools=True,
         ),
         sc(
+            "stream-tool-call",
+            "Two parallel tool calls, streamed",
+            "the finish reason of a streamed tool-call response",
+            oa.chunks(
+                id="chatcmpl-wt-stools",
+                model=OPENAI_SERVED,
+                parts=(),
+                finish="tool_calls",
+                prompt=1553,
+                completion_tokens=173,
+                tool_calls=(
+                    ("call_wt_1", WEATHER[0], '{"city":"Paris"}'),
+                    ("call_wt_2", TIME[0], '{"zone":"Europe/Paris"}'),
+                ),
+            ),
+            tools=True,
+            stream=True,
+        ),
+        sc(
             "rate-limited",
             "HTTP 429",
             "a failed call recorded as a success",
@@ -275,6 +294,22 @@ def _anthropic() -> list[Scenario]:
                 tool_uses=(("toolu_wt_1", *WEATHER), ("toolu_wt_2", *TIME)),
             ),
             tools=True,
+        ),
+        sc(
+            "stream-tool-call",
+            "Two parallel tool uses, streamed",
+            "the finish reason of a streamed tool-call response",
+            an.events(
+                id="msg_wt_stools",
+                model=ANTHROPIC_SERVED,
+                parts=(),
+                stop="tool_use",
+                input_tokens=1619,
+                output_tokens=197,
+                tool_uses=(("toolu_wt_1", *WEATHER), ("toolu_wt_2", *TIME)),
+            ),
+            tools=True,
+            stream=True,
         ),
         sc(
             "rate-limited",
