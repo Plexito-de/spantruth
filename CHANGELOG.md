@@ -37,6 +37,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- `openai/stream-tool-call` and `anthropic/stream-tool-call` scenarios for parallel tool calls in a stream:
+  streamed deltas and `input_json_delta` chunks with finish reasons `tool_calls` and `tool_use`.
 - `anthropic/thinking` and `anthropic/stream-thinking` scenarios for Anthropic extended thinking:
   a response with thinking content blocks, non-streamed and streamed.
 - Ten named bug classes, `ST01` Ghost span to `ST10` Observer effect, on a new page

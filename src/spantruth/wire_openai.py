@@ -82,6 +82,7 @@ def chunks(
     reasoning: int = 0,
     drop_after: int | None = None,
     include_usage: bool = True,
+    tool_calls: tuple[tuple[str, str, str], ...] = (),
 ) -> Response:
     """A stream. With `include_usage`, as sent for `stream_options={"include_usage": True}`."""
 
@@ -101,7 +102,36 @@ def chunks(
             }
         )
 
-    events = [chunk({"role": "assistant", "content": "", "refusal": None})]
+    events = [chunk({"role": "assistant", "content": None if tool_calls else "", "refusal": None})]
+    if tool_calls:
+        for i, (call_id, name, args) in enumerate(tool_calls):
+            events.append(
+                chunk(
+                    {
+                        "tool_calls": [
+                            {
+                                "index": i,
+                                "id": call_id,
+                                "type": "function",
+                                "function": {"name": name, "arguments": ""},
+                            }
+                        ]
+                    }
+                )
+            )
+            if args:
+                events.append(
+                    chunk(
+                        {
+                            "tool_calls": [
+                                {
+                                    "index": i,
+                                    "function": {"arguments": args},
+                                }
+                            ]
+                        }
+                    )
+                )
     events += [chunk({"content": part}) for part in parts]
     events.append(chunk({}, finish))
     if include_usage:
