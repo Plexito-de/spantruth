@@ -188,6 +188,21 @@ class _Stream:
             raise
         self._call.end()
 
+    def parse(self) -> Any:
+        parsed = self._inner.parse()
+        if hasattr(parsed, "__await__"):
+
+            async def _aparse():
+                res = await parsed
+                if hasattr(res, "__aiter__"):
+                    return _Stream(res, self._call, self._on_event)
+                return res
+
+            return _aparse()
+        if hasattr(parsed, "__iter__"):
+            return _Stream(parsed, self._call, self._on_event)
+        return parsed
+
     def _closed(self) -> None:
         if "close-leaks-span" not in self._call.faults:
             self._call.end()

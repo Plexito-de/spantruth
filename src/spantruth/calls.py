@@ -131,6 +131,13 @@ def run(sc: Scenario, base_url: str, seen: Seen) -> None:
         client = openai.OpenAI(
             base_url=base_url, api_key="wt-test", max_retries=sc.retries, timeout=10
         )
+        if sc.entrypoint == "with_streaming_response":
+            with client.chat.completions.with_streaming_response.create(
+                **_openai_kwargs(sc)
+            ) as response:
+                stream = response.parse()
+                _read(stream, sc, seen, _openai_chunk)
+            return
         result, on_result, on_event = _openai_create(client, sc)
     else:
         import anthropic
@@ -165,6 +172,13 @@ async def _run_async(sc: Scenario, base_url: str, seen: Seen) -> None:
         client = openai.AsyncOpenAI(
             base_url=base_url, api_key="wt-test", max_retries=sc.retries, timeout=10
         )
+        if sc.entrypoint == "with_streaming_response":
+            async with client.chat.completions.with_streaming_response.create(
+                **_openai_kwargs(sc)
+            ) as response:
+                stream = await response.parse()
+                await _aread(stream, sc, seen, _openai_chunk)
+            return
         pending, on_result, on_event = _openai_create(client, sc)
         result = await pending
     else:
