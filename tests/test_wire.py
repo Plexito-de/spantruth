@@ -174,3 +174,11 @@ def test_anthropic_thinking_stays_inside_output_tokens(sid):
     assert t.output_tokens is not None and t.reasoning_tokens is not None
     assert t.output_tokens > t.reasoning_tokens
     assert t.cache_read_tokens is None and t.cache_write_tokens is None
+
+
+def test_stream_helper_truth():
+    sc = scenarios.get("openai/stream-helper")
+    assert sc.entrypoint == "with_streaming_response"
+    t = scenarios.truth(sc)
+    assert (t.input_tokens, t.output_tokens) == (2137, 313)
+    assert t.finish_reasons == ("stop",)

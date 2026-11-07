@@ -96,6 +96,7 @@ class Scenario:
     stream_usage: bool = True
     asynchronous: bool = False
     api: str = "chat"
+    entrypoint: str = "create"
     catches: str = ""
     tags: tuple[str, ...] = field(default_factory=tuple)
     responses: tuple[Response, ...] = ()

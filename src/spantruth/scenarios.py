@@ -162,6 +162,14 @@ def _openai() -> list[Scenario]:
             ),
             stream=True,
         ),
+        sc(
+            "stream-helper",
+            "Stream via with_streaming_response",
+            "nothing recorded when using SDK helper context managers",
+            oa.chunks(id="chatcmpl-wt-shelper", prompt=2137, completion_tokens=313, **stream),
+            stream=True,
+            entrypoint="with_streaming_response",
+        ),
     ]
 
 
