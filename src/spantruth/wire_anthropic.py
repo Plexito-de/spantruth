@@ -6,6 +6,8 @@ event with the `anthropic` SDK's own types, so a fixture the SDK would reject fa
 
 from __future__ import annotations
 
+import json
+
 from .model import Event, Response, Truth
 
 
@@ -83,6 +85,7 @@ def events(
     thinking_parts: tuple[str, ...] = (),
     signature: str | None = None,
     thinking_tokens: int = 0,
+    tool_uses: tuple[tuple[str, str, dict], ...] = (),
     drop_after: int | None = None,
     cumulative_delta: bool = False,
     error_after: int | None = None,
@@ -135,11 +138,35 @@ def events(
         stream.append(ev("content_block_stop", index=idx))
         idx += 1
 
-    stream.append(ev("content_block_start", index=idx, content_block={"type": "text", "text": ""}))
-    stream += [
-        ev("content_block_delta", index=idx, delta={"type": "text_delta", "text": p}) for p in parts
-    ]
-    stream.append(ev("content_block_stop", index=idx))
+    if parts or (not thinking_parts and not tool_uses):
+        stream.append(
+            ev("content_block_start", index=idx, content_block={"type": "text", "text": ""})
+        )
+        stream += [
+            ev("content_block_delta", index=idx, delta={"type": "text_delta", "text": p})
+            for p in parts
+        ]
+        stream.append(ev("content_block_stop", index=idx))
+        idx += 1
+
+    if tool_uses:
+        for tool_id, name, input_dict in tool_uses:
+            stream.append(
+                ev(
+                    "content_block_start",
+                    index=idx,
+                    content_block={"type": "tool_use", "id": tool_id, "name": name, "input": {}},
+                )
+            )
+            stream.append(
+                ev(
+                    "content_block_delta",
+                    index=idx,
+                    delta={"type": "input_json_delta", "partial_json": json.dumps(input_dict)},
+                )
+            )
+            stream.append(ev("content_block_stop", index=idx))
+            idx += 1
 
     delta_usage = (
         _usage(input_tokens, output_tokens, cache_read, cache_write, thinking=thinking_tokens)

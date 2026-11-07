@@ -77,6 +77,12 @@ def _openai_chunk(c: Any, seen: Seen) -> None:
     seen.response_id = c.id
     if c.choices and c.choices[0].delta.content:
         seen.text += c.choices[0].delta.content
+    if c.choices and c.choices[0].delta.tool_calls:
+        seen.text += "".join(
+            tc.function.name
+            for tc in c.choices[0].delta.tool_calls
+            if tc.function and tc.function.name
+        )
     if c.usage:
         seen.usage = c.usage.model_dump()
 

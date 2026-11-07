@@ -174,3 +174,18 @@ def test_anthropic_thinking_stays_inside_output_tokens(sid):
     assert t.output_tokens is not None and t.reasoning_tokens is not None
     assert t.output_tokens > t.reasoning_tokens
     assert t.cache_read_tokens is None and t.cache_write_tokens is None
+
+
+@pytest.mark.parametrize(
+    ("sid", "expected_finish", "expected_tokens"),
+    [
+        ("openai/stream-tool-call", ("tool_calls",), (1553, 173)),
+        ("anthropic/stream-tool-call", ("tool_use",), (1619, 197)),
+    ],
+)
+def test_stream_tool_calls_truth(sid, expected_finish, expected_tokens):
+    sc = scenarios.get(sid)
+    t = scenarios.truth(sc)
+    assert t.finish_reasons == expected_finish
+    assert (t.input_tokens, t.output_tokens) == expected_tokens
+    assert sc.tools and sc.stream
