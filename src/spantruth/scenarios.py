@@ -22,7 +22,14 @@ WEATHER = ("get_weather", {"city": "Paris"})
 TIME = ("get_time", {"zone": "Europe/Paris"})
 
 # Async variants run the same fixture through the async client.
-ASYNC_PATTERNS = ("basic", "stream", "stream-early-exit", "stream-dropped", "stream-error-event")
+ASYNC_PATTERNS = (
+    "basic",
+    "stream",
+    "stream-early-exit",
+    "stream-dropped",
+    "stream-error-event",
+    "stream-helper",
+)
 
 
 def _openai() -> list[Scenario]:
@@ -180,6 +187,14 @@ def _openai() -> list[Scenario]:
                 **stream,
             ),
             stream=True,
+        ),
+        sc(
+            "stream-helper",
+            "Stream via with_streaming_response",
+            "nothing recorded when using SDK helper context managers",
+            oa.chunks(id="chatcmpl-wt-shelper", prompt=2137, completion_tokens=313, **stream),
+            stream=True,
+            entrypoint="with_streaming_response",
         ),
     ]
 

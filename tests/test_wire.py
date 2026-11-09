@@ -3,12 +3,14 @@
 import json
 
 import anthropic.types
+import openai.resources.chat.completions as oc
 import openai.types.chat
 import openai.types.responses
 import pydantic
 import pytest
 
-from spantruth import scenarios
+from spantruth import calls, scenarios
+from spantruth.mockserver import MockServer
 from spantruth.model import Response
 
 ALL = list(scenarios.SCENARIOS.values())
@@ -189,3 +191,34 @@ def test_stream_tool_calls_truth(sid, expected_finish, expected_tokens):
     assert t.finish_reasons == expected_finish
     assert (t.input_tokens, t.output_tokens) == expected_tokens
     assert sc.tools and sc.stream
+
+
+@pytest.mark.parametrize("sid", ["openai/stream-helper", "openai/async-stream-helper"])
+def test_stream_helper_truth(sid):
+    sc = scenarios.get(sid)
+    assert sc.entrypoint == "with_streaming_response"
+    t = scenarios.truth(sc)
+    assert (t.input_tokens, t.output_tokens) == (2137, 313)
+    assert t.finish_reasons == ("stop",)
+
+
+@pytest.mark.parametrize(
+    ("sid", "target_cls"),
+    [
+        ("openai/stream-helper", oc.Completions),
+        ("openai/async-stream-helper", oc.AsyncCompletions),
+    ],
+)
+def test_stream_helper_goes_through_with_streaming_response(monkeypatch, sid, target_cls):
+    sc = scenarios.get(sid)
+    sent = []
+    real = target_cls.create
+
+    def spy(self, *args, **kwargs):
+        sent.append((kwargs.get("extra_headers") or {}).get("X-Stainless-Raw-Response"))
+        return real(self, *args, **kwargs)
+
+    monkeypatch.setattr(target_cls, "create", spy)
+    with MockServer() as mock:
+        calls.run(sc, mock.base_url(sc), calls.Seen())
+    assert sent == ["stream"]
