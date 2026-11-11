@@ -31,10 +31,28 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ github.ref_name }}
     steps:
-      - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
-        with:
-          generate_release_notes: true
+      - name: Create the release
+        run: gh release create "$TAG" --verify-tag --generate-notes --title "$TAG"
+      # GitHub has no API for the Marketplace listing: a person ticks "Publish this Action to the
+      # GitHub Marketplace" on each release, with 2FA. Without it the listing keeps showing the
+      # last version that was published there, so the release leaves an issue with the link.
+      - name: Ask for the Marketplace listing
+        run: |
+          body="GitHub has no API for this step, so it is done by hand on each release.
+
+          1. Open https://github.com/${GH_REPO}/releases/edit/${TAG}
+          2. Tick **Publish this Action to the GitHub Marketplace**.
+          3. Primary category **Testing**, second category **Monitoring**.
+          4. **Update release**, and confirm with 2FA.
+
+          Close this issue when https://github.com/marketplace/actions/spantruth shows \`${GH_REPO}@${TAG}\`."
+          gh issue create --title "Publish ${TAG} to the GitHub Marketplace" --body "$body" --assignee chrikrah
 
   pypi:
     needs: check
