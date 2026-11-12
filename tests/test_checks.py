@@ -1,5 +1,7 @@
 """Every verdict the checks can return, on hand-built records. No subprocess, no network."""
 
+import json
+
 import pytest
 
 from spantruth import scenarios
@@ -116,6 +118,43 @@ def test_openinference_names_are_read_and_reported():
     )
 
 
+def test_langfuse_names_are_read_and_reported():
+    sc = scenarios.get("openai/basic")
+    t = scenarios.truth(sc)
+    attrs = {
+        "langfuse.observation.type": "generation",
+        "langfuse.observation.model.name": t.response_model,
+        "langfuse.observation.usage_details": json.dumps(
+            {"prompt_tokens": 1187, "completion_tokens": 263}
+        ),
+    }
+    c = by_id(grade(sc, t, BASE, obs(), [span(attrs)]))
+    assert (
+        c["input_tokens"].verdict == "pass"
+        and c["input_tokens"].where == "langfuse.observation.usage_details[prompt_tokens]"
+    )
+    assert (
+        c["output_tokens"].verdict == "pass"
+        and c["output_tokens"].where == "langfuse.observation.usage_details[completion_tokens]"
+    )
+    assert c["response_model"].verdict == "pass"
+    assert c["request_model"].verdict == "n/a"
+    assert c["response_id"].verdict == "n/a"
+    assert c["finish_reasons"].verdict == "n/a"
+    assert c["cache_write_tokens"].verdict == "n/a"
+
+
+def test_langfuse_observation_model_name_accepts_request_model():
+    sc = scenarios.get("openai/basic")
+    t = scenarios.truth(sc)
+    attrs = {
+        "langfuse.observation.type": "generation",
+        "langfuse.observation.model.name": t.request_model,
+    }
+    c = by_id(grade(sc, t, BASE, obs(), [span(attrs)]))
+    assert c["response_model"].verdict == "pass"
+
+
 def test_span_that_never_ended_is_lost():
     sc = scenarios.get("openai/stream-early-exit")
     t = scenarios.truth(sc)
@@ -223,6 +262,36 @@ def test_fact_outside_openinference_conventions_is_not_graded():
     assert c["finish_reasons"].verdict == "missing"
 
 
+def test_fact_outside_langfuse_conventions_is_not_graded():
+    sc = scenarios.get("openai/basic")
+    t = scenarios.truth(sc)
+    attrs = {
+        "langfuse.observation.type": "generation",
+        "langfuse.observation.model.name": t.response_model,
+    }
+    c = by_id(grade(sc, t, BASE, obs(), [span(attrs)]))
+    assert c["response_id"].verdict == "n/a"
+    assert c["request_model"].verdict == "n/a"
+    assert c["finish_reasons"].verdict == "n/a"
+    assert c["cache_write_tokens"].verdict == "n/a"
+
+
+def test_lookup_follows_dotted_json_key():
+    usage = {
+        "prompt_tokens_details": {"cached_tokens": 4096},
+        "completion_tokens_details": {"reasoning_tokens": 1792},
+    }
+    attrs = {"langfuse.observation.usage_details": json.dumps(usage)}
+    assert lookup(attrs, "cache_read_tokens") == (
+        "langfuse.observation.usage_details[prompt_tokens_details.cached_tokens]",
+        4096,
+    )
+    assert lookup(attrs, "reasoning_tokens") == (
+        "langfuse.observation.usage_details[completion_tokens_details.reasoning_tokens]",
+        1792,
+    )
+
+
 def test_with_block_variant_exists():
     sc = scenarios.get("anthropic/stream-early-exit-with")
     assert sc.with_block and sc.read_events == 2
@@ -231,6 +300,16 @@ def test_with_block_variant_exists():
 def test_error_type_is_not_graded_on_openinference_spans():
     sc = scenarios.get("openai/rate-limited")
     attrs = {"llm.system": "openai", "llm.invocation_parameters": "{}"}
+    c = by_id(grade(sc, scenarios.truth(sc), BASE, obs(), [span(attrs, status="ERROR")]))
+    assert c["error.status"].verdict == "pass" and c["error.type"].verdict == "n/a"
+
+
+def test_error_type_is_not_graded_on_langfuse_spans():
+    sc = scenarios.get("openai/rate-limited")
+    attrs = {
+        "langfuse.observation.type": "generation",
+        "langfuse.observation.model.name": "gpt-5-mini",
+    }
     c = by_id(grade(sc, scenarios.truth(sc), BASE, obs(), [span(attrs, status="ERROR")]))
     assert c["error.status"].verdict == "pass" and c["error.type"].verdict == "n/a"
 

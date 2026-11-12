@@ -8,6 +8,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- Langfuse Python SDK (`langfuse.openai`) as a subject, reading its native `langfuse.observation.*`
+  attributes.
 - `openai/stream-helper` and `openai/async-stream-helper` scenarios for a stream consumed via
   `with_streaming_response.create`.
 
