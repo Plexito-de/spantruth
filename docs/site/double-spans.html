@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Double spans</title>
+<meta name="description" content="Since anthropic 1.14.0 the Python SDK traces itself by default. With an instrumentation library on top, Phoenix and Opik can show one call twice. Your invoice does not change. How to check and what to do.">
+<meta property="og:title" content="Your LLM dashboard may count Anthropic costs twice">
+<meta property="og:description" content="One Claude call to a local stub, $0.006 at list price. With OpenLLMetry or the OpenTelemetry GenAI instrumentation, Phoenix and Opik totals came to $0.012. How to check and what to do.">
+<meta property="og:image" content="https://raw.githubusercontent.com/Plexito-de/spantruth/main/docs/assets/double-spans-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%231a6b37'/%3E%3Cpath d='M4 8l3 3 5-6' stroke='white' stroke-width='2' fill='none'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#fbfbf9;--fg:#1b1d21;--muted:#545b66;--line:#e2e4e8;--card:#fff;--bad:#9a1f27;--ok:#1a6b37;--link:#1a56b0}
+@media (prefers-color-scheme:dark){:root{--bg:#121417;--fg:#e8eaed;--muted:#a7aeb8;--line:#2a2e35;--card:#181b20;--bad:#ff9aa0;--ok:#7fd49b;--link:#8ab4ff}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:720px;margin:0 auto;padding:40px 16px 72px}
+h1{font-size:34px;line-height:1.2;margin:0 0 10px}h2{font-size:22px;margin:36px 0 10px}
+p{margin:12px 0}a{color:var(--link)}.muted{color:var(--muted);font-size:15px}code{font-size:15px}
+pre{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow-x:auto;font-size:14px;line-height:1.5}
+.wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--card);margin:14px 0}
+table{border-collapse:collapse;width:100%;font-size:15px}th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+thead th{color:var(--muted);font-weight:600;font-size:14px}li{margin:6px 0}tbody th{font-weight:400}tr:last-child td,tr:last-child th{border-bottom:0}
+.bad{color:var(--bad);font-weight:600}.ok{color:var(--ok);font-weight:600}
+</style></head>
+<body><main>
+<h1>Your LLM dashboard may count Anthropic costs twice</h1>
+<p class="muted">By Chris Krah. Plexito, my company, maintains spantruth, the tool this page recommends. Measured on November 6, 2026 · <a href="index.html">the report</a> · <a href="https://github.com/Plexito-de/spantruth">source</a></p>
+
+<p>I sent one Claude call to a local stub that returned 1,000 input tokens and 200 output tokens. At $3 and $15 per million tokens, that call costs $0.006. With OpenLLMetry or the OpenTelemetry GenAI instrumentation, the totals of self-hosted Phoenix and Opik came to <span class="bad">$0.012</span> for it.</p>
+
+<p>Your invoice from Anthropic does not change, and no call is sent twice. The wrong number is the one your observability tool shows, and no error tells you. That number is what budget alerts, cost per customer and model comparisons read.</p>
+
+<p>A span is a record of one operation. Since version 1.14.0, released in October 2026, the Anthropic Python SDK writes its own span for each call by default, named <code>anthropic.messages.create</code>, with token counts on it. It does this when your app has registered a global OpenTelemetry tracer provider, directly or through a setup call such as <code>Traceloop.init</code>. If an instrumentation library also writes a span with token counts, two spans now report the same call, and a backend that adds them up shows it twice.</p>
+
+<p>This is documented. <a href="https://platform.claude.com/docs/en/manage-claude/opentelemetry/sdk">Anthropic's SDK tracing docs</a> say: "If another library also traces the SDK, turn off one of the two." Each piece behaves reasonably alone. The default just means that an app that adds a library and does not read that line gets the overlap.</p>
+
+<h2>Check your project</h2>
+<p>Search all spans, not only root spans, for <code>anthropic.messages.create</code>. If they appear next to the spans of your library, both with token counts, you have the duplicate.</p>
+<ul>
+<li><strong>Clear the default filter.</strong> On the GenAI and older OpenInference rows below, the SDK's span is a child span. In Phoenix, replace the default <code>parent_id is None</code> filter on the Spans tab. In Opik, use the Spans tab under Logs.</li>
+<li><strong>Do not rely on one trace.</strong> With OpenLLMetry and no parent span in your app, the two spans land in two separate traces, and each trace looks clean.</li>
+<li><strong>Anthropic's API tracing adds a third source.</strong> If you turned it on, its spans have the same name and also carry usage, so the switch below can leave two counts. Anthropic's docs tell them apart by span kind (<code>CLIENT</code> for the SDK, <code>SERVER</code> for the API) or by <code>service.name</code> (<code>claude-platform</code> for the API), and their rule is to <a href="https://platform.claude.com/docs/en/manage-claude/opentelemetry#count-tokens">sum one source per request</a>. Phoenix does not keep the OpenTelemetry kind, so <code>span_kind == 'CLIENT'</code> returns nothing there. An empty result does not mean you are clean.</li>
+</ul>
+<p>A second check is to compare tokens in your tool with <a href="https://platform.claude.com/docs/en/manage-claude/usage-cost-analytics-api">Anthropic's usage data</a>, for the same traffic and a day that ended more than 24 hours ago, because the data can lag that long. It needs an Admin API key, which individual accounts do not have. A ratio near 2 is a reason to look, not proof: confirm it with one controlled call.</p>
+<p>To check the versions in a Python project, run this in its directory. It needs no API key, and it does not run your code:</p>
+<pre><code>uvx spantruth@0.4.2 doctor</code></pre>
+<p>It reads your lock file, or your requirements if you have no lock file, and tests the libraries it recognizes against a local fake provider. It installs those versions in its own environments, so it needs network access. A clean result does not clear your dashboard: it knows nothing about your backend, it cannot see settings in your code, and it does not cover paths such as LangChain with Langfuse's handler, or JavaScript projects. It also follows <code>ANTHROPIC_OPEN_TELEMETRY</code> in the shell you run it from, so run it with that variable unset.</p>
+
+<h2>What to do</h2>
+<p>Let one span per call report usage. The switch is <code>ANTHROPIC_OPEN_TELEMETRY=false</code>, set before the client is created, or <code>open_telemetry=False</code> on the client. A client created earlier, or given its own <code>open_telemetry</code> option, ignores the variable. Check with a new call in a clean project, because this does not repair stored data.</p>
+<ul>
+<li><strong>OpenLLMetry</strong> (<code>traceloop-sdk</code>, <code>opentelemetry-instrumentation-anthropic</code>): no release handles this, as of November 12, so use the switch. I filed it as <a href="https://github.com/traceloop/openllmetry/issues/4700">openllmetry#4700</a>. It has a cost: until <a href="https://github.com/traceloop/openllmetry/issues/4536">openllmetry#4536</a>, reported by @armanunix, and <a href="https://github.com/traceloop/openllmetry/issues/4643">#4643</a>, which I filed, are fixed, the SDK's span is the only record of a stream that your app leaves early or of a sync stream that fails, so those calls leave no span. If you need that record, the other choice is to remove the library and keep the SDK's span, which loses the library's attributes.</li>
+<li><strong>OpenTelemetry GenAI instrumentation</strong> (<code>opentelemetry-instrumentation-genai-anthropic</code>): its README warns about the duplicate. On anthropic 2.x it says to prefer the SDK's tracing and uninstall the package, or to keep the package, with its metrics and log events, and use the switch.</li>
+<li><strong>OpenInference</strong> (<code>openinference-instrumentation-anthropic</code>): upgrade to 3.1.1 or later, which suppresses the SDK's span for a call it traces. On Opik this shows no cost at all, because Opik maps no provider for OpenInference's span. The open pull request <a href="https://github.com/comet-ml/opik/pull/8141">opik#8141</a> maps it. There, the SDK's span alone, with OpenInference removed, gave the right cost on a plain call, without OpenInference's attributes.</li>
+<li><strong>Anything else</strong>, such as LangChain or Langfuse: the switch applies to the SDK's span. I did not measure these. <a href="https://github.com/langfuse/langfuse/issues/18978">langfuse#18978</a> and <a href="https://github.com/traceroot-ai/traceroot-py/issues/226">traceroot-py#226</a> report the same doubling there.</li>
+</ul>
+
+<h2>What was measured</h2>
+<p>One sync, non-streaming call to the stub, anthropic 2.4.0, the SDK's tracing at its default, a global tracer provider, and self-hosted backends receiving OTLP directly. The table shows what each backend's project pages display, with the exact values from their tooltips. The expected result is 1,200 tokens and $0.006.</p>
+<div class="wrap"><table>
+<thead><tr><th scope="col">Library</th><th scope="col">Phoenix 21.0.0</th><th scope="col">Opik 2.2.143</th></tr></thead>
+<tbody>
+<tr><th scope="row">OpenLLMetry 0.62.4</th><td><span class="bad">Two traces, each 1,200 and $0.006. Metrics: 2,000 prompt and 400 completion tokens</span></td><td><span class="bad">Two traces, each 1,200 and $0.006. Total cost: $0.012</span></td></tr>
+<tr><th scope="row">OpenTelemetry GenAI instrumentation 1.3b0</th><td><span class="bad">One trace: 2,400, $0.012</span></td><td><span class="bad">One trace: 2,400, $0.012</span></td></tr>
+<tr><th scope="row">OpenInference 3.1.0</th><td><span class="bad">One trace: 2,400, $0.012</span></td><td>One trace: 1,200, $0.006. Two spans, and only the SDK's is priced</td></tr>
+<tr><th scope="row">OpenInference 3.3.0</th><td><span class="ok">One trace: 1,200, $0.006</span></td><td>One trace, no tokens or cost in the tables</td></tr>
+<tr><th scope="row">OpenLLMetry or GenAI instrumentation, with the switch</th><td><span class="ok">One trace: 1,200, $0.006</span></td><td><span class="ok">One trace: 1,200, $0.006</span></td></tr>
+</tbody></table></div>
+<p class="muted">The pages round to <code>$0.01</code> and <code>&lt;$0.01</code>, and the tooltips show the values above. For OpenLLMetry, Phoenix's Traces tab shows only the two rows. The Total Cost stat on its Spans tab shows <code>$0.01</code>, and the project API returns <code>0.012</code>. With the GenAI and OpenInference 3.1.0 rows, that stat counts root spans only and shows <code>&lt;$0.01</code>, while the traces table, the trace view and the project API show $0.012. I filed the token and cost mismatch as <a href="https://github.com/Arize-ai/phoenix/issues/17856">phoenix#17856</a>. I took screenshots of OpenLLMetry with the switch, not of the GenAI row, which comes from the APIs, as does OpenInference 3.3.0 on Phoenix. On Phoenix, the GraphQL field <code>tokenCountTotal</code> says 1,200 for the GenAI and OpenInference 3.1.0 rows, while the traces table and the metrics show 2,400.</p>
+
+<p>Changing the setup moves the details, not the result:</p>
+<ul>
+<li><strong>With a parent span in the app,</strong> all the spans share one trace, and the totals stay the same.</li>
+<li><strong>With one streamed call,</strong> the doubling is the same, and OpenLLMetry adds one more token of its own (<a href="https://github.com/traceloop/openllmetry/pull/4377">openllmetry#4377</a>).</li>
+<li><strong>With cache tokens,</strong> it is about 1.9x, not exactly 2x. The same call with 4,000 cache reads and 800 cache writes added costs $0.0102 at list price, and showed $0.0198 with OpenLLMetry and $0.0192 with the GenAI instrumentation. The SDK's span alone, and the GenAI instrumentation with the switch, showed $0.0096, because neither backend prices <code>cache_write.input_tokens</code> as a cache write.</li>
+<li><strong>At the latest versions,</strong> anthropic 2.6.0, OpenLLMetry 0.63.0 and OpenInference 3.3.1, a plain call gives the same results. On Opik that comes from the API, with and without the switch, and OpenInference still has no cost. I read Opik's web pages only at the versions in the table.</li>
+</ul>
+<p>I did not measure a real API call, async calls, retries, a stream that fails or ends early, each library's quickstart, Anthropic's API tracing, other SDK languages, cloud clients such as Vertex or Bedrock, or any other backend. The backends' prices are their own, and they match Anthropic's list price for Sonnet 4.5, the model in the test. <a href="https://github.com/Plexito-de/spantruth/tree/main/results/2026-11-06-double-spans">The raw responses, the screenshots and the steps to reproduce this are in the repository.</a></p>
+
+<h2>Who found it and who fixed it</h2>
+<ul>
+<li>@rvndbalaji reported doubled dashboards on October 16 in <a href="https://github.com/langfuse/langfuse/issues/18978">langfuse#18978</a>, from the same SDK span, with LangChain and Langfuse's callback handler: "Cost and token dashboards show about 2x."</li>
+<li>@PabloPardoGarcia reported it for OpenInference in <a href="https://github.com/Arize-ai/openinference/issues/4119">openinference#4119</a> and fixed it in <a href="https://github.com/Arize-ai/openinference/pull/4121">#4121</a>, which @caroger reviewed and extended.</li>
+<li>@lmolkova opened <a href="https://github.com/open-telemetry/opentelemetry-python-genai/issues/971">opentelemetry-python-genai#971</a> with an analysis of the SDK's spans. The issue was open on November 12, and the 1.3b0 README documents the duplicate.</li>
+</ul>
+
+<h2>This is one of ten</h2>
+<p>A double span is one way that LLM telemetry goes wrong with nothing failing. A span that never ends makes the call disappear. A stream that drops its connection can count as a success. A cached token can vanish from your input count. spantruth tests those paths for each library every night, and compares each value with what the provider sent. <a href="bugs.html">Here are the ten bug classes</a>, and <a href="index.html">here is the report</a>. The report grades each library alone, with the SDK's tracing off, so your library's row will not show this. The row "OpenTelemetry GenAI instrumentation, with the Anthropic SDK's own tracing left on" does.</p>
+
+<p>If your numbers are doubled and your setup is not in the table, or if a finding is unfair to your library, <a href="https://github.com/Plexito-de/spantruth/issues">open an issue</a> with your versions.</p>
+</main></body></html>
