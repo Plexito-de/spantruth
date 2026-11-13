@@ -9,7 +9,14 @@ import json
 from dataclasses import asdict, dataclass
 from typing import Any
 
-from .conventions import LLM_MARKERS, defined_for, lookup, openinference_only, same_finish
+from .conventions import (
+    LLM_MARKERS,
+    defined_for,
+    langfuse_only,
+    lookup,
+    openinference_only,
+    same_finish,
+)
 from .model import Scenario, Truth
 from .receiver import SpanRecord
 from .rules import RULES
@@ -121,7 +128,11 @@ def _value(fact: str, expected: Any, found: list[tuple[SpanRecord, str, Any]], t
             if fact in TOKENS
             else v == expected
         )
-        if not ok and fact == "response_model" and name == "llm.model_name":
+        if (
+            not ok
+            and fact == "response_model"
+            and name in {"llm.model_name", "langfuse.observation.model.name"}
+        ):
             ok = v == t.request_model  # this name does not separate request and response model
         if not ok:
             detail = _formula(fact, v, t) if fact in TOKENS and isinstance(v, int) else ""
@@ -184,6 +195,14 @@ def grade(
                     "error.type",
                     "n/a",
                     detail="OpenInference records errors as span status and events",
+                )
+            )
+        elif all(langfuse_only(s.attributes) for s in llm):
+            checks.append(
+                Check(
+                    "error.type",
+                    "n/a",
+                    detail="Langfuse records errors as span status and level",
                 )
             )
         else:

@@ -75,6 +75,17 @@ def test_openlit_is_pinned_and_tracked():
     assert "openlit==1.45.0" not in latest
 
 
+def test_langfuse_is_pinned_and_tracked():
+    lib = subjects.load("langfuse")
+    assert lib.title == "Langfuse Python SDK"
+    assert lib.providers == ("openai",)
+    assert lib.homepage == "https://github.com/langfuse/langfuse-python"
+    assert "langfuse==5.2.0" in subjects.requirements(lib, latest=False)
+    latest = subjects.requirements(lib, latest=True)
+    assert "langfuse" in latest
+    assert "langfuse==5.2.0" not in latest
+
+
 def test_an_override_for_a_package_nobody_installs_is_refused(capsys):
     code = cli.main(["run", "--subject", "control-honest", "--with", PR_HEAD, "--out", "/dev/null"])
     assert code == 2

@@ -23,6 +23,8 @@ class Fact:
     json: tuple[tuple[str, str], ...] = ()
     # False when the OpenInference conventions define no attribute for this fact.
     in_openinference: bool = True
+    # False when the Langfuse conventions define no attribute for this fact.
+    in_langfuse: bool = True
 
     @property
     def names(self) -> tuple[str, ...]:
@@ -30,18 +32,29 @@ class Fact:
 
 
 FACTS: dict[str, Fact] = {
-    "provider": Fact("gen_ai.provider.name", ("gen_ai.system", "llm.provider", "llm.system")),
+    "provider": Fact(
+        "gen_ai.provider.name",
+        ("gen_ai.system", "llm.provider", "llm.system"),
+        in_langfuse=False,
+    ),
     "request_model": Fact(
         "gen_ai.request.model",
         ("llm.request.model_name",),
         json=(("llm.invocation_parameters", "model"),),
+        in_langfuse=False,
     ),
-    "response_model": Fact("gen_ai.response.model", ("llm.response.model_name", "llm.model_name")),
-    "response_id": Fact("gen_ai.response.id", in_openinference=False),
-    "finish_reasons": Fact("gen_ai.response.finish_reasons", ("llm.finish_reason",)),
+    "response_model": Fact(
+        "gen_ai.response.model",
+        ("llm.response.model_name", "llm.model_name", "langfuse.observation.model.name"),
+    ),
+    "response_id": Fact("gen_ai.response.id", in_openinference=False, in_langfuse=False),
+    "finish_reasons": Fact(
+        "gen_ai.response.finish_reasons", ("llm.finish_reason",), in_langfuse=False
+    ),
     "input_tokens": Fact(
         "gen_ai.usage.input_tokens",
         ("gen_ai.usage.prompt_tokens", "llm.usage.prompt_tokens", "llm.token_count.prompt"),
+        json=(("langfuse.observation.usage_details", "prompt_tokens"),),
     ),
     "output_tokens": Fact(
         "gen_ai.usage.output_tokens",
@@ -50,6 +63,7 @@ FACTS: dict[str, Fact] = {
             "llm.usage.completion_tokens",
             "llm.token_count.completion",
         ),
+        json=(("langfuse.observation.usage_details", "completion_tokens"),),
     ),
     "cache_read_tokens": Fact(
         "gen_ai.usage.cache_read.input_tokens",
@@ -58,6 +72,7 @@ FACTS: dict[str, Fact] = {
             "gen_ai.usage.input_tokens.cached",  # Sentry
             "llm.token_count.prompt_details.cache_read",
         ),
+        json=(("langfuse.observation.usage_details", "prompt_tokens_details.cached_tokens"),),
     ),
     "cache_write_tokens": Fact(
         "gen_ai.usage.cache_write.input_tokens",
@@ -68,6 +83,7 @@ FACTS: dict[str, Fact] = {
             "gen_ai.usage.cache_write_input_tokens",  # ddtrace
             "llm.token_count.prompt_details.cache_write",
         ),
+        in_langfuse=False,
     ),
     "reasoning_tokens": Fact(
         "gen_ai.usage.reasoning.output_tokens",
@@ -77,13 +93,16 @@ FACTS: dict[str, Fact] = {
             "gen_ai.usage.reasoning_output_tokens",  # ddtrace
             "llm.token_count.completion_details.reasoning",
         ),
+        json=(
+            ("langfuse.observation.usage_details", "completion_tokens_details.reasoning_tokens"),
+        ),
     ),
 }
 
 # Facts that identify a span as an LLM call. The driver's own span carries none of them.
 LLM_MARKERS = (
     frozenset(name for fact in FACTS.values() for name in fact.names)
-    | {"gen_ai.operation.name"}
+    | {"gen_ai.operation.name", "langfuse.observation.type"}
     | {a for fact in FACTS.values() for a, _ in fact.json}
 )
 
@@ -104,9 +123,20 @@ def openinference_only(attributes: dict[str, Any]) -> bool:
     )
 
 
+def langfuse_only(attributes: dict[str, Any]) -> bool:
+    keys = attributes.keys()
+    return any(k.startswith("langfuse.") for k in keys) and not any(
+        k.startswith("gen_ai.") for k in keys
+    )
+
+
 def defined_for(attributes: dict[str, Any], fact: str) -> bool:
-    """False when the span follows only OpenInference names and they have no name for `fact`."""
-    return FACTS[fact].in_openinference or not openinference_only(attributes)
+    """False when the span follows only OpenInference or Langfuse and has no name for `fact`."""
+    if openinference_only(attributes):
+        return FACTS[fact].in_openinference
+    if langfuse_only(attributes):
+        return FACTS[fact].in_langfuse
+    return True
 
 
 def lookup(attributes: dict[str, Any], fact: str) -> tuple[str, Any] | None:
@@ -122,8 +152,10 @@ def lookup(attributes: dict[str, Any], fact: str) -> tuple[str, Any] | None:
                 parsed = json.loads(raw)
             except ValueError:
                 continue
-            if isinstance(parsed, dict) and parsed.get(key) is not None:
-                return f"{name}[{key}]", parsed[key]
+            for part in key.split("."):
+                parsed = parsed.get(part) if isinstance(parsed, dict) else None
+            if parsed is not None:
+                return f"{name}[{key}]", parsed
     return None
 
 
