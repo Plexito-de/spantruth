@@ -50,3 +50,11 @@ check = "span.ended"
 status = "reported"
 url = "https://github.com/traceloop/openllmetry/issues/4643"
 note = "The async stream ends its span with status ERROR, but without error.type."
+
+[[issue]]
+subject = "langfuse"
+scenarios = ["openai/stream-dropped", "openai/async-stream-dropped", "openai/responses-stream-missing-finish-abort"]
+check = "error.status"
+status = "reported"
+url = "https://github.com/langfuse/langfuse-python/issues/2039"
+note = "traced_iterator finalizes in finally without level ERROR, so the span status stays UNSET. Fix proposed in https://github.com/langfuse/langfuse-python/pull/2056, which turns all three cells green."
