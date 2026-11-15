@@ -184,3 +184,69 @@ def test_a_ghost_span_figure_needs_the_ghost_check():
     checks = [check("span.ended", "lost"), check("output_tokens", "wrong", 419, 420)]
     assert impact.class_cost(wire, checks, "ST01").percent == -100
     assert impact.class_cost(wire, checks, "ST04").percent < 1
+
+
+def test_cost_prices_one_hour_writes_at_their_own_rate():
+    wire = truth(
+        input_tokens=6288,
+        output_tokens=389,
+        cache_read_tokens=2861,
+        cache_write_tokens=2120,
+        cache_write_long_tokens=1663,
+    )
+    checks = [
+        check("input_tokens", "pass", 6288, 6288),
+        check("output_tokens", "pass", 389, 389),
+        check("cache_read_tokens", "pass", 2861, 2861),
+        check("cache_write_tokens", "pass", 2120, 2120),
+    ]
+    result = impact.cell_cost(wire, checks)
+    # 1307 uncached at $2, 2861 read at $0.10, 457 written for 5 minutes at $2.50,
+    # 1663 written for 1 hour at $4, 389 output at $10, per million.
+    assert result.real == pytest.approx(
+        (1307 * 2 + 2861 * 0.10 + 457 * 2.50 + 1663 * 4 + 389 * 10) / 1_000_000
+    )
+    assert result.percent == 0
+
+
+def test_a_missing_write_loses_its_one_hour_price():
+    wire = truth(
+        input_tokens=6288,
+        output_tokens=389,
+        cache_read_tokens=2861,
+        cache_write_tokens=2120,
+        cache_write_long_tokens=1663,
+    )
+    checks = [
+        check("input_tokens", "pass", 6288, 6288),
+        check("output_tokens", "pass", 389, 389),
+        check("cache_read_tokens", "pass", 2861, 2861),
+        check("cache_write_tokens", "missing", 2120),
+    ]
+    result = impact.cell_cost(wire, checks)
+    # The dashboard prices the 2120 written tokens as uncached input at $2.
+    lost = 457 * (2.50 - 2) + 1663 * (4 - 2)
+    assert result.real - result.reported == pytest.approx(lost / 1_000_000)
+
+
+def test_a_wrong_write_count_keeps_the_wire_share_of_one_hour_writes():
+    wire = truth(
+        input_tokens=6288,
+        output_tokens=389,
+        cache_write_tokens=2120,
+        cache_write_long_tokens=1060,
+    )
+    checks = [
+        check("input_tokens", "pass", 6288, 6288),
+        check("output_tokens", "pass", 389, 389),
+        check("cache_write_tokens", "wrong", 2120, 4240),
+    ]
+    # Twice the writes, half of them for 1 hour: 2120 at $2.50 and 2120 at $4. That leaves 2048
+    # uncached at $2.
+    shown = (2048 * 2 + 2120 * 2.50 + 2120 * 4 + 389 * 10) / 1_000_000
+    assert impact.cell_cost(wire, checks).reported == pytest.approx(shown)
+
+
+def test_every_model_has_a_one_hour_write_price_at_least_the_five_minute_one():
+    for price in impact.load_prices().values():
+        assert price.cache_write_long >= price.cache_write

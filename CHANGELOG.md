@@ -12,6 +12,19 @@ All notable changes to this project are documented here. The format follows
   attributes.
 - `openai/stream-helper` and `openai/async-stream-helper` scenarios for a stream consumed via
   `with_streaming_response.create`.
+- `anthropic/cache-1h` and `anthropic/stream-cache-1h` scenarios for a prompt-cache write with a
+  1-hour part and a 5-minute part. The response carries the `cache_creation` breakdown, so a
+  library that adds the breakdown to the total, or reports one part alone, shows a wrong count.
+  The report names that arithmetic.
+
+### Changed
+
+- The cost figure prices a 1-hour cache write at its own rate (`cache_write_long` in `prices.toml`,
+  $4.00 per million tokens for Claude Sonnet 5.5). It used the 5-minute rate for every cache
+  write. No scenario sent a 1-hour write before, so no published figure changes.
+- The test suite fails on a built fixture with a field that the provider's SDK types do not
+  declare. The SDK types accept an unknown field, so such a fixture parsed before.
+- Prices checked against both pricing pages on 2026-11-15.
 
 ## [0.4.2] - 2026-11-06
 

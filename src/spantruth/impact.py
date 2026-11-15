@@ -25,7 +25,8 @@ class Price:
     source: str
     input: float
     cache_read: float
-    cache_write: float
+    cache_write: float  # a write the cache keeps for its default lifetime: 5 minutes at Anthropic
+    cache_write_long: float  # a write the cache keeps for the long lifetime: 1 hour at Anthropic
     output: float
 
 
@@ -54,14 +55,31 @@ def _number(value: Any) -> int | float:
     return value if is_number else 0
 
 
-def _cost(price: Price, input_: float, output: float, read: float, write: float) -> float:
+def _cost(
+    price: Price, input_: float, output: float, read: float, write: float, long_share: float
+) -> float:
+    """`long_share` is the part of the cache writes, from 0 to 1, with the long lifetime."""
     uncached = max(input_ - read - write, 0)
+    long_write = write * long_share
     return (
         uncached * price.input
         + read * price.cache_read
-        + write * price.cache_write
+        + (write - long_write) * price.cache_write
+        + long_write * price.cache_write_long
         + output * price.output
     ) / MILLION
+
+
+def _long_share(truth: Mapping[str, Any]) -> float:
+    """The part of the cache writes on the wire with the long lifetime, from 0 to 1.
+
+    No span attribute separates a 1-hour write from a 5-minute one. So the reported figure gives
+    the writes on the span the same share, and a correct count shows the real cost. This is an
+    assumption for a wrong count: a span that reports one part alone is priced at the mix of both.
+    A truth with a long part above the total is not a real response, and counts as all long.
+    """
+    write = truth.get("cache_write_tokens") or 0
+    return min((truth.get("cache_write_long_tokens") or 0) / write, 1.0) if write else 0.0
 
 
 def cell_cost(
@@ -78,6 +96,7 @@ def cell_cost(
         return None
     by_id = {c["id"]: c for c in checks}
     known = truth.get("input_tokens") is not None and truth.get("output_tokens") is not None
+    long_share = _long_share(truth)
     real = (
         _cost(
             price,
@@ -85,6 +104,7 @@ def cell_cost(
             truth["output_tokens"],
             truth.get("cache_read_tokens") or 0,
             truth.get("cache_write_tokens") or 0,
+            long_share,
         )
         if known
         else None
@@ -111,6 +131,7 @@ def cell_cost(
         reported("output_tokens"),
         reported("cache_read_tokens"),
         reported("cache_write_tokens"),
+        long_share,
     ) * max(copies, 1)
     return CellCost(real, shown, round((shown - real) / real * 100, 1))
 

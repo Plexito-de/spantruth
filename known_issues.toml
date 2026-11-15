@@ -5,7 +5,7 @@
 
 [[issue]]
 subject = "openllmetry"
-scenarios = ["anthropic/stream", "anthropic/async-stream", "anthropic/stream-cache-hit", "anthropic/stream-cache-cumulative"]
+scenarios = ["anthropic/stream", "anthropic/async-stream", "anthropic/stream-cache-hit", "anthropic/stream-cache-cumulative", "anthropic/stream-cache-1h"]
 check = "output_tokens"
 status = "reported"
 url = "https://github.com/traceloop/openllmetry/pull/4377"

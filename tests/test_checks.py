@@ -5,8 +5,9 @@ import json
 import pytest
 
 from spantruth import scenarios
-from spantruth.checks import cell_verdict, grade
+from spantruth.checks import _formula, cell_verdict, grade
 from spantruth.conventions import lookup
+from spantruth.model import Truth
 from spantruth.receiver import SpanRecord
 
 TRACE, PARENT = "a" * 32, "b" * 16
@@ -321,3 +322,58 @@ def test_finish_reasons_as_a_json_string_are_wrong_and_say_so():
     c = by_id(grade(sc, t, BASE, obs(), [span(attrs)]))["finish_reasons"]
     assert c.verdict == "wrong"
     assert "JSON string" in c.detail and "string array" in c.detail
+
+
+def test_one_hour_cache_writes_left_out_is_named():
+    sc = scenarios.get("anthropic/cache-1h")
+    t, attrs = honest(sc.id)
+    long_write = t.cache_write_long_tokens
+    attrs["gen_ai.usage.cache_creation.input_tokens"] = t.cache_write_tokens - long_write
+    attrs["gen_ai.usage.input_tokens"] = t.input_tokens - long_write
+    checks = by_id(grade(sc, t, BASE, obs(), [span(attrs)]))
+    assert checks["cache_write_tokens"].detail == "1-hour cache writes left out"
+    assert checks["input_tokens"].detail == "1-hour cache writes left out"
+
+
+def test_ttl_breakdown_added_to_cache_writes_is_named():
+    sc = scenarios.get("anthropic/cache-1h")
+    t, attrs = honest(sc.id)
+    attrs["gen_ai.usage.cache_creation.input_tokens"] = 2 * t.cache_write_tokens
+    c = by_id(grade(sc, t, BASE, obs(), [span(attrs)]))["cache_write_tokens"]
+    assert c.verdict == "wrong" and c.detail == "cache writes counted twice"
+
+
+def test_five_minute_cache_writes_left_out_is_named():
+    sc = scenarios.get("anthropic/cache-1h")
+    t, attrs = honest(sc.id)
+    short_write = t.cache_write_tokens - t.cache_write_long_tokens
+    attrs["gen_ai.usage.cache_creation.input_tokens"] = t.cache_write_long_tokens
+    attrs["gen_ai.usage.input_tokens"] = t.input_tokens - short_write
+    checks = by_id(grade(sc, t, BASE, obs(), [span(attrs)]))
+    assert checks["cache_write_tokens"].detail == "5-minute cache writes left out"
+    assert checks["input_tokens"].detail == "5-minute cache writes left out"
+
+
+def test_ttl_breakdown_added_to_input_tokens_is_named():
+    sc = scenarios.get("anthropic/cache-1h")
+    t, attrs = honest(sc.id)
+    attrs["gen_ai.usage.input_tokens"] = t.input_tokens + t.cache_write_tokens
+    c = by_id(grade(sc, t, BASE, obs(), [span(attrs)]))["input_tokens"]
+    assert c.verdict == "wrong" and c.detail == "cache writes counted twice"
+
+
+def test_two_equal_parts_of_a_cache_write_are_not_told_apart():
+    t = Truth(
+        request_model="claude-sonnet-5-5",
+        input_tokens=900,
+        cache_write_tokens=200,
+        cache_write_long_tokens=100,
+    )
+    assert _formula("cache_write_tokens", 100, t) == "one part of the cache writes left out"
+    assert _formula("input_tokens", 800, t) == "one part of the cache writes left out"
+
+
+def test_a_cache_scenario_without_a_ttl_breakdown_gets_no_new_guess():
+    t = scenarios.truth(scenarios.get("anthropic/cache-hit"))
+    assert _formula("cache_write_tokens", 2 * t.cache_write_tokens, t) == ""
+    assert _formula("input_tokens", t.input_tokens + t.cache_write_tokens, t) == ""

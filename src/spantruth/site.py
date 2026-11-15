@@ -279,7 +279,9 @@ def _cost_note() -> str:
     return (
         f"A cost figure is for the token mix of one scenario, at list price from {links} on "
         f"{escape(impact.prices_as_of())}. Input tokens include cache reads and writes, so the "
-        "uncached part is input minus reads minus writes. A span that never ends reports nothing, "
+        "uncached part is input minus reads minus writes. A cache write that lasts 1 hour costs "
+        "more than one that lasts 5 minutes. No span attribute separates the two, so the figure "
+        "from the spans uses the split on the wire. A span that never ends reports nothing, "
         "and usage on two spans counts twice only in a backend that sums across spans. A backend "
         "with another formula shows another number."
     )

@@ -233,8 +233,9 @@ endpoint per library, at `https://plexito-de.github.io/spantruth/badges/<subject
 
 - **Providers:** OpenAI Chat Completions and Anthropic Messages, sync and async. The OpenAI
   Responses API has its first scenario, a stream replayed from a recording.
-- **Scenarios (32):** plain call, stream, stream without usage, prompt-cache hit (plain, streamed,
-  and with cumulative counts in `message_delta`), parallel tool calls, reasoning tokens, HTTP 429,
+- **Scenarios (43):** plain call, stream, stream without usage, prompt-cache hit (plain, streamed,
+  with cumulative counts in `message_delta`, and with a 1-hour cache write next to a 5-minute
+  one), parallel tool calls, reasoning tokens, HTTP 429,
   a stream the app leaves early (by `close()` and by a `with` block), a dropped connection, and
   Anthropic's mid-stream `error` event. Streams and failures run sync and async. A Responses API
   stream cut after eight recorded events replays kartsan03/wiretruth's

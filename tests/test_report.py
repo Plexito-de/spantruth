@@ -225,6 +225,12 @@ def test_the_bug_page_lists_every_class_with_its_anchor_and_escapes_values():
     assert "uvx spantruth doctor" in page
 
 
+def test_the_bug_page_says_how_the_cost_figure_prices_a_cache_write():
+    page = report.bugs_html(priced_doc())
+    assert "A cache write that lasts 1 hour costs more" in page
+    assert "uses the split on the wire" in page
+
+
 def test_the_bug_page_counts_cells_and_libraries_and_never_names_a_ranking():
     page = report.bugs_html(doc())
     assert "1 cell in 1 library" in page

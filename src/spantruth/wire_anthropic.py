@@ -17,13 +17,29 @@ def _usage(
     cache_read: int,
     cache_write: int,
     thinking: int = 0,
+    long_write: int | None = None,
 ) -> dict:
+    """The `usage` of a message.
+
+    `long_write` is the part of `cache_write` that the cache keeps for 1 hour: `cache_write_1h` in
+    the builders below, `cache_write_long_tokens` in the truth.
+    """
     u: dict = {
         "input_tokens": input_tokens,
         "output_tokens": output_tokens,
         "cache_read_input_tokens": cache_read,
         "cache_creation_input_tokens": cache_write,
     }
+    if long_write is not None:
+        if not 0 <= long_write <= cache_write:
+            raise ValueError(
+                f"cache_write_1h {long_write} is not a part of cache_write {cache_write}"
+            )
+        # The TTL breakdown. Its two parts add up to `cache_creation_input_tokens`.
+        u["cache_creation"] = {
+            "ephemeral_5m_input_tokens": cache_write - long_write,
+            "ephemeral_1h_input_tokens": long_write,
+        }
     if thinking:
         u["output_tokens_details"] = {"thinking_tokens": thinking}
     return u
@@ -39,6 +55,7 @@ def message(
     output_tokens: int,
     cache_read: int = 0,
     cache_write: int = 0,
+    cache_write_1h: int | None = None,
     thinking: str | None = None,
     signature: str | None = None,
     thinking_tokens: int = 0,
@@ -66,7 +83,12 @@ def message(
             "stop_reason": stop,
             "stop_sequence": None,
             "usage": _usage(
-                input_tokens, output_tokens, cache_read, cache_write, thinking=thinking_tokens
+                input_tokens,
+                output_tokens,
+                cache_read,
+                cache_write,
+                thinking=thinking_tokens,
+                long_write=cache_write_1h,
             ),
         }
     )
@@ -82,6 +104,7 @@ def events(
     output_tokens: int,
     cache_read: int = 0,
     cache_write: int = 0,
+    cache_write_1h: int | None = None,
     thinking_parts: tuple[str, ...] = (),
     signature: str | None = None,
     thinking_tokens: int = 0,
@@ -94,8 +117,10 @@ def events(
 
     `message_delta` carries only the final output count, unless `cumulative_delta` is set: the
     API may also repeat the cumulative input and cache counts there, and a library that adds
-    them to `message_start` counts them twice. `error_after` replaces the rest of the stream with
-    an `error` event after that many events, as the API does when it is overloaded mid-stream.
+    them to `message_start` counts them twice. The TTL breakdown of a cache write is in
+    `message_start` only: the usage of `message_delta` has no `cache_creation`. `error_after`
+    replaces the rest of the stream with an `error` event after that many events, as the API does
+    when it is overloaded mid-stream.
     """
 
     def ev(kind: str, **data: object) -> Event:
@@ -109,7 +134,7 @@ def events(
         "content": [],
         "stop_reason": None,
         "stop_sequence": None,
-        "usage": _usage(input_tokens, 1, cache_read, cache_write),
+        "usage": _usage(input_tokens, 1, cache_read, cache_write, long_write=cache_write_1h),
     }
     stream = [ev("message_start", message=start)]
     idx = 0
@@ -252,6 +277,8 @@ def truth(request_model: str, response: Response, read_events: int | None = None
 def _tokens(usage: dict, output_tokens: int | None) -> dict:
     read = usage.get("cache_read_input_tokens") or 0
     write = usage.get("cache_creation_input_tokens") or 0
+    # The 1-hour part of the writes, priced higher. A fixture with no TTL breakdown has none.
+    ttl = usage.get("cache_creation") or {}
     details = usage.get("output_tokens_details") or {}
     thinking = (
         details.get("thinking_tokens")
@@ -263,5 +290,6 @@ def _tokens(usage: dict, output_tokens: int | None) -> dict:
         "output_tokens": output_tokens,
         "cache_read_tokens": read or None,
         "cache_write_tokens": write or None,
+        "cache_write_long_tokens": ttl.get("ephemeral_1h_input_tokens") if write else None,
         "reasoning_tokens": thinking or None,
     }
