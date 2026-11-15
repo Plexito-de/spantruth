@@ -1,0 +1,15 @@
+title = "MLflow Tracing"
+homepage = "https://github.com/mlflow/mlflow"
+providers = ["openai", "anthropic"]
+packages = ["mlflow-skinny==3.18.0"]
+track = ["mlflow-skinny"]
+detect = ["mlflow", "mlflow-skinny"]
+# Many projects use MLflow for experiments only, so `spantruth doctor` needs a provider SDK as well.
+detect_with = ["openai", "anthropic"]
+
+notes = "MLflow's own OTLP export with its own option MLFLOW_ENABLE_OTEL_GENAI_SEMCONV=true, which translates mlflow.* attributes to GenAI names before export. No adapter. The findings on tokens and models are about that translation: MLflow's native attribute mlflow.chat.tokenUsage keeps the cache counts. The driver's provider also exports the untranslated copy of each span, which the suite does not grade. MLFLOW_USE_DEFAULT_TRACER_PROVIDER=false joins the app's trace, and mlflow.tracing.enable() sets up the processors before the app's parent span starts. MLFLOW_DISABLE_TELEMETRY=true stops the usage telemetry fetch and post (mlflow/telemetry/client.py)."
+
+[env]
+MLFLOW_ENABLE_OTEL_GENAI_SEMCONV = "true"
+MLFLOW_USE_DEFAULT_TRACER_PROVIDER = "false"
+MLFLOW_DISABLE_TELEMETRY = "true"

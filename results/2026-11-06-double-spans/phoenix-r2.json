@@ -1,0 +1,572 @@
+[
+ {
+  "name": "r2-A-oi310",
+  "traceCount": 1,
+  "recordCount": 2,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.012,
+    "tokens": 2400.0
+   },
+   "prompt": {
+    "cost": 0.006,
+    "tokens": 2000.0
+   },
+   "completion": {
+    "cost": 0.006,
+    "tokens": 400.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "anthropic.messages.create",
+      "spanKind": "llm",
+      "parentId": "55922b044210a17e",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       }
+      },
+      "trace": {
+       "traceId": "7b86ae9db590f9cea095def5cfefa209",
+       "costSummary": {
+        "total": {
+         "cost": 0.012,
+         "tokens": 2400.0
+        }
+       }
+      }
+     }
+    },
+    {
+     "node": {
+      "name": "messages.create",
+      "spanKind": "llm",
+      "parentId": null,
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "cumulativeTokenCountTotal": 2400.0,
+      "cumulativeTokenCountPrompt": 2000.0,
+      "cumulativeTokenCountCompletion": 400.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       }
+      },
+      "trace": {
+       "traceId": "7b86ae9db590f9cea095def5cfefa209",
+       "costSummary": {
+        "total": {
+         "cost": 0.012,
+         "tokens": 2400.0
+        }
+       }
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "r2-B-oi310",
+  "traceCount": 1,
+  "recordCount": 1,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.006,
+    "tokens": 1200.0
+   },
+   "prompt": {
+    "cost": 0.003,
+    "tokens": 1000.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "messages.create",
+      "spanKind": "llm",
+      "parentId": null,
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       }
+      },
+      "trace": {
+       "traceId": "d72dce7dac7ce2dfe7ef5291bdebc290",
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        }
+       }
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "r2-A-oilatest",
+  "traceCount": 1,
+  "recordCount": 1,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.006,
+    "tokens": 1200.0
+   },
+   "prompt": {
+    "cost": 0.003,
+    "tokens": 1000.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "messages.create",
+      "spanKind": "llm",
+      "parentId": null,
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       }
+      },
+      "trace": {
+       "traceId": "dfa35f3cfbb17ee8fd1b888a7e9ac1af",
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        }
+       }
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "r2-B-oilatest",
+  "traceCount": 1,
+  "recordCount": 1,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.006,
+    "tokens": 1200.0
+   },
+   "prompt": {
+    "cost": 0.003,
+    "tokens": 1000.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "messages.create",
+      "spanKind": "llm",
+      "parentId": null,
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       }
+      },
+      "trace": {
+       "traceId": "b7175af48b04b49f7b73bda7b4e7595a",
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        }
+       }
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "r2-C-sdk26",
+  "traceCount": 1,
+  "recordCount": 1,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.006,
+    "tokens": 1200.0
+   },
+   "prompt": {
+    "cost": 0.003,
+    "tokens": 1000.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "anthropic.messages.create",
+      "spanKind": "llm",
+      "parentId": null,
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       }
+      },
+      "trace": {
+       "traceId": "d67f14c28f57daa40daea57279b969c3",
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        }
+       }
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "r2-A-lllatest",
+  "traceCount": 2,
+  "recordCount": 2,
+  "tokenCountTotal": 2400.0,
+  "tokenCountPrompt": 2000.0,
+  "tokenCountCompletion": 400.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.012,
+    "tokens": 2400.0
+   },
+   "prompt": {
+    "cost": 0.006,
+    "tokens": 2000.0
+   },
+   "completion": {
+    "cost": 0.006,
+    "tokens": 400.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "anthropic.messages.create",
+      "spanKind": "llm",
+      "parentId": null,
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       }
+      },
+      "trace": {
+       "traceId": "ba30b22ffe6cc5cfe136c97310e9ecd8",
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        }
+       }
+      }
+     }
+    },
+    {
+     "node": {
+      "name": "anthropic.chat",
+      "spanKind": "llm",
+      "parentId": null,
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       }
+      },
+      "trace": {
+       "traceId": "81696ab349cfb14d5f6075b05c1eccd1",
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        }
+       }
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "r2-B-lllatest",
+  "traceCount": 1,
+  "recordCount": 1,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.006,
+    "tokens": 1200.0
+   },
+   "prompt": {
+    "cost": 0.003,
+    "tokens": 1000.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "anthropic.chat",
+      "spanKind": "llm",
+      "parentId": null,
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       }
+      },
+      "trace": {
+       "traceId": "917652936165468596333ee6d03ebe0d",
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        }
+       }
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "r2-A-otellatest",
+  "traceCount": 1,
+  "recordCount": 2,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.012,
+    "tokens": 2400.0
+   },
+   "prompt": {
+    "cost": 0.006,
+    "tokens": 2000.0
+   },
+   "completion": {
+    "cost": 0.006,
+    "tokens": 400.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "anthropic.messages.create",
+      "spanKind": "llm",
+      "parentId": "c1bd18aa0e13f3de",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       }
+      },
+      "trace": {
+       "traceId": "16aecf85650384348141dce18b86c96f",
+       "costSummary": {
+        "total": {
+         "cost": 0.012,
+         "tokens": 2400.0
+        }
+       }
+      }
+     }
+    },
+    {
+     "node": {
+      "name": "chat claude-sonnet-4-5-20250929",
+      "spanKind": "llm",
+      "parentId": null,
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "cumulativeTokenCountTotal": 2400.0,
+      "cumulativeTokenCountPrompt": 2000.0,
+      "cumulativeTokenCountCompletion": 400.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       }
+      },
+      "trace": {
+       "traceId": "16aecf85650384348141dce18b86c96f",
+       "costSummary": {
+        "total": {
+         "cost": 0.012,
+         "tokens": 2400.0
+        }
+       }
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "r2-B-otellatest",
+  "traceCount": 1,
+  "recordCount": 1,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.006,
+    "tokens": 1200.0
+   },
+   "prompt": {
+    "cost": 0.003,
+    "tokens": 1000.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "chat claude-sonnet-4-5-20250929",
+      "spanKind": "llm",
+      "parentId": null,
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       }
+      },
+      "trace": {
+       "traceId": "39de12ac3d219f0fd63eb94e9e47dd7f",
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        }
+       }
+      }
+     }
+    }
+   ]
+  }
+ }
+]

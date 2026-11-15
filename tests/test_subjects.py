@@ -1,5 +1,7 @@
 """Requirement resolution, including `--with` overrides, without building an environment."""
 
+from pathlib import Path
+
 import pytest
 
 from spantruth import cli, subjects
@@ -82,6 +84,17 @@ def test_openlit_is_pinned_and_tracked():
     latest = subjects.requirements(lib, latest=True)
     assert "openlit" in latest
     assert "openlit==1.45.0" not in latest
+
+
+def test_langfuse_is_pinned_and_tracked():
+    lib = subjects.load("langfuse")
+    assert lib.title == "Langfuse Python SDK"
+    assert lib.providers == ("openai",)
+    assert lib.homepage == "https://github.com/langfuse/langfuse-python"
+    assert "langfuse==5.2.0" in subjects.requirements(lib, latest=False)
+    latest = subjects.requirements(lib, latest=True)
+    assert "langfuse" in latest
+    assert "langfuse==5.2.0" not in latest
 
 
 def test_an_override_for_a_package_nobody_installs_is_refused(capsys):
@@ -252,3 +265,11 @@ def test_a_directory_subject_remembers_how_it_was_named(tmp_path):
     directory = _copy_subject(tmp_path, source="openllmetry")
     assert subjects.load(str(directory)).ref == str(directory)
     assert subjects.load("openllmetry").ref == "openllmetry"
+
+
+def test_the_wrapper_example_loads_as_a_subject():
+    example = Path(__file__).resolve().parents[1] / "examples" / "in-house-wrapper"
+    subject = subjects.load(str(example / "spantruth"))
+    assert subject.name == "spantruth"
+    assert "acme-llm==0.1.0" in subject.packages
+    assert subjects.resolve_override(str(example)).startswith("acme-llm @ file://")

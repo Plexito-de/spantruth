@@ -1,0 +1,15 @@
+title = "Datadog ddtrace LLM Observability"
+homepage = "https://github.com/DataDog/dd-trace-py"
+providers = ["openai", "anthropic"]
+packages = ["ddtrace==4.16.3"]
+track = ["ddtrace"]
+# Many projects use ddtrace for APM only, so `spantruth doctor` needs a provider SDK as well.
+detect_with = ["openai", "anthropic"]
+
+notes = "ddtrace spans are not OpenTelemetry spans. A local adapter in instrument.py shows ddtrace's own LLM spans to the harness: tag and metric keys and values are unchanged, span.error becomes ERROR, and a span ddtrace never finishes stays open and is lost. span.parented comes from the adapter, not from ddtrace, whose spans form their own trace. What is graded is the APM span with its gen_ai.* tags, not the LLMObs event sent to Datadog, which holds finish_reason in its metadata. OpenAI's response model is also on the tag openai.response.model, a name the suite does not read. No Agent and no account: LLMObs.enable(agentless_enabled=False) tries a local Agent on 127.0.0.1:8126, finds none and drops the events. Telemetry and remote configuration are off."
+
+[env]
+DD_LLMOBS_AGENTLESS_ENABLED = "false"
+DD_INSTRUMENTATION_TELEMETRY_ENABLED = "false"
+DD_REMOTE_CONFIGURATION_ENABLED = "false"
+DD_TRACE_STARTUP_LOGS = "false"

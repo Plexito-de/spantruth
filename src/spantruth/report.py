@@ -8,7 +8,7 @@ import tomllib
 from pathlib import Path
 from typing import Any
 
-from . import paths
+from . import bugclasses, impact, paths
 
 KNOWN = paths.data("known_issues.toml")
 
@@ -33,6 +33,9 @@ LEGEND = {
 
 NOT_GRADED = ("inconclusive", "n/a")
 
+# An absolute address: the action's HTML report is an artifact, with no page beside it.
+BUGS_URL = "https://plexito-de.github.io/spantruth/bugs.html"
+
 
 def _subjects(doc: dict) -> list[str]:
     # Libraries first, controls last, each group in name order. No ranking.
@@ -55,8 +58,8 @@ def reproduce(subject: str, scenario: str) -> str:
 
 
 def findings(doc: dict, known: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
-    """Every check that did not pass, with its anchor, the command that reproduces it, and the
-    upstream issue that tracks it, if any."""
+    """Every check that did not pass, with its anchor, the command that reproduces it, the upstream
+    issue that tracks it, if any, its bug class, and what the cell does to a cost figure."""
     known = known_issues() if known is None else known
     out = []
     for name in _subjects(doc):
@@ -64,6 +67,8 @@ def findings(doc: dict, known: list[dict[str, Any]] | None = None) -> list[dict[
         # Known issues describe the built-in subjects. A directory subject only shares a name.
         relevant = known if ref == name else []
         for sid, cell in doc["subjects"][name]["cells"].items():
+            truth = doc["scenarios"].get(sid, {}).get("truth")
+            cost = impact.cell_cost(truth, cell["checks"])
             for c in cell["checks"]:
                 if c["verdict"] in ("pass", "n/a"):
                     continue
@@ -83,6 +88,11 @@ def findings(doc: dict, known: list[dict[str, Any]] | None = None) -> list[dict[
                         "issue": issue,
                         "anchor": finding_id(name, sid, c["id"]),
                         "reproduce": reproduce(ref, sid),
+                        "bug_class": (bug := bugclasses.classify(c)),
+                        "cost": cost,
+                        "class_cost": impact.class_cost(truth, cell["checks"], bug.id)
+                        if bug
+                        else None,
                     }
                 )
     return out
@@ -133,6 +143,11 @@ def _fence(text: str) -> str:
     return f"{fence}\n{text}\n{fence}"
 
 
+def _bug(finding: dict[str, Any]) -> str:
+    bug = finding["bug_class"]
+    return f"[{bug.id} {bug.name}]({BUGS_URL}#{bug.id})" if bug else "—"
+
+
 def _fmt(value: Any) -> str:
     return "—" if value is None else _cell(_code(str(value)))
 
@@ -157,13 +172,14 @@ def markdown(doc: dict) -> str:
     if found:
         lines += [
             "",
-            "| Subject | Scenario | Check | Verdict | Expected | Reported | Read from | Note "
+            "| Subject | Scenario | Check | Bug | Verdict | Expected | Reported | Read from | Note "
             "| Upstream |",
-            "| --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+            "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
         ]
         for f in found:
             lines.append(
-                f"| {_cell(f['subject'])} | `{f['scenario']}` | {f['id']} | {f['verdict']} | "
+                f"| {_cell(f['subject'])} | `{f['scenario']}` | {f['id']} | {_bug(f)} | "
+                f"{f['verdict']} | "
                 f"{_fmt(f['expected'])} | {_fmt(f['got'])} | {_fmt(f['where'])} | "
                 f"{_cell(_code(f['detail'][:160])) if f['detail'] else ''} | "
                 f"{_link(f['issue'])} |"
@@ -173,7 +189,76 @@ def markdown(doc: dict) -> str:
     return "\n".join(lines)
 
 
+def comment_marker(subject: str) -> str:
+    """The first line of a comment, so that a later run finds and updates the same comment."""
+    return f"<!-- spantruth:{re.sub(r'[^A-Za-z0-9._]', '_', subject)} -->"
+
+
+def _difference_rows(result: dict, differences: list) -> list[str]:
+    """One table row per changed check, with the bug class that the check belongs to."""
+    rows = []
+    for d in differences:
+        cell = result["cells"].get(d.scenario, {})
+        record = next((c for c in cell.get("checks", ()) if c["id"] == d.check), None)
+        bug = bugclasses.classify(record or {"id": d.check})
+        name = f"[{bug.id} {bug.name}]({BUGS_URL}#{bug.id})" if bug else "—"
+        if d.expected is None:
+            change = f"newly failing: {d.got}"
+        elif d.got is None:
+            change = f"now passes, was {d.expected}"
+        else:
+            change = f"{d.got}, was {d.expected}"
+        rows.append(f"| `{d.scenario}` | `{d.check}` | {name} | {change} |")
+    return rows
+
+
+def comment(doc: dict, subject: str, differences: list | None = None, link: str = "") -> str:
+    """A short pull request comment for one subject. `differences` is None with no expectation file.
+
+    Titles, values and details come from the library under test, so they stay out of the comment.
+    Scenario IDs, check IDs and verdicts come from spantruth's own lists.
+    """
+    result = doc["subjects"][subject]
+    graded = [c["verdict"] for c in result["cells"].values() if c["verdict"] not in NOT_GRADED]
+    passed = graded.count("pass")
+    lines = [comment_marker(subject), f"### spantruth: {_code(subject)}", ""]
+    if result.get("error") or any(c["verdict"] == "inconclusive" for c in result["cells"].values()):
+        lines += ["⚠️ spantruth could not run every cell, so this result is incomplete.", ""]
+    if differences is None:
+        lines.append(f"{passed} of {len(graded)} cells pass.")
+    elif not differences:
+        lines.append(f"No change from the expectation file. {passed} of {len(graded)} cells pass.")
+    else:
+        count = len(differences)
+        lines += [
+            f"{count} check{'' if count == 1 else 's'} changed from the expectation file. "
+            f"{passed} of {len(graded)} cells pass.",
+            "",
+            "| Scenario | Check | Bug | Change |",
+            "| --- | --- | --- | --- |",
+            *_difference_rows(result, differences),
+        ]
+    found = [f for f in findings(doc) if f["subject"] == subject and f["bug_class"]]
+    seen = sorted({f["bug_class"].id for f in found})
+    if seen and not differences:
+        names = ", ".join(f"[{i} {bugclasses.BY_ID[i].name}]({BUGS_URL}#{i})" for i in seen)
+        lines += ["", f"Bug classes in this run: {names}."]
+    details = f"[Details]({link}). " if link.startswith(("https://", "http://")) else ""
+    lines += [
+        "",
+        f"{details}Checked by [spantruth](https://github.com/Plexito-de/spantruth), which compares "
+        "what a library reports with what the provider sent.",
+    ]
+    return "\n".join(lines) + "\n"
+
+
 def html(doc: dict) -> str:
     from .site import render
 
     return render(doc)
+
+
+def bugs_html(doc: dict, findings_page: str = "index.html") -> str:
+    from .site import render_bugs
+
+    return render_bugs(doc, findings_page)

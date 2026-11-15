@@ -15,6 +15,9 @@ from .model import Scenario, Truth
 
 OPENAI_MODEL = "gpt-5-mini"
 OPENAI_SERVED = "gpt-5-mini-2026-08-07"
+# GPT-5.6 and later bill a prompt-cache write and report it, so the cache-write scenarios use one.
+OPENAI_CACHE_MODEL = "gpt-5.6-luna"
+OPENAI_CACHE_SERVED = "gpt-5.6-luna-2026-10-14"
 ANTHROPIC_MODEL = "claude-sonnet-5-5"
 ANTHROPIC_SERVED = "claude-sonnet-5-5-20260915"
 PARTS = ("The capital", " of France", " is Paris.")
@@ -22,7 +25,14 @@ WEATHER = ("get_weather", {"city": "Paris"})
 TIME = ("get_time", {"zone": "Europe/Paris"})
 
 # Async variants run the same fixture through the async client.
-ASYNC_PATTERNS = ("basic", "stream", "stream-early-exit", "stream-dropped", "stream-error-event")
+ASYNC_PATTERNS = (
+    "basic",
+    "stream",
+    "stream-early-exit",
+    "stream-dropped",
+    "stream-error-event",
+    "stream-helper",
+)
 
 
 def _openai() -> list[Scenario]:
@@ -32,9 +42,8 @@ def _openai() -> list[Scenario]:
             provider="openai",
             title=title,
             catches=catches,
-            request_model=OPENAI_MODEL,
             response=response,
-            **kw,
+            **{"request_model": OPENAI_MODEL} | kw,
         )
 
     body = dict(model=OPENAI_SERVED, text="The capital of France is Paris.", finish="stop")
@@ -79,6 +88,35 @@ def _openai() -> list[Scenario]:
             stream=True,
         ),
         sc(
+            "cache-write",
+            "Prompt cache read and write",
+            "cache writes dropped from usage",
+            oa.completion(
+                id="chatcmpl-wt-cwrite",
+                prompt=6619,
+                completion_tokens=401,
+                cached=2753,
+                cache_write=3181,
+                **body | {"model": OPENAI_CACHE_SERVED},
+            ),
+            request_model=OPENAI_CACHE_MODEL,
+        ),
+        sc(
+            "stream-cache-write",
+            "Prompt cache read and write, streamed",
+            "cache writes lost in a stream",
+            oa.chunks(
+                id="chatcmpl-wt-scwrite",
+                prompt=8237,
+                completion_tokens=457,
+                cached=3967,
+                cache_write=3539,
+                **stream | {"model": OPENAI_CACHE_SERVED},
+            ),
+            request_model=OPENAI_CACHE_MODEL,
+            stream=True,
+        ),
+        sc(
             "stream-no-usage",
             "Stream without include_usage",
             "token counts invented when the stream carries none",
@@ -109,6 +147,25 @@ def _openai() -> list[Scenario]:
                 ),
             ),
             tools=True,
+        ),
+        sc(
+            "stream-tool-call",
+            "Two parallel tool calls, streamed",
+            "the finish reason of a streamed tool-call response",
+            oa.chunks(
+                id="chatcmpl-wt-stools",
+                model=OPENAI_SERVED,
+                parts=(),
+                finish="tool_calls",
+                prompt=1553,
+                completion_tokens=173,
+                tool_calls=(
+                    ("call_wt_1", WEATHER[0], '{"city":"Paris"}'),
+                    ("call_wt_2", TIME[0], '{"zone":"Europe/Paris"}'),
+                ),
+            ),
+            tools=True,
+            stream=True,
         ),
         sc(
             "rate-limited",
@@ -148,6 +205,27 @@ def _openai() -> list[Scenario]:
             oa.completion(
                 id="chatcmpl-wt-reason", prompt=1601, completion_tokens=2219, reasoning=1792, **body
             ),
+        ),
+        sc(
+            "stream-reasoning",
+            "Reasoning tokens, streamed",
+            "reasoning tokens lost from output in a stream",
+            oa.chunks(
+                id="chatcmpl-wt-sreason",
+                prompt=2089,
+                completion_tokens=2459,
+                reasoning=1931,
+                **stream,
+            ),
+            stream=True,
+        ),
+        sc(
+            "stream-helper",
+            "Stream via with_streaming_response",
+            "nothing recorded when using SDK helper context managers",
+            oa.chunks(id="chatcmpl-wt-shelper", prompt=2137, completion_tokens=313, **stream),
+            stream=True,
+            entrypoint="with_streaming_response",
         ),
     ]
 
@@ -249,6 +327,35 @@ def _anthropic() -> list[Scenario]:
             stream=True,
         ),
         sc(
+            "cache-1h",
+            "Prompt cache write with a 1-hour part",
+            "the TTL breakdown added to the cache writes, or only one part of it reported",
+            an.message(
+                id="msg_wt_cache1h",
+                input_tokens=1307,
+                output_tokens=389,
+                cache_read=2861,
+                cache_write=2120,
+                cache_write_1h=1663,
+                **body,
+            ),
+        ),
+        sc(
+            "stream-cache-1h",
+            "Prompt cache write with a 1-hour part, streamed",
+            "the TTL breakdown in message_start added to the cache writes",
+            an.events(
+                id="msg_wt_scache1h",
+                input_tokens=1451,
+                output_tokens=523,
+                cache_read=3217,
+                cache_write=2492,
+                cache_write_1h=1879,
+                **stream,
+            ),
+            stream=True,
+        ),
+        sc(
             "stream-error-event",
             "Overloaded error event mid-stream",
             "an error event swallowed into a cut-off answer",
@@ -275,6 +382,22 @@ def _anthropic() -> list[Scenario]:
                 tool_uses=(("toolu_wt_1", *WEATHER), ("toolu_wt_2", *TIME)),
             ),
             tools=True,
+        ),
+        sc(
+            "stream-tool-call",
+            "Two parallel tool uses, streamed",
+            "the finish reason of a streamed tool-call response",
+            an.events(
+                id="msg_wt_stools",
+                model=ANTHROPIC_SERVED,
+                parts=(),
+                stop="tool_use",
+                input_tokens=1619,
+                output_tokens=197,
+                tool_uses=(("toolu_wt_1", *WEATHER), ("toolu_wt_2", *TIME)),
+            ),
+            tools=True,
+            stream=True,
         ),
         sc(
             "rate-limited",
@@ -304,6 +427,39 @@ def _anthropic() -> list[Scenario]:
             "an error swallowed into a cut-off answer",
             an.events(
                 id="msg_wt_drop", input_tokens=1427, output_tokens=301, drop_after=3, **stream
+            ),
+            stream=True,
+        ),
+        sc(
+            "thinking",
+            "Extended thinking",
+            "thinking tokens lost from output",
+            an.message(
+                id="msg_wt_thinking",
+                input_tokens=1627,
+                output_tokens=1273,
+                thinking=(
+                    "Let me think about the capital of France. The capital of France is Paris."
+                ),
+                thinking_tokens=947,
+                **body,
+            ),
+        ),
+        sc(
+            "stream-thinking",
+            "Extended thinking, streamed",
+            "thinking tokens lost from output in a stream",
+            an.events(
+                id="msg_wt_sthink",
+                input_tokens=1831,
+                output_tokens=1439,
+                thinking_parts=(
+                    "Let me think about",
+                    " the capital of France.",
+                    " The capital is Paris.",
+                ),
+                thinking_tokens=1103,
+                **stream,
             ),
             stream=True,
         ),

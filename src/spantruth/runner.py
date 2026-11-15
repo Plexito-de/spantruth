@@ -96,6 +96,8 @@ def run_subject(
         "ref": subject.ref,
         "cells": {},
     }
+    if not ids:
+        return out
     try:
         py, versions = subjects.environment(subject, cache, latest, overrides)
     except subprocess.CalledProcessError as exc:

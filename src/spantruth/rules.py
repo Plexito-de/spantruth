@@ -73,7 +73,9 @@ RULES: dict[str, tuple[str, str]] = {
         f"{GENAI}/model/gen-ai/spans.yaml#L842-L866",
     ),
     "output_tokens": (
-        "Output tokens, with reasoning tokens included.",
+        "Output tokens, with reasoning tokens included. For Anthropic, whose `output_tokens` "
+        "includes thinking tokens, reasoning tokens are part of, not in addition to, output "
+        "tokens. OpenInference states the same rule for `llm.token_count.completion`.",
         f"{GENAI}/model/gen-ai/registry.yaml#L336",
     ),
     "cache_read_tokens": (
@@ -85,7 +87,9 @@ RULES: dict[str, tuple[str, str]] = {
         f"{GENAI}/model/gen-ai/registry.yaml#L308",
     ),
     "reasoning_tokens": (
-        "Output tokens used for reasoning.",
+        "Output tokens used for reasoning. For Anthropic, thinking tokens reported in "
+        "`output_tokens_details` map to this count. OpenInference records them as "
+        "`llm.token_count.completion_details.reasoning`.",
         f"{GENAI}/model/gen-ai/registry.yaml#L346",
     ),
     "tokens.single-report": (

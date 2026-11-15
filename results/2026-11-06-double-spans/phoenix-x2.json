@@ -1,0 +1,7833 @@
+[
+ {
+  "name": "x2-base-A-ll",
+  "traceCount": 2,
+  "recordCount": 2,
+  "tokenCountTotal": 2400.0,
+  "tokenCountPrompt": 2000.0,
+  "tokenCountCompletion": 400.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.012,
+    "tokens": 2400.0
+   },
+   "prompt": {
+    "cost": 0.006,
+    "tokens": 2000.0
+   },
+   "completion": {
+    "cost": 0.006,
+    "tokens": 400.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "anthropic.messages.create",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "OK",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": 0,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "cache_read",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0,
+         "tokens": 0.0
+        }
+       },
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "51808516543631a31b65b11f3118ca11",
+       "numSpans": 1,
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        },
+        "prompt": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    },
+    {
+     "node": {
+      "name": "anthropic.chat",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "OK",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": 0,
+       "cacheWrite": 0,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "cache_read",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0,
+         "tokens": 0.0
+        }
+       },
+       {
+        "tokenType": "cache_write",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0,
+         "tokens": 0.0
+        }
+       },
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "e1cd1c2c20f180f4b98faf148570462e",
+       "numSpans": 1,
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        },
+        "prompt": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "cache_write",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-base-A-oi",
+  "traceCount": 1,
+  "recordCount": 1,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.006,
+    "tokens": 1200.0
+   },
+   "prompt": {
+    "cost": 0.003,
+    "tokens": 1000.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "messages.create",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "OK",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": null,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "bebe5a7ee7ab905ca2b17e7e8faa9e3a",
+       "numSpans": 1,
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        },
+        "prompt": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-base-A-oi310",
+  "traceCount": 1,
+  "recordCount": 2,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.012,
+    "tokens": 2400.0
+   },
+   "prompt": {
+    "cost": 0.006,
+    "tokens": 2000.0
+   },
+   "completion": {
+    "cost": 0.006,
+    "tokens": 400.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "anthropic.messages.create",
+      "spanKind": "llm",
+      "parentId": "8bd50c42da1a00ea",
+      "statusCode": "OK",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": 0,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "cache_read",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0,
+         "tokens": 0.0
+        }
+       },
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "418bc5d580c3978c405116bbad1595a6",
+       "numSpans": 2,
+       "costSummary": {
+        "total": {
+         "cost": 0.012,
+         "tokens": 2400.0
+        },
+        "prompt": {
+         "cost": 0.006,
+         "tokens": 2000.0
+        },
+        "completion": {
+         "cost": 0.006,
+         "tokens": 400.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.006,
+          "tokens": 2000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.006,
+          "tokens": 400.0
+         }
+        }
+       ]
+      }
+     }
+    },
+    {
+     "node": {
+      "name": "messages.create",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "OK",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": null,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 2400.0,
+      "cumulativeTokenCountPrompt": 2000.0,
+      "cumulativeTokenCountCompletion": 400.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "418bc5d580c3978c405116bbad1595a6",
+       "numSpans": 2,
+       "costSummary": {
+        "total": {
+         "cost": 0.012,
+         "tokens": 2400.0
+        },
+        "prompt": {
+         "cost": 0.006,
+         "tokens": 2000.0
+        },
+        "completion": {
+         "cost": 0.006,
+         "tokens": 400.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.006,
+          "tokens": 2000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.006,
+          "tokens": 400.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-base-A-otel",
+  "traceCount": 1,
+  "recordCount": 2,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.012,
+    "tokens": 2400.0
+   },
+   "prompt": {
+    "cost": 0.006,
+    "tokens": 2000.0
+   },
+   "completion": {
+    "cost": 0.006,
+    "tokens": 400.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "anthropic.messages.create",
+      "spanKind": "llm",
+      "parentId": "6e576d7437178938",
+      "statusCode": "OK",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": 0,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "cache_read",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0,
+         "tokens": 0.0
+        }
+       },
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "64accf69628bf6ca7662e4b7e8608e29",
+       "numSpans": 2,
+       "costSummary": {
+        "total": {
+         "cost": 0.012,
+         "tokens": 2400.0
+        },
+        "prompt": {
+         "cost": 0.006,
+         "tokens": 2000.0
+        },
+        "completion": {
+         "cost": 0.006,
+         "tokens": 400.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.006,
+          "tokens": 2000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.006,
+          "tokens": 400.0
+         }
+        }
+       ]
+      }
+     }
+    },
+    {
+     "node": {
+      "name": "chat claude-sonnet-4-5-20250929",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "UNSET",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": null,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 2400.0,
+      "cumulativeTokenCountPrompt": 2000.0,
+      "cumulativeTokenCountCompletion": 400.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "64accf69628bf6ca7662e4b7e8608e29",
+       "numSpans": 2,
+       "costSummary": {
+        "total": {
+         "cost": 0.012,
+         "tokens": 2400.0
+        },
+        "prompt": {
+         "cost": 0.006,
+         "tokens": 2000.0
+        },
+        "completion": {
+         "cost": 0.006,
+         "tokens": 400.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.006,
+          "tokens": 2000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.006,
+          "tokens": 400.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-base-B-ll",
+  "traceCount": 1,
+  "recordCount": 1,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.006,
+    "tokens": 1200.0
+   },
+   "prompt": {
+    "cost": 0.003,
+    "tokens": 1000.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "anthropic.chat",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "OK",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": 0,
+       "cacheWrite": 0,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "cache_read",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0,
+         "tokens": 0.0
+        }
+       },
+       {
+        "tokenType": "cache_write",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0,
+         "tokens": 0.0
+        }
+       },
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "d573912a903ddb4e360f056e818d81ff",
+       "numSpans": 1,
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        },
+        "prompt": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "cache_write",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-base-B-oi",
+  "traceCount": 1,
+  "recordCount": 1,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.006,
+    "tokens": 1200.0
+   },
+   "prompt": {
+    "cost": 0.003,
+    "tokens": 1000.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "messages.create",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "OK",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": null,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "45c5d28d7f30aa45e2843eeef52ff5c4",
+       "numSpans": 1,
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        },
+        "prompt": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-base-B-oi310",
+  "traceCount": 1,
+  "recordCount": 1,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.006,
+    "tokens": 1200.0
+   },
+   "prompt": {
+    "cost": 0.003,
+    "tokens": 1000.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "messages.create",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "OK",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": null,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "d376275b34071550578d9db67ffc2de5",
+       "numSpans": 1,
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        },
+        "prompt": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-base-B-otel",
+  "traceCount": 1,
+  "recordCount": 1,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.006,
+    "tokens": 1200.0
+   },
+   "prompt": {
+    "cost": 0.003,
+    "tokens": 1000.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "chat claude-sonnet-4-5-20250929",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "UNSET",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": null,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "531e28c49431dafc982d0096f40f006f",
+       "numSpans": 1,
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        },
+        "prompt": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-base-C-sdk",
+  "traceCount": 1,
+  "recordCount": 1,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.006,
+    "tokens": 1200.0
+   },
+   "prompt": {
+    "cost": 0.003,
+    "tokens": 1000.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "anthropic.messages.create",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "OK",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": 0,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "cache_read",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0,
+         "tokens": 0.0
+        }
+       },
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "973f5146689da4dd8008a360bf5529ee",
+       "numSpans": 1,
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        },
+        "prompt": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-cache-A-ll",
+  "traceCount": 2,
+  "recordCount": 2,
+  "tokenCountTotal": 12000.0,
+  "tokenCountPrompt": 11600.0,
+  "tokenCountCompletion": 400.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.0198,
+    "tokens": 12000.0
+   },
+   "prompt": {
+    "cost": 0.0138,
+    "tokens": 11600.0
+   },
+   "completion": {
+    "cost": 0.006,
+    "tokens": 400.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "anthropic.messages.create",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "OK",
+      "tokenCountTotal": 6000,
+      "tokenCountPrompt": 5800,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": 4000,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 6000.0,
+      "cumulativeTokenCountPrompt": 5800.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.009600000000000001,
+        "tokens": 6000.0
+       },
+       "prompt": {
+        "cost": 0.0066,
+        "tokens": 5800.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "cache_read",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0012,
+         "tokens": 4000.0
+        }
+       },
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0054,
+         "tokens": 1800.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "f8bb17ba3f39a289d4554262b563db76",
+       "numSpans": 1,
+       "costSummary": {
+        "total": {
+         "cost": 0.009600000000000001,
+         "tokens": 6000.0
+        },
+        "prompt": {
+         "cost": 0.0066,
+         "tokens": 5800.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0012,
+          "tokens": 4000.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0054,
+          "tokens": 1800.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    },
+    {
+     "node": {
+      "name": "anthropic.chat",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "OK",
+      "tokenCountTotal": 6000,
+      "tokenCountPrompt": 5800,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": 4000,
+       "cacheWrite": 800,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 6000.0,
+      "cumulativeTokenCountPrompt": 5800.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.0102,
+        "tokens": 6000.0
+       },
+       "prompt": {
+        "cost": 0.0072,
+        "tokens": 5800.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "cache_read",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0012,
+         "tokens": 4000.0
+        }
+       },
+       {
+        "tokenType": "cache_write",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 800.0
+        }
+       },
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "5b241a073369b046939c05b68e7775e7",
+       "numSpans": 1,
+       "costSummary": {
+        "total": {
+         "cost": 0.0102,
+         "tokens": 6000.0
+        },
+        "prompt": {
+         "cost": 0.0072,
+         "tokens": 5800.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0012,
+          "tokens": 4000.0
+         }
+        },
+        {
+         "tokenType": "cache_write",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 800.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-cache-A-oi",
+  "traceCount": 1,
+  "recordCount": 1,
+  "tokenCountTotal": 6000.0,
+  "tokenCountPrompt": 5800.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.0102,
+    "tokens": 6000.0
+   },
+   "prompt": {
+    "cost": 0.0072,
+    "tokens": 5800.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "messages.create",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "OK",
+      "tokenCountTotal": 6000,
+      "tokenCountPrompt": 5800,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": 4000,
+       "cacheWrite": 800,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 6000.0,
+      "cumulativeTokenCountPrompt": 5800.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.0102,
+        "tokens": 6000.0
+       },
+       "prompt": {
+        "cost": 0.0072,
+        "tokens": 5800.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "cache_read",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0012,
+         "tokens": 4000.0
+        }
+       },
+       {
+        "tokenType": "cache_write",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 800.0
+        }
+       },
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "ededd5f22433ffe479f20272ff21fbeb",
+       "numSpans": 1,
+       "costSummary": {
+        "total": {
+         "cost": 0.0102,
+         "tokens": 6000.0
+        },
+        "prompt": {
+         "cost": 0.0072,
+         "tokens": 5800.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0012,
+          "tokens": 4000.0
+         }
+        },
+        {
+         "tokenType": "cache_write",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 800.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-cache-A-oi310",
+  "traceCount": 1,
+  "recordCount": 2,
+  "tokenCountTotal": 6000.0,
+  "tokenCountPrompt": 5800.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.0198,
+    "tokens": 12000.0
+   },
+   "prompt": {
+    "cost": 0.0138,
+    "tokens": 11600.0
+   },
+   "completion": {
+    "cost": 0.006,
+    "tokens": 400.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "anthropic.messages.create",
+      "spanKind": "llm",
+      "parentId": "e743059f23131eee",
+      "statusCode": "OK",
+      "tokenCountTotal": 6000,
+      "tokenCountPrompt": 5800,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": 4000,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 6000.0,
+      "cumulativeTokenCountPrompt": 5800.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.009600000000000001,
+        "tokens": 6000.0
+       },
+       "prompt": {
+        "cost": 0.0066,
+        "tokens": 5800.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "cache_read",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0012,
+         "tokens": 4000.0
+        }
+       },
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0054,
+         "tokens": 1800.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "3dd0d6adbbcd8284d8f5afdba728ee8e",
+       "numSpans": 2,
+       "costSummary": {
+        "total": {
+         "cost": 0.0198,
+         "tokens": 12000.0
+        },
+        "prompt": {
+         "cost": 0.0138,
+         "tokens": 11600.0
+        },
+        "completion": {
+         "cost": 0.006,
+         "tokens": 400.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0024,
+          "tokens": 8000.0
+         }
+        },
+        {
+         "tokenType": "cache_write",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 800.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.008400000000000001,
+          "tokens": 2800.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.006,
+          "tokens": 400.0
+         }
+        }
+       ]
+      }
+     }
+    },
+    {
+     "node": {
+      "name": "messages.create",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "OK",
+      "tokenCountTotal": 6000,
+      "tokenCountPrompt": 5800,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": 4000,
+       "cacheWrite": 800,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 12000.0,
+      "cumulativeTokenCountPrompt": 11600.0,
+      "cumulativeTokenCountCompletion": 400.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.0102,
+        "tokens": 6000.0
+       },
+       "prompt": {
+        "cost": 0.0072,
+        "tokens": 5800.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "cache_read",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0012,
+         "tokens": 4000.0
+        }
+       },
+       {
+        "tokenType": "cache_write",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 800.0
+        }
+       },
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "3dd0d6adbbcd8284d8f5afdba728ee8e",
+       "numSpans": 2,
+       "costSummary": {
+        "total": {
+         "cost": 0.0198,
+         "tokens": 12000.0
+        },
+        "prompt": {
+         "cost": 0.0138,
+         "tokens": 11600.0
+        },
+        "completion": {
+         "cost": 0.006,
+         "tokens": 400.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0024,
+          "tokens": 8000.0
+         }
+        },
+        {
+         "tokenType": "cache_write",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 800.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.008400000000000001,
+          "tokens": 2800.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.006,
+          "tokens": 400.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-cache-A-otel",
+  "traceCount": 1,
+  "recordCount": 2,
+  "tokenCountTotal": 6000.0,
+  "tokenCountPrompt": 5800.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.019200000000000002,
+    "tokens": 12000.0
+   },
+   "prompt": {
+    "cost": 0.0132,
+    "tokens": 11600.0
+   },
+   "completion": {
+    "cost": 0.006,
+    "tokens": 400.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "anthropic.messages.create",
+      "spanKind": "llm",
+      "parentId": "3e670670a778d103",
+      "statusCode": "OK",
+      "tokenCountTotal": 6000,
+      "tokenCountPrompt": 5800,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": 4000,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 6000.0,
+      "cumulativeTokenCountPrompt": 5800.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.009600000000000001,
+        "tokens": 6000.0
+       },
+       "prompt": {
+        "cost": 0.0066,
+        "tokens": 5800.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "cache_read",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0012,
+         "tokens": 4000.0
+        }
+       },
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0054,
+         "tokens": 1800.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "67c63d9a5a4e5643e9cb1e26ed02e181",
+       "numSpans": 2,
+       "costSummary": {
+        "total": {
+         "cost": 0.019200000000000002,
+         "tokens": 12000.0
+        },
+        "prompt": {
+         "cost": 0.0132,
+         "tokens": 11600.0
+        },
+        "completion": {
+         "cost": 0.006,
+         "tokens": 400.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0024,
+          "tokens": 8000.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0108,
+          "tokens": 3600.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.006,
+          "tokens": 400.0
+         }
+        }
+       ]
+      }
+     }
+    },
+    {
+     "node": {
+      "name": "chat claude-sonnet-4-5-20250929",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "UNSET",
+      "tokenCountTotal": 6000,
+      "tokenCountPrompt": 5800,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": 4000,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 12000.0,
+      "cumulativeTokenCountPrompt": 11600.0,
+      "cumulativeTokenCountCompletion": 400.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.009600000000000001,
+        "tokens": 6000.0
+       },
+       "prompt": {
+        "cost": 0.0066,
+        "tokens": 5800.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "cache_read",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0012,
+         "tokens": 4000.0
+        }
+       },
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0054,
+         "tokens": 1800.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "67c63d9a5a4e5643e9cb1e26ed02e181",
+       "numSpans": 2,
+       "costSummary": {
+        "total": {
+         "cost": 0.019200000000000002,
+         "tokens": 12000.0
+        },
+        "prompt": {
+         "cost": 0.0132,
+         "tokens": 11600.0
+        },
+        "completion": {
+         "cost": 0.006,
+         "tokens": 400.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0024,
+          "tokens": 8000.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0108,
+          "tokens": 3600.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.006,
+          "tokens": 400.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-cache-B-ll",
+  "traceCount": 1,
+  "recordCount": 1,
+  "tokenCountTotal": 6000.0,
+  "tokenCountPrompt": 5800.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.0102,
+    "tokens": 6000.0
+   },
+   "prompt": {
+    "cost": 0.0072,
+    "tokens": 5800.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "anthropic.chat",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "OK",
+      "tokenCountTotal": 6000,
+      "tokenCountPrompt": 5800,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": 4000,
+       "cacheWrite": 800,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 6000.0,
+      "cumulativeTokenCountPrompt": 5800.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.0102,
+        "tokens": 6000.0
+       },
+       "prompt": {
+        "cost": 0.0072,
+        "tokens": 5800.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "cache_read",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0012,
+         "tokens": 4000.0
+        }
+       },
+       {
+        "tokenType": "cache_write",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 800.0
+        }
+       },
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "085d26188214990040a9249be389c704",
+       "numSpans": 1,
+       "costSummary": {
+        "total": {
+         "cost": 0.0102,
+         "tokens": 6000.0
+        },
+        "prompt": {
+         "cost": 0.0072,
+         "tokens": 5800.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0012,
+          "tokens": 4000.0
+         }
+        },
+        {
+         "tokenType": "cache_write",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 800.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-cache-B-oi",
+  "traceCount": 1,
+  "recordCount": 1,
+  "tokenCountTotal": 6000.0,
+  "tokenCountPrompt": 5800.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.0102,
+    "tokens": 6000.0
+   },
+   "prompt": {
+    "cost": 0.0072,
+    "tokens": 5800.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "messages.create",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "OK",
+      "tokenCountTotal": 6000,
+      "tokenCountPrompt": 5800,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": 4000,
+       "cacheWrite": 800,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 6000.0,
+      "cumulativeTokenCountPrompt": 5800.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.0102,
+        "tokens": 6000.0
+       },
+       "prompt": {
+        "cost": 0.0072,
+        "tokens": 5800.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "cache_read",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0012,
+         "tokens": 4000.0
+        }
+       },
+       {
+        "tokenType": "cache_write",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 800.0
+        }
+       },
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "bac0e49bccdb33175b1ad8e7bc13aed2",
+       "numSpans": 1,
+       "costSummary": {
+        "total": {
+         "cost": 0.0102,
+         "tokens": 6000.0
+        },
+        "prompt": {
+         "cost": 0.0072,
+         "tokens": 5800.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0012,
+          "tokens": 4000.0
+         }
+        },
+        {
+         "tokenType": "cache_write",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 800.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-cache-B-oi310",
+  "traceCount": 1,
+  "recordCount": 1,
+  "tokenCountTotal": 6000.0,
+  "tokenCountPrompt": 5800.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.0102,
+    "tokens": 6000.0
+   },
+   "prompt": {
+    "cost": 0.0072,
+    "tokens": 5800.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "messages.create",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "OK",
+      "tokenCountTotal": 6000,
+      "tokenCountPrompt": 5800,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": 4000,
+       "cacheWrite": 800,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 6000.0,
+      "cumulativeTokenCountPrompt": 5800.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.0102,
+        "tokens": 6000.0
+       },
+       "prompt": {
+        "cost": 0.0072,
+        "tokens": 5800.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "cache_read",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0012,
+         "tokens": 4000.0
+        }
+       },
+       {
+        "tokenType": "cache_write",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 800.0
+        }
+       },
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "a32bfb18805da9170ef1a546c584d669",
+       "numSpans": 1,
+       "costSummary": {
+        "total": {
+         "cost": 0.0102,
+         "tokens": 6000.0
+        },
+        "prompt": {
+         "cost": 0.0072,
+         "tokens": 5800.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0012,
+          "tokens": 4000.0
+         }
+        },
+        {
+         "tokenType": "cache_write",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 800.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-cache-B-otel",
+  "traceCount": 1,
+  "recordCount": 1,
+  "tokenCountTotal": 6000.0,
+  "tokenCountPrompt": 5800.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.009600000000000001,
+    "tokens": 6000.0
+   },
+   "prompt": {
+    "cost": 0.0066,
+    "tokens": 5800.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "chat claude-sonnet-4-5-20250929",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "UNSET",
+      "tokenCountTotal": 6000,
+      "tokenCountPrompt": 5800,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": 4000,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 6000.0,
+      "cumulativeTokenCountPrompt": 5800.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.009600000000000001,
+        "tokens": 6000.0
+       },
+       "prompt": {
+        "cost": 0.0066,
+        "tokens": 5800.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "cache_read",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0012,
+         "tokens": 4000.0
+        }
+       },
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0054,
+         "tokens": 1800.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "8f9338e46f2ddbbd0e83f402b426eb45",
+       "numSpans": 1,
+       "costSummary": {
+        "total": {
+         "cost": 0.009600000000000001,
+         "tokens": 6000.0
+        },
+        "prompt": {
+         "cost": 0.0066,
+         "tokens": 5800.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0012,
+          "tokens": 4000.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0054,
+          "tokens": 1800.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-cache-C-sdk",
+  "traceCount": 1,
+  "recordCount": 1,
+  "tokenCountTotal": 6000.0,
+  "tokenCountPrompt": 5800.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.009600000000000001,
+    "tokens": 6000.0
+   },
+   "prompt": {
+    "cost": 0.0066,
+    "tokens": 5800.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "anthropic.messages.create",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "OK",
+      "tokenCountTotal": 6000,
+      "tokenCountPrompt": 5800,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": 4000,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 6000.0,
+      "cumulativeTokenCountPrompt": 5800.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.009600000000000001,
+        "tokens": 6000.0
+       },
+       "prompt": {
+        "cost": 0.0066,
+        "tokens": 5800.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "cache_read",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0012,
+         "tokens": 4000.0
+        }
+       },
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0054,
+         "tokens": 1800.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "1a3e2e63a7518e8954ec88a7e5917fac",
+       "numSpans": 1,
+       "costSummary": {
+        "total": {
+         "cost": 0.009600000000000001,
+         "tokens": 6000.0
+        },
+        "prompt": {
+         "cost": 0.0066,
+         "tokens": 5800.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0012,
+          "tokens": 4000.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0054,
+          "tokens": 1800.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-parent-A-ll",
+  "traceCount": 1,
+  "recordCount": 3,
+  "tokenCountTotal": 2400.0,
+  "tokenCountPrompt": 2000.0,
+  "tokenCountCompletion": 400.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.012,
+    "tokens": 2400.0
+   },
+   "prompt": {
+    "cost": 0.006,
+    "tokens": 2000.0
+   },
+   "completion": {
+    "cost": 0.006,
+    "tokens": 400.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "anthropic.messages.create",
+      "spanKind": "llm",
+      "parentId": "e937c3610d8a209a",
+      "statusCode": "OK",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": 0,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "cache_read",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0,
+         "tokens": 0.0
+        }
+       },
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "d50b7809fc6da52c4a43866581c66a90",
+       "numSpans": 3,
+       "costSummary": {
+        "total": {
+         "cost": 0.012,
+         "tokens": 2400.0
+        },
+        "prompt": {
+         "cost": 0.006,
+         "tokens": 2000.0
+        },
+        "completion": {
+         "cost": 0.006,
+         "tokens": 400.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "cache_write",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.006,
+          "tokens": 2000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.006,
+          "tokens": 400.0
+         }
+        }
+       ]
+      }
+     }
+    },
+    {
+     "node": {
+      "name": "anthropic.chat",
+      "spanKind": "llm",
+      "parentId": "e937c3610d8a209a",
+      "statusCode": "OK",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": 0,
+       "cacheWrite": 0,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "cache_read",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0,
+         "tokens": 0.0
+        }
+       },
+       {
+        "tokenType": "cache_write",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0,
+         "tokens": 0.0
+        }
+       },
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "d50b7809fc6da52c4a43866581c66a90",
+       "numSpans": 3,
+       "costSummary": {
+        "total": {
+         "cost": 0.012,
+         "tokens": 2400.0
+        },
+        "prompt": {
+         "cost": 0.006,
+         "tokens": 2000.0
+        },
+        "completion": {
+         "cost": 0.006,
+         "tokens": 400.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "cache_write",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.006,
+          "tokens": 2000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.006,
+          "tokens": 400.0
+         }
+        }
+       ]
+      }
+     }
+    },
+    {
+     "node": {
+      "name": "app.handle_request",
+      "spanKind": "unknown",
+      "parentId": null,
+      "statusCode": "UNSET",
+      "tokenCountTotal": 0,
+      "tokenCountPrompt": null,
+      "tokenCountCompletion": null,
+      "tokenPromptDetails": {
+       "cacheRead": null,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 2400.0,
+      "cumulativeTokenCountPrompt": 2000.0,
+      "cumulativeTokenCountCompletion": 400.0,
+      "costSummary": null,
+      "costDetailSummaryEntries": [],
+      "trace": {
+       "traceId": "d50b7809fc6da52c4a43866581c66a90",
+       "numSpans": 3,
+       "costSummary": {
+        "total": {
+         "cost": 0.012,
+         "tokens": 2400.0
+        },
+        "prompt": {
+         "cost": 0.006,
+         "tokens": 2000.0
+        },
+        "completion": {
+         "cost": 0.006,
+         "tokens": 400.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "cache_write",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.006,
+          "tokens": 2000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.006,
+          "tokens": 400.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-parent-A-oi",
+  "traceCount": 1,
+  "recordCount": 2,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.006,
+    "tokens": 1200.0
+   },
+   "prompt": {
+    "cost": 0.003,
+    "tokens": 1000.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "messages.create",
+      "spanKind": "llm",
+      "parentId": "a6e44a1e2fff08d7",
+      "statusCode": "OK",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": null,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "768088f3a70d7a2008a035c5f228593b",
+       "numSpans": 2,
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        },
+        "prompt": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    },
+    {
+     "node": {
+      "name": "app.handle_request",
+      "spanKind": "unknown",
+      "parentId": null,
+      "statusCode": "UNSET",
+      "tokenCountTotal": 0,
+      "tokenCountPrompt": null,
+      "tokenCountCompletion": null,
+      "tokenPromptDetails": {
+       "cacheRead": null,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": null,
+      "costDetailSummaryEntries": [],
+      "trace": {
+       "traceId": "768088f3a70d7a2008a035c5f228593b",
+       "numSpans": 2,
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        },
+        "prompt": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-parent-A-oi310",
+  "traceCount": 1,
+  "recordCount": 3,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.012,
+    "tokens": 2400.0
+   },
+   "prompt": {
+    "cost": 0.006,
+    "tokens": 2000.0
+   },
+   "completion": {
+    "cost": 0.006,
+    "tokens": 400.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "anthropic.messages.create",
+      "spanKind": "llm",
+      "parentId": "767cb4cfdc508791",
+      "statusCode": "OK",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": 0,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "cache_read",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0,
+         "tokens": 0.0
+        }
+       },
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "0cd74bc931f0da8912eba8199d831179",
+       "numSpans": 3,
+       "costSummary": {
+        "total": {
+         "cost": 0.012,
+         "tokens": 2400.0
+        },
+        "prompt": {
+         "cost": 0.006,
+         "tokens": 2000.0
+        },
+        "completion": {
+         "cost": 0.006,
+         "tokens": 400.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.006,
+          "tokens": 2000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.006,
+          "tokens": 400.0
+         }
+        }
+       ]
+      }
+     }
+    },
+    {
+     "node": {
+      "name": "messages.create",
+      "spanKind": "llm",
+      "parentId": "835dc3f86dde853c",
+      "statusCode": "OK",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": null,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 2400.0,
+      "cumulativeTokenCountPrompt": 2000.0,
+      "cumulativeTokenCountCompletion": 400.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "0cd74bc931f0da8912eba8199d831179",
+       "numSpans": 3,
+       "costSummary": {
+        "total": {
+         "cost": 0.012,
+         "tokens": 2400.0
+        },
+        "prompt": {
+         "cost": 0.006,
+         "tokens": 2000.0
+        },
+        "completion": {
+         "cost": 0.006,
+         "tokens": 400.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.006,
+          "tokens": 2000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.006,
+          "tokens": 400.0
+         }
+        }
+       ]
+      }
+     }
+    },
+    {
+     "node": {
+      "name": "app.handle_request",
+      "spanKind": "unknown",
+      "parentId": null,
+      "statusCode": "UNSET",
+      "tokenCountTotal": 0,
+      "tokenCountPrompt": null,
+      "tokenCountCompletion": null,
+      "tokenPromptDetails": {
+       "cacheRead": null,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 2400.0,
+      "cumulativeTokenCountPrompt": 2000.0,
+      "cumulativeTokenCountCompletion": 400.0,
+      "costSummary": null,
+      "costDetailSummaryEntries": [],
+      "trace": {
+       "traceId": "0cd74bc931f0da8912eba8199d831179",
+       "numSpans": 3,
+       "costSummary": {
+        "total": {
+         "cost": 0.012,
+         "tokens": 2400.0
+        },
+        "prompt": {
+         "cost": 0.006,
+         "tokens": 2000.0
+        },
+        "completion": {
+         "cost": 0.006,
+         "tokens": 400.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.006,
+          "tokens": 2000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.006,
+          "tokens": 400.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-parent-A-otel",
+  "traceCount": 1,
+  "recordCount": 3,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.012,
+    "tokens": 2400.0
+   },
+   "prompt": {
+    "cost": 0.006,
+    "tokens": 2000.0
+   },
+   "completion": {
+    "cost": 0.006,
+    "tokens": 400.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "anthropic.messages.create",
+      "spanKind": "llm",
+      "parentId": "ec7cddcac5f7520d",
+      "statusCode": "OK",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": 0,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "cache_read",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0,
+         "tokens": 0.0
+        }
+       },
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "00136bd1effeac3ec188aee479299834",
+       "numSpans": 3,
+       "costSummary": {
+        "total": {
+         "cost": 0.012,
+         "tokens": 2400.0
+        },
+        "prompt": {
+         "cost": 0.006,
+         "tokens": 2000.0
+        },
+        "completion": {
+         "cost": 0.006,
+         "tokens": 400.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.006,
+          "tokens": 2000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.006,
+          "tokens": 400.0
+         }
+        }
+       ]
+      }
+     }
+    },
+    {
+     "node": {
+      "name": "chat claude-sonnet-4-5-20250929",
+      "spanKind": "llm",
+      "parentId": "3e1cfb1428ed0b8e",
+      "statusCode": "UNSET",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": null,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 2400.0,
+      "cumulativeTokenCountPrompt": 2000.0,
+      "cumulativeTokenCountCompletion": 400.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "00136bd1effeac3ec188aee479299834",
+       "numSpans": 3,
+       "costSummary": {
+        "total": {
+         "cost": 0.012,
+         "tokens": 2400.0
+        },
+        "prompt": {
+         "cost": 0.006,
+         "tokens": 2000.0
+        },
+        "completion": {
+         "cost": 0.006,
+         "tokens": 400.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.006,
+          "tokens": 2000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.006,
+          "tokens": 400.0
+         }
+        }
+       ]
+      }
+     }
+    },
+    {
+     "node": {
+      "name": "app.handle_request",
+      "spanKind": "unknown",
+      "parentId": null,
+      "statusCode": "UNSET",
+      "tokenCountTotal": 0,
+      "tokenCountPrompt": null,
+      "tokenCountCompletion": null,
+      "tokenPromptDetails": {
+       "cacheRead": null,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 2400.0,
+      "cumulativeTokenCountPrompt": 2000.0,
+      "cumulativeTokenCountCompletion": 400.0,
+      "costSummary": null,
+      "costDetailSummaryEntries": [],
+      "trace": {
+       "traceId": "00136bd1effeac3ec188aee479299834",
+       "numSpans": 3,
+       "costSummary": {
+        "total": {
+         "cost": 0.012,
+         "tokens": 2400.0
+        },
+        "prompt": {
+         "cost": 0.006,
+         "tokens": 2000.0
+        },
+        "completion": {
+         "cost": 0.006,
+         "tokens": 400.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.006,
+          "tokens": 2000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.006,
+          "tokens": 400.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-parent-B-ll",
+  "traceCount": 1,
+  "recordCount": 2,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.006,
+    "tokens": 1200.0
+   },
+   "prompt": {
+    "cost": 0.003,
+    "tokens": 1000.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "anthropic.chat",
+      "spanKind": "llm",
+      "parentId": "865e15242da3857a",
+      "statusCode": "OK",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": 0,
+       "cacheWrite": 0,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "cache_read",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0,
+         "tokens": 0.0
+        }
+       },
+       {
+        "tokenType": "cache_write",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0,
+         "tokens": 0.0
+        }
+       },
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "f230eaeb977d510715f60e5fb3ad7fdf",
+       "numSpans": 2,
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        },
+        "prompt": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "cache_write",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    },
+    {
+     "node": {
+      "name": "app.handle_request",
+      "spanKind": "unknown",
+      "parentId": null,
+      "statusCode": "UNSET",
+      "tokenCountTotal": 0,
+      "tokenCountPrompt": null,
+      "tokenCountCompletion": null,
+      "tokenPromptDetails": {
+       "cacheRead": null,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": null,
+      "costDetailSummaryEntries": [],
+      "trace": {
+       "traceId": "f230eaeb977d510715f60e5fb3ad7fdf",
+       "numSpans": 2,
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        },
+        "prompt": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "cache_write",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-parent-B-oi",
+  "traceCount": 1,
+  "recordCount": 2,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.006,
+    "tokens": 1200.0
+   },
+   "prompt": {
+    "cost": 0.003,
+    "tokens": 1000.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "messages.create",
+      "spanKind": "llm",
+      "parentId": "0c6357a51ad2e013",
+      "statusCode": "OK",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": null,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "2b208afd2f09dca351d5b56726fd2c4a",
+       "numSpans": 2,
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        },
+        "prompt": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    },
+    {
+     "node": {
+      "name": "app.handle_request",
+      "spanKind": "unknown",
+      "parentId": null,
+      "statusCode": "UNSET",
+      "tokenCountTotal": 0,
+      "tokenCountPrompt": null,
+      "tokenCountCompletion": null,
+      "tokenPromptDetails": {
+       "cacheRead": null,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": null,
+      "costDetailSummaryEntries": [],
+      "trace": {
+       "traceId": "2b208afd2f09dca351d5b56726fd2c4a",
+       "numSpans": 2,
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        },
+        "prompt": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-parent-B-oi310",
+  "traceCount": 1,
+  "recordCount": 2,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.006,
+    "tokens": 1200.0
+   },
+   "prompt": {
+    "cost": 0.003,
+    "tokens": 1000.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "messages.create",
+      "spanKind": "llm",
+      "parentId": "2fdc093e7724c2d9",
+      "statusCode": "OK",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": null,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "b73b5abce92f60e47f1b60ad0b5c2fc7",
+       "numSpans": 2,
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        },
+        "prompt": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    },
+    {
+     "node": {
+      "name": "app.handle_request",
+      "spanKind": "unknown",
+      "parentId": null,
+      "statusCode": "UNSET",
+      "tokenCountTotal": 0,
+      "tokenCountPrompt": null,
+      "tokenCountCompletion": null,
+      "tokenPromptDetails": {
+       "cacheRead": null,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": null,
+      "costDetailSummaryEntries": [],
+      "trace": {
+       "traceId": "b73b5abce92f60e47f1b60ad0b5c2fc7",
+       "numSpans": 2,
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        },
+        "prompt": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-parent-B-otel",
+  "traceCount": 1,
+  "recordCount": 2,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.006,
+    "tokens": 1200.0
+   },
+   "prompt": {
+    "cost": 0.003,
+    "tokens": 1000.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "chat claude-sonnet-4-5-20250929",
+      "spanKind": "llm",
+      "parentId": "40e02493d28fbba6",
+      "statusCode": "UNSET",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": null,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "e56f55eb3814bccca3e943dcf13f9076",
+       "numSpans": 2,
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        },
+        "prompt": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    },
+    {
+     "node": {
+      "name": "app.handle_request",
+      "spanKind": "unknown",
+      "parentId": null,
+      "statusCode": "UNSET",
+      "tokenCountTotal": 0,
+      "tokenCountPrompt": null,
+      "tokenCountCompletion": null,
+      "tokenPromptDetails": {
+       "cacheRead": null,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": null,
+      "costDetailSummaryEntries": [],
+      "trace": {
+       "traceId": "e56f55eb3814bccca3e943dcf13f9076",
+       "numSpans": 2,
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        },
+        "prompt": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-parent-C-sdk",
+  "traceCount": 1,
+  "recordCount": 2,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.006,
+    "tokens": 1200.0
+   },
+   "prompt": {
+    "cost": 0.003,
+    "tokens": 1000.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "anthropic.messages.create",
+      "spanKind": "llm",
+      "parentId": "8d4ab68aec520776",
+      "statusCode": "OK",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": 0,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "cache_read",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0,
+         "tokens": 0.0
+        }
+       },
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "b69aa1b2f498426680923079e7e53447",
+       "numSpans": 2,
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        },
+        "prompt": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    },
+    {
+     "node": {
+      "name": "app.handle_request",
+      "spanKind": "unknown",
+      "parentId": null,
+      "statusCode": "UNSET",
+      "tokenCountTotal": 0,
+      "tokenCountPrompt": null,
+      "tokenCountCompletion": null,
+      "tokenPromptDetails": {
+       "cacheRead": null,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": null,
+      "costDetailSummaryEntries": [],
+      "trace": {
+       "traceId": "b69aa1b2f498426680923079e7e53447",
+       "numSpans": 2,
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        },
+        "prompt": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-streamc-A-ll",
+  "traceCount": 2,
+  "recordCount": 2,
+  "tokenCountTotal": 2401.0,
+  "tokenCountPrompt": 2000.0,
+  "tokenCountCompletion": 401.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.012015,
+    "tokens": 2401.0
+   },
+   "prompt": {
+    "cost": 0.006,
+    "tokens": 2000.0
+   },
+   "completion": {
+    "cost": 0.0060149999999999995,
+    "tokens": 401.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "anthropic.messages.create",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "OK",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": 0,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "cache_read",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0,
+         "tokens": 0.0
+        }
+       },
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "19d89518725cc427d1bc983dc11faf7e",
+       "numSpans": 1,
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        },
+        "prompt": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    },
+    {
+     "node": {
+      "name": "anthropic.chat",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "OK",
+      "tokenCountTotal": 1201,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 201,
+      "tokenPromptDetails": {
+       "cacheRead": 0,
+       "cacheWrite": 0,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1201.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 201.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.0060149999999999995,
+        "tokens": 1201.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003015,
+        "tokens": 201.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "cache_read",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0,
+         "tokens": 0.0
+        }
+       },
+       {
+        "tokenType": "cache_write",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0,
+         "tokens": 0.0
+        }
+       },
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003015,
+         "tokens": 201.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "f98c6c936bde9512be42c1112fec458e",
+       "numSpans": 1,
+       "costSummary": {
+        "total": {
+         "cost": 0.0060149999999999995,
+         "tokens": 1201.0
+        },
+        "prompt": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        },
+        "completion": {
+         "cost": 0.003015,
+         "tokens": 201.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "cache_write",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003015,
+          "tokens": 201.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-streamc-A-oi",
+  "traceCount": 1,
+  "recordCount": 1,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.006,
+    "tokens": 1200.0
+   },
+   "prompt": {
+    "cost": 0.003,
+    "tokens": 1000.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "messages.create",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "OK",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": null,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "f6e551e970addefc28b3f8a0d821a250",
+       "numSpans": 1,
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        },
+        "prompt": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-streamc-A-oi310",
+  "traceCount": 1,
+  "recordCount": 2,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.012,
+    "tokens": 2400.0
+   },
+   "prompt": {
+    "cost": 0.006,
+    "tokens": 2000.0
+   },
+   "completion": {
+    "cost": 0.006,
+    "tokens": 400.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "anthropic.messages.create",
+      "spanKind": "llm",
+      "parentId": "b560bf805a8cec21",
+      "statusCode": "OK",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": 0,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "cache_read",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0,
+         "tokens": 0.0
+        }
+       },
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "7f7a89340ad81273f1bf7623617f885e",
+       "numSpans": 2,
+       "costSummary": {
+        "total": {
+         "cost": 0.012,
+         "tokens": 2400.0
+        },
+        "prompt": {
+         "cost": 0.006,
+         "tokens": 2000.0
+        },
+        "completion": {
+         "cost": 0.006,
+         "tokens": 400.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.006,
+          "tokens": 2000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.006,
+          "tokens": 400.0
+         }
+        }
+       ]
+      }
+     }
+    },
+    {
+     "node": {
+      "name": "messages.create",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "OK",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": null,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 2400.0,
+      "cumulativeTokenCountPrompt": 2000.0,
+      "cumulativeTokenCountCompletion": 400.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "7f7a89340ad81273f1bf7623617f885e",
+       "numSpans": 2,
+       "costSummary": {
+        "total": {
+         "cost": 0.012,
+         "tokens": 2400.0
+        },
+        "prompt": {
+         "cost": 0.006,
+         "tokens": 2000.0
+        },
+        "completion": {
+         "cost": 0.006,
+         "tokens": 400.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.006,
+          "tokens": 2000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.006,
+          "tokens": 400.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-streamc-A-otel",
+  "traceCount": 1,
+  "recordCount": 2,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.012,
+    "tokens": 2400.0
+   },
+   "prompt": {
+    "cost": 0.006,
+    "tokens": 2000.0
+   },
+   "completion": {
+    "cost": 0.006,
+    "tokens": 400.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "anthropic.messages.create",
+      "spanKind": "llm",
+      "parentId": "35cb99e142cb75ec",
+      "statusCode": "OK",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": 0,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "cache_read",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0,
+         "tokens": 0.0
+        }
+       },
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "6f744e61b7e6b9513a1b7563d28946e3",
+       "numSpans": 2,
+       "costSummary": {
+        "total": {
+         "cost": 0.012,
+         "tokens": 2400.0
+        },
+        "prompt": {
+         "cost": 0.006,
+         "tokens": 2000.0
+        },
+        "completion": {
+         "cost": 0.006,
+         "tokens": 400.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.006,
+          "tokens": 2000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.006,
+          "tokens": 400.0
+         }
+        }
+       ]
+      }
+     }
+    },
+    {
+     "node": {
+      "name": "chat claude-sonnet-4-5-20250929",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "UNSET",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": null,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 2400.0,
+      "cumulativeTokenCountPrompt": 2000.0,
+      "cumulativeTokenCountCompletion": 400.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "6f744e61b7e6b9513a1b7563d28946e3",
+       "numSpans": 2,
+       "costSummary": {
+        "total": {
+         "cost": 0.012,
+         "tokens": 2400.0
+        },
+        "prompt": {
+         "cost": 0.006,
+         "tokens": 2000.0
+        },
+        "completion": {
+         "cost": 0.006,
+         "tokens": 400.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.006,
+          "tokens": 2000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.006,
+          "tokens": 400.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-streamc-B-ll",
+  "traceCount": 1,
+  "recordCount": 1,
+  "tokenCountTotal": 1201.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 201.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.0060149999999999995,
+    "tokens": 1201.0
+   },
+   "prompt": {
+    "cost": 0.003,
+    "tokens": 1000.0
+   },
+   "completion": {
+    "cost": 0.003015,
+    "tokens": 201.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "anthropic.chat",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "OK",
+      "tokenCountTotal": 1201,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 201,
+      "tokenPromptDetails": {
+       "cacheRead": 0,
+       "cacheWrite": 0,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1201.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 201.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.0060149999999999995,
+        "tokens": 1201.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003015,
+        "tokens": 201.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "cache_read",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0,
+         "tokens": 0.0
+        }
+       },
+       {
+        "tokenType": "cache_write",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0,
+         "tokens": 0.0
+        }
+       },
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003015,
+         "tokens": 201.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "13a90bdd0970a5bc9c3b952ef69d8a8d",
+       "numSpans": 1,
+       "costSummary": {
+        "total": {
+         "cost": 0.0060149999999999995,
+         "tokens": 1201.0
+        },
+        "prompt": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        },
+        "completion": {
+         "cost": 0.003015,
+         "tokens": 201.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "cache_write",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003015,
+          "tokens": 201.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-streamc-B-oi",
+  "traceCount": 1,
+  "recordCount": 1,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.006,
+    "tokens": 1200.0
+   },
+   "prompt": {
+    "cost": 0.003,
+    "tokens": 1000.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "messages.create",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "OK",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": null,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "a3267089f2fd6f6a638b2eec9c0942b5",
+       "numSpans": 1,
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        },
+        "prompt": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-streamc-B-oi310",
+  "traceCount": 1,
+  "recordCount": 1,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.006,
+    "tokens": 1200.0
+   },
+   "prompt": {
+    "cost": 0.003,
+    "tokens": 1000.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "messages.create",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "OK",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": null,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "e64d2ddd9b92b4c4ad853d14f1ec9c1d",
+       "numSpans": 1,
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        },
+        "prompt": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-streamc-B-otel",
+  "traceCount": 1,
+  "recordCount": 1,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.006,
+    "tokens": 1200.0
+   },
+   "prompt": {
+    "cost": 0.003,
+    "tokens": 1000.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "chat claude-sonnet-4-5-20250929",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "UNSET",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": null,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "de3c0e444d50324eb7c19efae8fa7ac5",
+       "numSpans": 1,
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        },
+        "prompt": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-streamc-C-sdk",
+  "traceCount": 1,
+  "recordCount": 1,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.006,
+    "tokens": 1200.0
+   },
+   "prompt": {
+    "cost": 0.003,
+    "tokens": 1000.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "anthropic.messages.create",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "OK",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": 0,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "cache_read",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0,
+         "tokens": 0.0
+        }
+       },
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "5d1c056815fc044676a8082ec186fea3",
+       "numSpans": 1,
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        },
+        "prompt": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-streamh-A-ll",
+  "traceCount": 2,
+  "recordCount": 2,
+  "tokenCountTotal": 2401.0,
+  "tokenCountPrompt": 2000.0,
+  "tokenCountCompletion": 401.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.012015,
+    "tokens": 2401.0
+   },
+   "prompt": {
+    "cost": 0.006,
+    "tokens": 2000.0
+   },
+   "completion": {
+    "cost": 0.0060149999999999995,
+    "tokens": 401.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "anthropic.messages.create",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "OK",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": 0,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "cache_read",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0,
+         "tokens": 0.0
+        }
+       },
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "b6dd7435af7190718c0ec7ad883d4192",
+       "numSpans": 1,
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        },
+        "prompt": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    },
+    {
+     "node": {
+      "name": "anthropic.chat",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "OK",
+      "tokenCountTotal": 1201,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 201,
+      "tokenPromptDetails": {
+       "cacheRead": 0,
+       "cacheWrite": 0,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1201.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 201.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.0060149999999999995,
+        "tokens": 1201.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003015,
+        "tokens": 201.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "cache_read",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0,
+         "tokens": 0.0
+        }
+       },
+       {
+        "tokenType": "cache_write",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0,
+         "tokens": 0.0
+        }
+       },
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003015,
+         "tokens": 201.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "2414070819db8f3dea1d42929ba0a40f",
+       "numSpans": 1,
+       "costSummary": {
+        "total": {
+         "cost": 0.0060149999999999995,
+         "tokens": 1201.0
+        },
+        "prompt": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        },
+        "completion": {
+         "cost": 0.003015,
+         "tokens": 201.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "cache_write",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003015,
+          "tokens": 201.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-streamh-A-oi",
+  "traceCount": 1,
+  "recordCount": 1,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.006,
+    "tokens": 1200.0
+   },
+   "prompt": {
+    "cost": 0.003,
+    "tokens": 1000.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "messages.stream",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "OK",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": null,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "e51b886e40adda8edcc46a8ed1275a09",
+       "numSpans": 1,
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        },
+        "prompt": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-streamh-A-oi310",
+  "traceCount": 2,
+  "recordCount": 2,
+  "tokenCountTotal": 2400.0,
+  "tokenCountPrompt": 2000.0,
+  "tokenCountCompletion": 400.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.012,
+    "tokens": 2400.0
+   },
+   "prompt": {
+    "cost": 0.006,
+    "tokens": 2000.0
+   },
+   "completion": {
+    "cost": 0.006,
+    "tokens": 400.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "anthropic.messages.create",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "OK",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": 0,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "cache_read",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0,
+         "tokens": 0.0
+        }
+       },
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "262efaa25d31880a2446701475ffe462",
+       "numSpans": 1,
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        },
+        "prompt": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    },
+    {
+     "node": {
+      "name": "messages.stream",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "OK",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": null,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "1687c33d3469757c847becbe9cc925d8",
+       "numSpans": 1,
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        },
+        "prompt": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-streamh-A-otel",
+  "traceCount": 1,
+  "recordCount": 2,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.012,
+    "tokens": 2400.0
+   },
+   "prompt": {
+    "cost": 0.006,
+    "tokens": 2000.0
+   },
+   "completion": {
+    "cost": 0.006,
+    "tokens": 400.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "anthropic.messages.create",
+      "spanKind": "llm",
+      "parentId": "eba64cb05c20e49e",
+      "statusCode": "OK",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": 0,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "cache_read",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0,
+         "tokens": 0.0
+        }
+       },
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "95f806011a2ca1b79fad9e13f9372b62",
+       "numSpans": 2,
+       "costSummary": {
+        "total": {
+         "cost": 0.012,
+         "tokens": 2400.0
+        },
+        "prompt": {
+         "cost": 0.006,
+         "tokens": 2000.0
+        },
+        "completion": {
+         "cost": 0.006,
+         "tokens": 400.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.006,
+          "tokens": 2000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.006,
+          "tokens": 400.0
+         }
+        }
+       ]
+      }
+     }
+    },
+    {
+     "node": {
+      "name": "chat claude-sonnet-4-5-20250929",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "UNSET",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": null,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 2400.0,
+      "cumulativeTokenCountPrompt": 2000.0,
+      "cumulativeTokenCountCompletion": 400.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "95f806011a2ca1b79fad9e13f9372b62",
+       "numSpans": 2,
+       "costSummary": {
+        "total": {
+         "cost": 0.012,
+         "tokens": 2400.0
+        },
+        "prompt": {
+         "cost": 0.006,
+         "tokens": 2000.0
+        },
+        "completion": {
+         "cost": 0.006,
+         "tokens": 400.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.006,
+          "tokens": 2000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.006,
+          "tokens": 400.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-streamh-B-ll",
+  "traceCount": 1,
+  "recordCount": 1,
+  "tokenCountTotal": 1201.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 201.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.0060149999999999995,
+    "tokens": 1201.0
+   },
+   "prompt": {
+    "cost": 0.003,
+    "tokens": 1000.0
+   },
+   "completion": {
+    "cost": 0.003015,
+    "tokens": 201.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "anthropic.chat",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "OK",
+      "tokenCountTotal": 1201,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 201,
+      "tokenPromptDetails": {
+       "cacheRead": 0,
+       "cacheWrite": 0,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1201.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 201.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.0060149999999999995,
+        "tokens": 1201.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003015,
+        "tokens": 201.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "cache_read",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0,
+         "tokens": 0.0
+        }
+       },
+       {
+        "tokenType": "cache_write",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0,
+         "tokens": 0.0
+        }
+       },
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003015,
+         "tokens": 201.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "a6842acc1d204d0274a1679b20898d59",
+       "numSpans": 1,
+       "costSummary": {
+        "total": {
+         "cost": 0.0060149999999999995,
+         "tokens": 1201.0
+        },
+        "prompt": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        },
+        "completion": {
+         "cost": 0.003015,
+         "tokens": 201.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "cache_write",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003015,
+          "tokens": 201.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-streamh-B-oi",
+  "traceCount": 1,
+  "recordCount": 1,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.006,
+    "tokens": 1200.0
+   },
+   "prompt": {
+    "cost": 0.003,
+    "tokens": 1000.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "messages.stream",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "OK",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": null,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "440cfdb86bb5142176c9985d459a08b7",
+       "numSpans": 1,
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        },
+        "prompt": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-streamh-B-oi310",
+  "traceCount": 1,
+  "recordCount": 1,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.006,
+    "tokens": 1200.0
+   },
+   "prompt": {
+    "cost": 0.003,
+    "tokens": 1000.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "messages.stream",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "OK",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": null,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "aac9cc25758e93433daa2d068762a53e",
+       "numSpans": 1,
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        },
+        "prompt": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-streamh-B-otel",
+  "traceCount": 1,
+  "recordCount": 1,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.006,
+    "tokens": 1200.0
+   },
+   "prompt": {
+    "cost": 0.003,
+    "tokens": 1000.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "chat claude-sonnet-4-5-20250929",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "UNSET",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": null,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "f6f82e2c3a39d192a633cf60a710a888",
+       "numSpans": 1,
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        },
+        "prompt": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "x2-streamh-C-sdk",
+  "traceCount": 1,
+  "recordCount": 1,
+  "tokenCountTotal": 1200.0,
+  "tokenCountPrompt": 1000.0,
+  "tokenCountCompletion": 200.0,
+  "costSummary": {
+   "total": {
+    "cost": 0.006,
+    "tokens": 1200.0
+   },
+   "prompt": {
+    "cost": 0.003,
+    "tokens": 1000.0
+   },
+   "completion": {
+    "cost": 0.003,
+    "tokens": 200.0
+   }
+  },
+  "spans": {
+   "edges": [
+    {
+     "node": {
+      "name": "anthropic.messages.create",
+      "spanKind": "llm",
+      "parentId": null,
+      "statusCode": "OK",
+      "tokenCountTotal": 1200,
+      "tokenCountPrompt": 1000,
+      "tokenCountCompletion": 200,
+      "tokenPromptDetails": {
+       "cacheRead": 0,
+       "cacheWrite": null,
+       "audio": null
+      },
+      "cumulativeTokenCountTotal": 1200.0,
+      "cumulativeTokenCountPrompt": 1000.0,
+      "cumulativeTokenCountCompletion": 200.0,
+      "costSummary": {
+       "total": {
+        "cost": 0.006,
+        "tokens": 1200.0
+       },
+       "prompt": {
+        "cost": 0.003,
+        "tokens": 1000.0
+       },
+       "completion": {
+        "cost": 0.003,
+        "tokens": 200.0
+       }
+      },
+      "costDetailSummaryEntries": [
+       {
+        "tokenType": "cache_read",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.0,
+         "tokens": 0.0
+        }
+       },
+       {
+        "tokenType": "input",
+        "isPrompt": true,
+        "value": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        }
+       },
+       {
+        "tokenType": "output",
+        "isPrompt": false,
+        "value": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       }
+      ],
+      "trace": {
+       "traceId": "4963bd8f1a0b36474fa8a8fe4cc4fcb5",
+       "numSpans": 1,
+       "costSummary": {
+        "total": {
+         "cost": 0.006,
+         "tokens": 1200.0
+        },
+        "prompt": {
+         "cost": 0.003,
+         "tokens": 1000.0
+        },
+        "completion": {
+         "cost": 0.003,
+         "tokens": 200.0
+        }
+       },
+       "costDetailSummaryEntries": [
+        {
+         "tokenType": "cache_read",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.0,
+          "tokens": 0.0
+         }
+        },
+        {
+         "tokenType": "input",
+         "isPrompt": true,
+         "value": {
+          "cost": 0.003,
+          "tokens": 1000.0
+         }
+        },
+        {
+         "tokenType": "output",
+         "isPrompt": false,
+         "value": {
+          "cost": 0.003,
+          "tokens": 200.0
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ }
+]

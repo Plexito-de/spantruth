@@ -1,0 +1,61 @@
+{
+  "_note": "What each web UI displayed for the x2-base projects, read with Playwright on 2026-11-06. 'tooltip' is shown only on hover. Screens are in screens/.",
+  "phoenix-21.0.0": {
+    "projects_page": "project cards show traces, sessions, latency P50; no tokens and no cost (phoenix-projects-list.png)",
+    "x2-base-A-ll": {
+      "traces_tab_rows": [
+        {"name": "anthropic.messages.create", "total_tokens": "1,200", "total_cost": "<$0.01", "cost_tooltip": "$0.0060"},
+        {"name": "anthropic.chat", "total_tokens": "1,200", "total_cost": "<$0.01", "cost_tooltip": "$0.0060"}
+      ],
+      "metrics_tab": {"cost_chart_tooltip": "prompt <$0.01, completion <$0.01; axis top $0.01", "token_chart_tooltip": "prompt 2,000, completion 400", "top_models_tokens": "2,000 (83.33%), 400 (16.67%)"},
+      "trace_view": [
+        {"trace": "51808516", "total_cost": "<$0.01", "tooltip": "$0.0060", "spans": ["anthropic.messages.create 1,200 <$0.01"]},
+        {"trace": "e1cd1c2c", "total_cost": "<$0.01", "tooltip": "$0.0060", "spans": ["anthropic.chat 1,200 <$0.01"]}
+      ]
+    },
+    "x2-base-A-otel": {
+      "traces_tab_rows": [{"name": "chat claude-sonnet-4-5-20250929", "total_tokens": "2,400", "total_cost": "$0.01", "cost_tooltip": "$0.0120"}],
+      "metrics_tab": {"cost_chart_tooltip": "prompt <$0.01, completion <$0.01; axis top $0.01", "token_chart_tooltip": "prompt 2,000, completion 400"},
+      "trace_view": [{"total_cost": "$0.01", "tooltip": "$0.0120", "spans": ["chat claude-sonnet-4-5-20250929 1,200 <$0.01", "anthropic.messages.create 1,200 <$0.01"]}]
+    },
+    "x2-base-A-oi310": {
+      "traces_tab_rows": [{"name": "messages.create", "total_tokens": "2,400", "total_cost": "$0.01", "cost_tooltip": "$0.0120"}],
+      "metrics_tab": {"cost_chart_tooltip": "prompt <$0.01, completion <$0.01; axis top $0.01", "token_chart_tooltip": "prompt 2,000, completion 400"},
+      "trace_view": [{"total_cost": "$0.01", "tooltip": "$0.0120", "spans": ["messages.create 1,200 <$0.01", "anthropic.messages.create 1,200 <$0.01"]}]
+    },
+    "x2-base-B-ll": {
+      "traces_tab_rows": [{"name": "anthropic.chat", "total_tokens": "1,200", "total_cost": "<$0.01", "cost_tooltip": "$0.0060"}],
+      "metrics_tab": {"cost_chart_tooltip": "prompt <$0.01, completion <$0.01", "token_chart_tooltip": "prompt 1,000, completion 200"},
+      "trace_view": [{"total_cost": "<$0.01", "tooltip": "$0.0060", "spans": ["anthropic.chat 1,200 <$0.01"]}]
+    }
+  },
+  "opik-2.2.143": {
+    "x2-base-A-ll": {
+      "projects_list": {"trace_count": "2", "total_cost": "$0.01", "cost_tooltip": "$0.012", "avg_total_tokens": "1200"},
+      "dashboard_cost_tile": {"value": "$0.01", "tooltip": "$0.012"},
+      "logs": {"total_cost_tile": "$0.01", "header": "Total tokens avg 1200, Estimated cost avg <$0.01", "rows": [{"tokens": "1200", "cost": "<$0.01", "tooltip": "$0.006"}, {"tokens": "1200", "cost": "<$0.01", "tooltip": "$0.006"}]},
+      "trace_view": [{"name": "anthropic.messages.create", "spans": 1, "tokens": "1200", "cost": "<$0.01"}, {"name": "anthropic.chat", "spans": 1, "tokens": "1200", "cost": "<$0.01"}]
+    },
+    "x2-base-A-otel": {
+      "projects_list": {"trace_count": "1", "total_cost": "$0.01", "cost_tooltip": "$0.012", "avg_total_tokens": "2400"},
+      "logs": {"total_cost_tile": "$0.01", "header": "Total tokens avg 2400, Estimated cost avg $0.01", "rows": [{"tokens": "2400", "cost": "$0.01", "tooltip": "$0.012"}]},
+      "trace_view": [{"name": "chat claude-sonnet-4-5-20250929", "spans": 2, "tokens": "2400", "cost": "$0.01", "children": ["chat ... <$0.01 1200", "anthropic.messages.create <$0.01 1200"]}]
+    },
+    "x2-base-A-oi310": {
+      "projects_list": {"trace_count": "1", "total_cost": "<$0.01", "avg_total_tokens": "1200"},
+      "logs": {"total_cost_tile": "<$0.01", "header": "Total tokens avg 1200, Estimated cost avg <$0.01", "rows": [{"tokens": "1200", "cost": "<$0.01", "tooltip": "$0.006"}]},
+      "trace_view": [{"name": "messages.create", "spans": 2, "tokens": "1200", "cost": "<$0.01", "children": ["messages.create: no cost, no token figure", "anthropic.messages.create <$0.01 1200"]}]
+    },
+    "x2-base-A-oi (OpenInference 3.3.0, extra)": {
+      "projects_list": {"trace_count": "1", "total_cost": "-", "avg_total_tokens": "-"},
+      "logs": {"total_cost_tile": "$0", "header": "Total tokens -, Estimated cost avg -", "rows": [{"tokens": "-", "cost": "-"}]},
+      "trace_view": [{"name": "messages.create", "spans": 1, "token_usage_yaml": "completion: 200, prompt: 1000, total: 1200", "cost": "none shown"}]
+    },
+    "x2-base-B-ll": {
+      "projects_list": {"trace_count": "1", "total_cost": "<$0.01", "avg_total_tokens": "1200"},
+      "logs": {"total_cost_tile": "<$0.01", "header": "Total tokens avg 1200, Estimated cost avg <$0.01", "rows": [{"tokens": "1200", "cost": "<$0.01", "tooltip": "$0.006"}]},
+      "trace_view": [{"name": "anthropic.chat", "spans": 1, "tokens": "1200", "cost": "<$0.01"}]
+    }
+  },
+  "browser_requests_blocked_off_loopback": {"phoenix_ui": ["fonts.googleapis.com", "pypi.org", "api.github.com"], "opik_ui": ["fonts.googleapis.com", "api.github.com"]}
+}

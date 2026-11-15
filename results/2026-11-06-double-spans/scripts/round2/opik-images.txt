@@ -1,0 +1,9 @@
+ghcr.io/comet-ml/opik/opik-python-backend:2.2.143 sha256:2a2645de57c664d064dec618faeb78f37ed6f684ae2e7882e72350a4acbb1d99
+ghcr.io/comet-ml/opik/opik-backend:2.2.143 sha256:d115d21f66bf1660ac09ad4101fba66db510cafbbbc5e93de1d0528c43686338
+ghcr.io/comet-ml/opik/opik-frontend:2.2.143 sha256:f1fddd32c7a4416cc1d949dd9f3b06960cc3f071ff702613698d8827356d5369
+docker.io/library/alpine:latest sha256:3f4d6b32e26703c6082839234f43769d5046b3ac7c910033911d1e71d8cd630a
+docker.io/clickhouse/clickhouse-server:26.3.62.3-alpine sha256:1d45e52080e6ed136a6377863046a0e53d69fb0418d799f12e23184ed6460c55
+docker.io/library/zookeeper:3.9.4 sha256:dfa9ba46d14bd52bcb3c1dac3ba91f179cf4cebf7ee576e1c2df09c68fc1d30d
+docker.io/cloudpirates/image-minio:RELEASE.2025-10-15T17-29-55Z-hardened sha256:8dc02a7e509336c8bbb67962086d691bdcde20a2c9327ed68e5081a681f6dbfc
+docker.io/library/mysql:8.4.2 sha256:ac80b6e09e5b12b4f9d5cd4f6425e43464247aa4ba4f6169da5daf59e5877f7d
+docker.io/library/redis:7.2.4-alpine3.19 sha256:c8bb255c3559b3e458766db810aa7b3c7af1235b204cfdb304e79ff388fe1a5a

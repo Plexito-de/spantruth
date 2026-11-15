@@ -19,6 +19,7 @@ REPO = Path(__file__).resolve().parents[1]
 def test_data_resolves_to_the_repository_in_a_clone():
     assert paths.data("subjects") == REPO / "subjects"
     assert paths.data("known_issues.toml") == REPO / "known_issues.toml"
+    assert paths.data("prices.toml") == REPO / "prices.toml"
 
 
 def test_data_prefers_the_copy_next_to_the_package(tmp_path):
@@ -121,6 +122,7 @@ def test_wheel_runs_a_control_without_a_clone(tmp_path):
     names = zipfile.ZipFile(wheel).namelist()
     assert "spantruth/subjects/control-honest/subject.toml" in names
     assert "spantruth/known_issues.toml" in names
+    assert "spantruth/prices.toml" in names
     assert {n.split("/")[0] for n in names} == {
         "spantruth",
         wheel.name.split("-py3")[0] + ".dist-info",

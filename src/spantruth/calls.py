@@ -77,6 +77,12 @@ def _openai_chunk(c: Any, seen: Seen) -> None:
     seen.response_id = c.id
     if c.choices and c.choices[0].delta.content:
         seen.text += c.choices[0].delta.content
+    if c.choices and c.choices[0].delta.tool_calls:
+        seen.text += "".join(
+            tc.function.name
+            for tc in c.choices[0].delta.tool_calls
+            if tc.function and tc.function.name
+        )
     if c.usage:
         seen.usage = c.usage.model_dump()
 
@@ -100,7 +106,9 @@ def _openai_create(client: Any, sc: Scenario):
 
 
 def _anthropic_result(r: Any, seen: Seen) -> None:
-    seen.text = "".join(b.text if b.type == "text" else b.name for b in r.content)
+    seen.text = "".join(
+        b.text if b.type == "text" else b.name if b.type == "tool_use" else "" for b in r.content
+    )
     seen.response_id, seen.usage = r.id, r.usage.model_dump()
 
 
@@ -123,6 +131,13 @@ def run(sc: Scenario, base_url: str, seen: Seen) -> None:
         client = openai.OpenAI(
             base_url=base_url, api_key="wt-test", max_retries=sc.retries, timeout=10
         )
+        if sc.entrypoint == "with_streaming_response":
+            with client.chat.completions.with_streaming_response.create(
+                **_openai_kwargs(sc)
+            ) as response:
+                stream = response.parse()
+                _read(stream, sc, seen, _openai_chunk)
+            return
         result, on_result, on_event = _openai_create(client, sc)
     else:
         import anthropic
@@ -157,6 +172,13 @@ async def _run_async(sc: Scenario, base_url: str, seen: Seen) -> None:
         client = openai.AsyncOpenAI(
             base_url=base_url, api_key="wt-test", max_retries=sc.retries, timeout=10
         )
+        if sc.entrypoint == "with_streaming_response":
+            async with client.chat.completions.with_streaming_response.create(
+                **_openai_kwargs(sc)
+            ) as response:
+                stream = await response.parse()
+                await _aread(stream, sc, seen, _openai_chunk)
+            return
         pending, on_result, on_event = _openai_create(client, sc)
         result = await pending
     else:

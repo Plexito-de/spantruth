@@ -9,7 +9,14 @@ import json
 from dataclasses import asdict, dataclass
 from typing import Any
 
-from .conventions import LLM_MARKERS, defined_for, lookup, openinference_only, same_finish
+from .conventions import (
+    LLM_MARKERS,
+    defined_for,
+    langfuse_only,
+    lookup,
+    openinference_only,
+    same_finish,
+)
 from .model import Scenario, Truth
 from .receiver import SpanRecord
 from .rules import RULES
@@ -58,9 +65,29 @@ def _app(base: dict, obs: dict) -> Check:
     return Check("app.unchanged", "broken" if diffs else "pass", detail="; ".join(diffs))
 
 
+def _one_part(t: Truth) -> dict[int, str]:
+    """The cache writes a library reports when it reads one part of the TTL breakdown alone.
+
+    The words are Anthropic's lifetimes, 5 minutes and 1 hour. Anthropic is the only provider whose
+    truth has a long part so far, so a second one needs its own words here.
+    """
+    write, long_write = t.cache_write_tokens or 0, t.cache_write_long_tokens or 0
+    short_write = write - long_write
+    if not long_write or not short_write:
+        return {}
+    if long_write == short_write:
+        return {long_write: "one part of the cache writes left out"}
+    return {
+        short_write: "1-hour cache writes left out",
+        long_write: "5-minute cache writes left out",
+    }
+
+
 def _formula(fact: str, got: int, t: Truth) -> str:
     """Name the arithmetic a wrong token count most likely came from."""
     read, write = t.cache_read_tokens or 0, t.cache_write_tokens or 0
+    # With a TTL breakdown on the wire, a library can also add its parts to the total.
+    breakdown = t.cache_write_long_tokens is not None
     if fact == "input_tokens" and t.input_tokens is not None:
         total = t.input_tokens
         guesses = {
@@ -70,8 +97,21 @@ def _formula(fact: str, got: int, t: Truth) -> str:
             total + read + write: "cache tokens counted twice",
             2 * total: "counted twice",
         }
+        for reported, left_out in _one_part(t).items():
+            guesses.setdefault(total - write + reported, left_out)
+        if breakdown:
+            guesses.setdefault(total + write, "cache writes counted twice")
         if got in guesses and read + write:
             return guesses[got]
+    if fact == "cache_write_tokens" and breakdown and write:
+        guesses = _one_part(t) | {2 * write: "cache writes counted twice"}
+        if got in guesses:
+            return guesses[got]
+    if fact == "output_tokens" and t.output_tokens is not None and t.reasoning_tokens:
+        if got == t.output_tokens - t.reasoning_tokens:
+            return "reasoning tokens left out of output"
+        if got == t.output_tokens + t.reasoning_tokens:
+            return "reasoning tokens added twice"
     for other in TOKENS:
         if other != fact and getattr(t, other) == got:
             return f"equals {other.replace('_', ' ')}"
@@ -116,7 +156,11 @@ def _value(fact: str, expected: Any, found: list[tuple[SpanRecord, str, Any]], t
             if fact in TOKENS
             else v == expected
         )
-        if not ok and fact == "response_model" and name == "llm.model_name":
+        if (
+            not ok
+            and fact == "response_model"
+            and name in {"llm.model_name", "langfuse.observation.model.name"}
+        ):
             ok = v == t.request_model  # this name does not separate request and response model
         if not ok:
             detail = _formula(fact, v, t) if fact in TOKENS and isinstance(v, int) else ""
@@ -179,6 +223,14 @@ def grade(
                     "error.type",
                     "n/a",
                     detail="OpenInference records errors as span status and events",
+                )
+            )
+        elif all(langfuse_only(s.attributes) for s in llm):
+            checks.append(
+                Check(
+                    "error.type",
+                    "n/a",
+                    detail="Langfuse records errors as span status and level",
                 )
             )
         else:

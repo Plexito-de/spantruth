@@ -12,12 +12,22 @@ CREATED = 1760000000
 FINGERPRINT = "fp_wt0001"
 
 
-def _usage(prompt: int, completion: int, cached: int, reasoning: int) -> dict:
+def _usage(
+    prompt: int, completion: int, cached: int, reasoning: int, cache_write: int | None = None
+) -> dict:
+    """The `usage` of a completion. `prompt` includes the cached and the written tokens.
+
+    `cache_write` is sent only when given: GPT-5.6 and later report the tokens a call wrote to
+    the prompt cache, and bill them at their own rate. Earlier models send no such field.
+    """
+    details: dict = {"cached_tokens": cached, "audio_tokens": 0}
+    if cache_write is not None:
+        details["cache_write_tokens"] = cache_write
     return {
         "prompt_tokens": prompt,
         "completion_tokens": completion,
         "total_tokens": prompt + completion,
-        "prompt_tokens_details": {"cached_tokens": cached, "audio_tokens": 0},
+        "prompt_tokens_details": details,
         "completion_tokens_details": {
             "reasoning_tokens": reasoning,
             "audio_tokens": 0,
@@ -45,6 +55,7 @@ def completion(
     prompt: int,
     completion_tokens: int,
     cached: int = 0,
+    cache_write: int | None = None,
     reasoning: int = 0,
     tool_calls: tuple[tuple[str, str, str], ...] = (),
 ) -> Response:
@@ -65,7 +76,7 @@ def completion(
             "choices": [
                 {"index": 0, "message": message, "finish_reason": finish, "logprobs": None}
             ],
-            "usage": _usage(prompt, completion_tokens, cached, reasoning),
+            "usage": _usage(prompt, completion_tokens, cached, reasoning, cache_write),
         }
     )
 
@@ -79,9 +90,11 @@ def chunks(
     prompt: int,
     completion_tokens: int,
     cached: int = 0,
+    cache_write: int | None = None,
     reasoning: int = 0,
     drop_after: int | None = None,
     include_usage: bool = True,
+    tool_calls: tuple[tuple[str, str, str], ...] = (),
 ) -> Response:
     """A stream. With `include_usage`, as sent for `stream_options={"include_usage": True}`."""
 
@@ -101,13 +114,42 @@ def chunks(
             }
         )
 
-    events = [chunk({"role": "assistant", "content": "", "refusal": None})]
+    events = [chunk({"role": "assistant", "content": None if tool_calls else "", "refusal": None})]
+    if tool_calls:
+        for i, (call_id, name, args) in enumerate(tool_calls):
+            events.append(
+                chunk(
+                    {
+                        "tool_calls": [
+                            {
+                                "index": i,
+                                "id": call_id,
+                                "type": "function",
+                                "function": {"name": name, "arguments": ""},
+                            }
+                        ]
+                    }
+                )
+            )
+            if args:
+                events.append(
+                    chunk(
+                        {
+                            "tool_calls": [
+                                {
+                                    "index": i,
+                                    "function": {"arguments": args},
+                                }
+                            ]
+                        }
+                    )
+                )
     events += [chunk({"content": part}) for part in parts]
     events.append(chunk({}, finish))
     if include_usage:
         usage = chunk({}).data | {
             "choices": [],
-            "usage": _usage(prompt, completion_tokens, cached, reasoning),
+            "usage": _usage(prompt, completion_tokens, cached, reasoning, cache_write),
         }
         events.append(Event(usage))
     events.append(Event("[DONE]"))
@@ -171,9 +213,12 @@ def responses_truth(
 
 
 def _tokens(usage: dict) -> dict:
+    """`prompt_tokens` already holds the cached and the written tokens, unlike Anthropic's count."""
+    prompt_details = usage["prompt_tokens_details"]
     return {
         "input_tokens": usage["prompt_tokens"],
         "output_tokens": usage["completion_tokens"],
-        "cache_read_tokens": usage["prompt_tokens_details"]["cached_tokens"] or None,
+        "cache_read_tokens": prompt_details["cached_tokens"] or None,
+        "cache_write_tokens": prompt_details.get("cache_write_tokens") or None,
         "reasoning_tokens": usage["completion_tokens_details"]["reasoning_tokens"] or None,
     }

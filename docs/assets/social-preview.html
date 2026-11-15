@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>spantruth social preview</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:1280px;height:640px;overflow:hidden}
+body{background:#121417;color:#e8eaed;font:24px/1.45 ui-sans-serif,system-ui,"DejaVu Sans",sans-serif;
+padding:64px 72px;display:flex;flex-direction:column;justify-content:space-between}
+h1{font-size:76px;line-height:1;margin:0;letter-spacing:-.02em}
+.q{font-size:38px;margin:18px 0 0}
+.t{font:25px/1.7 ui-monospace,"DejaVu Sans Mono",monospace;color:#a7aeb8;width:100%;border-collapse:collapse}
+.t td{padding:0}.t td:last-child{text-align:right}.t td.cmd{color:#7fd49b;padding-bottom:10px;text-align:left}
+.l{color:#cfaaf5}.w{color:#ff9aa0}.m{color:#f1cf6b}
+</style></head><body>
+<div><h1>spantruth</h1><p class="q">Does your LLM telemetry tell the truth?</p></div>
+<table class="t">
+<tr><td class="cmd" colspan="3">$ uvx spantruth doctor</td></tr>
+<tr><td class="l">Ghost span</td><td>the call never reaches a backend</td><td>-100%</td></tr>
+<tr><td class="w">Double span</td><td>one call reports usage on two spans</td><td>+100%</td></tr>
+<tr><td class="m">Cache-blind tokens</td><td>cached tokens left out of the count</td><td>-30%</td></tr>
+</table>
+</body></html>

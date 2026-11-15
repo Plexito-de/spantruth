@@ -1,0 +1,7 @@
+title = "Langfuse Python SDK"
+homepage = "https://github.com/langfuse/langfuse-python"
+providers = ["openai"]
+packages = ["langfuse==5.2.0"]
+track = ["langfuse"]
+notes = "The documented setup: from langfuse.openai import openai, with a throwaway key so Langfuse does not turn itself off. base_url points at the harness receiver so Langfuse's own export does not attempt an outbound connection; any POST to its own path (/api/public/otel/v1/traces) is answered 200 by the receiver. The driver's tracer provider exports the span to /v1/traces."
+

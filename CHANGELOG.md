@@ -8,9 +8,97 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
-- OpenLIT is a subject (`openlit==1.45.0`), instrumenting the OpenAI and Anthropic SDKs.
 - Pydantic Logfire is a subject (`logfire==5.4.0`), instrumenting the OpenAI and Anthropic SDKs
   with no Logfire account.
+
+## [0.5.0] - 2026-11-15
+
+### Added
+
+- `openai/stream-tool-call` and `anthropic/stream-tool-call` scenarios for parallel tool calls in a
+  stream: streamed deltas and `input_json_delta` chunks with finish reasons `tool_calls` and `tool_use`.
+- A write-up of the double span on the site: one Claude call shows twice its cost when the
+  Anthropic SDK's own tracing and an instrumentation library both report usage.
+- Langfuse Python SDK (`langfuse.openai`) as a subject, reading its native `langfuse.observation.*`
+  attributes.
+- `openai/stream-helper` and `openai/async-stream-helper` scenarios for a stream consumed via
+  `with_streaming_response.create`.
+- `anthropic/cache-1h` and `anthropic/stream-cache-1h` scenarios for a prompt-cache write with a
+  1-hour part and a 5-minute part. The response carries the `cache_creation` breakdown, so a
+  library that adds the breakdown to the total, or reports one part alone, shows a wrong count.
+  The report names that arithmetic.
+- `openai/cache-write` and `openai/stream-cache-write` scenarios for a prompt-cache write on
+  GPT-5.6, which OpenAI bills at its own rate and reports as `prompt_tokens_details.cache_write_tokens`.
+  The cost figure prices it, with a `gpt-5.6-luna` row in `prices.toml`.
+
+### Changed
+
+- The cost figure prices a 1-hour cache write at its own rate (`cache_write_long` in `prices.toml`,
+  $4.00 per million tokens for Claude Sonnet 5.5). It used the 5-minute rate for every cache
+  write. No scenario sent a 1-hour write before, so no published figure changes.
+- The test suite fails on a fixture whose `usage` has a field the cost figure does not price: a
+  batch, priority or fast tier, US-only inference, an Anthropic web search or code execution,
+  audio tokens, or an OpenAI cache write. The scenario that adds one decides its price first.
+- The test suite fails on a built fixture with a field that the provider's SDK types do not
+  declare. The SDK types accept an unknown field, so such a fixture parsed before.
+- Prices checked against both pricing pages on 2026-11-15.
+
+## [0.4.2] - 2026-11-06
+
+### Fixed
+
+- `doctor` left the Anthropic SDK's own tracing off when a project got `anthropic` through a
+  dependency and did not name it, so it missed the double span and could report no problem.
+
+## [0.4.1] - 2026-11-06
+
+### Added
+
+- `openai/stream-reasoning` scenario for a streamed chat completion whose last chunk carries
+  reasoning tokens.
+
+### Fixed
+
+- `spantruth doctor` no longer fails with exit code 3 on a project that pins `opentelemetry-sdk` but
+  not the OTLP HTTP exporter, or that uses the gRPC exporter. The harness's exporter now follows the
+  project's SDK version.
+- A selection with no scenario for one of the subjects, such as OpenAI scenarios with an Anthropic-only
+  subject, no longer ends in exit code 3.
+
+### Changed
+
+- The output of `spantruth doctor` says that it cannot see settings in the application's code or its
+  backend.
+
+## [0.4.0] - 2026-11-06
+
+### Added
+
+- `anthropic/thinking` and `anthropic/stream-thinking` scenarios for Anthropic extended thinking:
+  a response with thinking content blocks, non-streamed and streamed.
+- Ten named bug classes, `ST01` Ghost span to `ST10` Observer effect, on a new page
+  (`spantruth report --bugs FILE`, published as `bugs.html`). Each finding names its class. A class is
+  a reading of a check, so results documents of any age get classes, and a class ID never changes
+  meaning.
+- A finding shows what it does to a cost figure, at list price, for the token mix of its scenario.
+  `prices.toml` holds the prices, with their sources and their date.
+- `spantruth doctor` reads a project's lock file, runs the instrumentation libraries it recognizes at those
+  versions, and says what they get wrong, by bug class. It leaves the Anthropic SDK's own tracing on, as an
+  application does. `--json` prints a result for a script or a coding agent.
+- `comment: "true"` on the GitHub Action keeps one comment on each pull request with the checks that
+  changed. `spantruth run --comment FILE` writes the text.
+- `spantruth watch` compares a run with the last one. The nightly run publishes a history, a
+  [page](https://plexito-de.github.io/spantruth/changes.html) and an
+  [Atom feed](https://plexito-de.github.io/spantruth/feed.xml) of new releases that change a result.
+- [A guide](docs/test-your-wrapper.md) and an example for testing an in-house LLM wrapper.
+- An agent skill, `skills/spantruth`, and `llms.txt` on the report site.
+- Three subjects: the Sentry SDK and Datadog ddtrace through a local adapter that copies their span data
+  unchanged, and MLflow Tracing through its own GenAI export. The suite also reads the names that Sentry
+  and ddtrace use for cache and reasoning counts.
+- `otel-official-sdk-on`, the OpenTelemetry GenAI instrumentation with the Anthropic SDK's own tracing
+  left on. The library passes every scenario alone, so this subject shows what the SDK's tracing does:
+  14 of its 19 cells report usage on two spans.
+- OpenLIT is a subject (`openlit==1.45.0`), instrumenting the OpenAI and Anthropic SDKs.
 - `openai/retry-429` and `anthropic/retry-429` scenarios where the SDK's own retry runs:
   HTTP 429 with `retry-after`, then a successful response. Per-scenario state in the mock
   server ensures cells stay independent.
@@ -19,6 +107,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- `--with` with a version no longer rebuilds the environment on each run. A git ref or a checkout still
+  does.
 - spantruth is on PyPI, so the README quick start is `uvx spantruth`.
 - CI tests Python 3.13 and 3.14 as well as 3.11 and 3.12. Subject environments stay on 3.12.
 
@@ -149,7 +239,11 @@ All notable changes to this project are documented here. The format follows
 - Subjects: the OpenTelemetry GenAI instrumentation, OpenLLMetry and OpenInference.
 - A Markdown and a static HTML report.
 
-[Unreleased]: https://github.com/Plexito-de/spantruth/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/Plexito-de/spantruth/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/Plexito-de/spantruth/compare/v0.4.2...v0.5.0
+[0.4.2]: https://github.com/Plexito-de/spantruth/compare/v0.4.1...v0.4.2
+[0.4.1]: https://github.com/Plexito-de/spantruth/compare/v0.4.0...v0.4.1
+[0.4.0]: https://github.com/Plexito-de/spantruth/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Plexito-de/spantruth/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Plexito-de/spantruth/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Plexito-de/spantruth/releases/tag/v0.1.0

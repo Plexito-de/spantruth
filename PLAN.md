@@ -11,6 +11,10 @@ are in [`.plans/`](.plans/), and the research behind this plan is in
   files and exit codes (#23), findings people can link to (#24), and the GitHub Action (#25). The
   SDK bump found that the Anthropic SDK traces itself since 1.14.0, so any library on top reports
   each call twice. Open from E0: the PyPI publisher and the three contributor pull requests.
+- **2026-11-15.** The cost figure prices a 1-hour cache write at its own rate, and two scenarios
+  send one. The suite fails on a fixture with a field that changes the price and has no rate:
+  [PLAN_FEAT_cache-ttl-pricing.md](.plans/PLAN_FEAT_cache-ttl-pricing.md). Open: OpenAI bills a
+  cache write on GPT-5.6 and later, and no scenario covers it.
 
 ## The goal
 
@@ -148,6 +152,10 @@ Why: bets 2 and 3. Each scenario names its public instance.
 | Two concurrent calls in one trace | Counts that cross between spans |
 
 Start after #16 is merged, because it changes the scenario registry, the fake provider and the model.
+
+Moved on 2026-11-06: the rest of this table goes to 0.5, and contributors keep adding to it through issues.
+Release 0.4 goes to the people who pay the bill instead:
+[.plans/PLAN_FEAT_take-off.md](.plans/PLAN_FEAT_take-off.md).
 
 ### E4. Providers (Q1 and Q2 2027)
 

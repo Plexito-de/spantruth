@@ -41,6 +41,10 @@ class Subject:
     kind: str = "library"
     env: dict[str, str] = field(default_factory=dict)
     notes: str = ""
+    # The packages that tell `spantruth doctor` a project uses this library. Default: `track`.
+    detect: tuple[str, ...] = ()
+    # A package from this list has to be there too, for a library with other uses. Default: none.
+    detect_with: tuple[str, ...] = ()
     # How the subject was named: a built-in name, or the path that was given.
     ref: str = ""
 
@@ -92,6 +96,8 @@ def load(ref: str) -> Subject:
         kind=kind,
         env=dict(data.get("env", {})),
         notes=data.get("notes", ""),
+        detect=tuple(data.get("detect", data.get("track", ()))),
+        detect_with=tuple(data.get("detect_with", ())),
         ref=ref if is_path(ref) else directory.name,
     )
 
@@ -165,15 +171,15 @@ def environment(
 ) -> tuple[Path, dict[str, str]]:
     """Build (or reuse) the subject's virtual environment. Return its python and versions."""
     reqs = requirements(subject, latest, overrides)
-    overridden = reqs != requirements(subject, latest)
+    # A git ref such as a pull request head moves, and a checkout changes. A version does not.
+    moving = any(" @ " in spec for spec in overrides)
     python = base()["python"]
     key = hashlib.sha256(json.dumps([LAYOUT, python, reqs, latest]).encode()).hexdigest()[:12]
     cache.mkdir(parents=True, exist_ok=True)
     venv = cache / f"{subject.name}-{key}"
     py = venv / "bin" / "python"
     ready = venv / ".ready"
-    # A git ref such as a pull request head moves, so an override is always reinstalled.
-    if not ready.exists() or latest or overridden:
+    if not ready.exists() or latest or moving:
         try:
             _build(venv, python, reqs, cache)
         except subprocess.CalledProcessError:

@@ -1,0 +1,11 @@
+title = "OpenTelemetry GenAI instrumentation, with the Anthropic SDK's own tracing left on"
+homepage = "https://github.com/anthropics/anthropic-sdk-python"
+providers = ["anthropic"]
+notes = "What an app gets by default: this library passes every scenario alone, so each difference here comes from the SDK tracing itself since anthropic 1.14.0. The other subjects turn the SDK's spans off with ANTHROPIC_OPEN_TELEMETRY=false."
+packages = ["opentelemetry-instrumentation-genai-anthropic==1.3b0"]
+track = ["opentelemetry-instrumentation-genai-anthropic"]
+# `spantruth doctor` reaches this state by itself: it leaves the SDK's tracing on.
+detect = []
+
+[env]
+ANTHROPIC_OPEN_TELEMETRY = "true"

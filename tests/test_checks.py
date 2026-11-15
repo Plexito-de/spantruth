@@ -1,7 +1,13 @@
 """Every verdict the checks can return, on hand-built records. No subprocess, no network."""
 
+import json
+
+import pytest
+
 from spantruth import scenarios
-from spantruth.checks import cell_verdict, grade
+from spantruth.checks import _formula, cell_verdict, grade
+from spantruth.conventions import lookup
+from spantruth.model import Truth
 from spantruth.receiver import SpanRecord
 
 TRACE, PARENT = "a" * 32, "b" * 16
@@ -35,6 +41,7 @@ def honest(sid):
         ("output_tokens", "gen_ai.usage.output_tokens"),
         ("cache_read_tokens", "gen_ai.usage.cache_read.input_tokens"),
         ("cache_write_tokens", "gen_ai.usage.cache_creation.input_tokens"),
+        ("reasoning_tokens", "gen_ai.usage.reasoning.output_tokens"),
     ]:
         if getattr(t, fact) is not None:
             attrs[name] = getattr(t, fact)
@@ -68,6 +75,29 @@ def test_cache_reads_counted_twice_is_named():
     )
 
 
+def test_reasoning_tokens_left_out_of_output_is_named():
+    sc = scenarios.get("anthropic/thinking")
+    t, attrs = honest(sc.id)
+    attrs["gen_ai.usage.output_tokens"] = t.output_tokens - t.reasoning_tokens
+    assert by_id(grade(sc, t, BASE, obs(), [span(attrs)]))["output_tokens"].detail == (
+        "reasoning tokens left out of output"
+    )
+
+
+@pytest.mark.parametrize(
+    ("fact", "name"),
+    [
+        ("cache_read_tokens", "gen_ai.usage.input_tokens.cached"),
+        ("cache_write_tokens", "gen_ai.usage.input_tokens.cache_write"),
+        ("cache_write_tokens", "gen_ai.usage.cache_write_input_tokens"),
+        ("reasoning_tokens", "gen_ai.usage.output_tokens.reasoning"),
+        ("reasoning_tokens", "gen_ai.usage.reasoning_output_tokens"),
+    ],
+)
+def test_a_vendor_name_for_a_count_is_read(fact, name):
+    assert lookup({name: 5}, fact) == (name, 5)
+
+
 def test_absent_value_is_missing_not_wrong():
     sc = scenarios.get("openai/basic")
     t, attrs = honest(sc.id)
@@ -87,6 +117,43 @@ def test_openinference_names_are_read_and_reported():
     assert (
         c["input_tokens"].verdict == "pass" and c["input_tokens"].where == "llm.token_count.prompt"
     )
+
+
+def test_langfuse_names_are_read_and_reported():
+    sc = scenarios.get("openai/basic")
+    t = scenarios.truth(sc)
+    attrs = {
+        "langfuse.observation.type": "generation",
+        "langfuse.observation.model.name": t.response_model,
+        "langfuse.observation.usage_details": json.dumps(
+            {"prompt_tokens": 1187, "completion_tokens": 263}
+        ),
+    }
+    c = by_id(grade(sc, t, BASE, obs(), [span(attrs)]))
+    assert (
+        c["input_tokens"].verdict == "pass"
+        and c["input_tokens"].where == "langfuse.observation.usage_details[prompt_tokens]"
+    )
+    assert (
+        c["output_tokens"].verdict == "pass"
+        and c["output_tokens"].where == "langfuse.observation.usage_details[completion_tokens]"
+    )
+    assert c["response_model"].verdict == "pass"
+    assert c["request_model"].verdict == "n/a"
+    assert c["response_id"].verdict == "n/a"
+    assert c["finish_reasons"].verdict == "n/a"
+    assert c["cache_write_tokens"].verdict == "n/a"
+
+
+def test_langfuse_observation_model_name_accepts_request_model():
+    sc = scenarios.get("openai/basic")
+    t = scenarios.truth(sc)
+    attrs = {
+        "langfuse.observation.type": "generation",
+        "langfuse.observation.model.name": t.request_model,
+    }
+    c = by_id(grade(sc, t, BASE, obs(), [span(attrs)]))
+    assert c["response_model"].verdict == "pass"
 
 
 def test_span_that_never_ended_is_lost():
@@ -196,6 +263,36 @@ def test_fact_outside_openinference_conventions_is_not_graded():
     assert c["finish_reasons"].verdict == "missing"
 
 
+def test_fact_outside_langfuse_conventions_is_not_graded():
+    sc = scenarios.get("openai/basic")
+    t = scenarios.truth(sc)
+    attrs = {
+        "langfuse.observation.type": "generation",
+        "langfuse.observation.model.name": t.response_model,
+    }
+    c = by_id(grade(sc, t, BASE, obs(), [span(attrs)]))
+    assert c["response_id"].verdict == "n/a"
+    assert c["request_model"].verdict == "n/a"
+    assert c["finish_reasons"].verdict == "n/a"
+    assert c["cache_write_tokens"].verdict == "n/a"
+
+
+def test_lookup_follows_dotted_json_key():
+    usage = {
+        "prompt_tokens_details": {"cached_tokens": 4096},
+        "completion_tokens_details": {"reasoning_tokens": 1792},
+    }
+    attrs = {"langfuse.observation.usage_details": json.dumps(usage)}
+    assert lookup(attrs, "cache_read_tokens") == (
+        "langfuse.observation.usage_details[prompt_tokens_details.cached_tokens]",
+        4096,
+    )
+    assert lookup(attrs, "reasoning_tokens") == (
+        "langfuse.observation.usage_details[completion_tokens_details.reasoning_tokens]",
+        1792,
+    )
+
+
 def test_with_block_variant_exists():
     sc = scenarios.get("anthropic/stream-early-exit-with")
     assert sc.with_block and sc.read_events == 2
@@ -208,6 +305,16 @@ def test_error_type_is_not_graded_on_openinference_spans():
     assert c["error.status"].verdict == "pass" and c["error.type"].verdict == "n/a"
 
 
+def test_error_type_is_not_graded_on_langfuse_spans():
+    sc = scenarios.get("openai/rate-limited")
+    attrs = {
+        "langfuse.observation.type": "generation",
+        "langfuse.observation.model.name": "gpt-5-mini",
+    }
+    c = by_id(grade(sc, scenarios.truth(sc), BASE, obs(), [span(attrs, status="ERROR")]))
+    assert c["error.status"].verdict == "pass" and c["error.type"].verdict == "n/a"
+
+
 def test_finish_reasons_as_a_json_string_are_wrong_and_say_so():
     sc = scenarios.get("openai/basic")
     t, attrs = honest(sc.id)
@@ -215,3 +322,58 @@ def test_finish_reasons_as_a_json_string_are_wrong_and_say_so():
     c = by_id(grade(sc, t, BASE, obs(), [span(attrs)]))["finish_reasons"]
     assert c.verdict == "wrong"
     assert "JSON string" in c.detail and "string array" in c.detail
+
+
+def test_one_hour_cache_writes_left_out_is_named():
+    sc = scenarios.get("anthropic/cache-1h")
+    t, attrs = honest(sc.id)
+    long_write = t.cache_write_long_tokens
+    attrs["gen_ai.usage.cache_creation.input_tokens"] = t.cache_write_tokens - long_write
+    attrs["gen_ai.usage.input_tokens"] = t.input_tokens - long_write
+    checks = by_id(grade(sc, t, BASE, obs(), [span(attrs)]))
+    assert checks["cache_write_tokens"].detail == "1-hour cache writes left out"
+    assert checks["input_tokens"].detail == "1-hour cache writes left out"
+
+
+def test_ttl_breakdown_added_to_cache_writes_is_named():
+    sc = scenarios.get("anthropic/cache-1h")
+    t, attrs = honest(sc.id)
+    attrs["gen_ai.usage.cache_creation.input_tokens"] = 2 * t.cache_write_tokens
+    c = by_id(grade(sc, t, BASE, obs(), [span(attrs)]))["cache_write_tokens"]
+    assert c.verdict == "wrong" and c.detail == "cache writes counted twice"
+
+
+def test_five_minute_cache_writes_left_out_is_named():
+    sc = scenarios.get("anthropic/cache-1h")
+    t, attrs = honest(sc.id)
+    short_write = t.cache_write_tokens - t.cache_write_long_tokens
+    attrs["gen_ai.usage.cache_creation.input_tokens"] = t.cache_write_long_tokens
+    attrs["gen_ai.usage.input_tokens"] = t.input_tokens - short_write
+    checks = by_id(grade(sc, t, BASE, obs(), [span(attrs)]))
+    assert checks["cache_write_tokens"].detail == "5-minute cache writes left out"
+    assert checks["input_tokens"].detail == "5-minute cache writes left out"
+
+
+def test_ttl_breakdown_added_to_input_tokens_is_named():
+    sc = scenarios.get("anthropic/cache-1h")
+    t, attrs = honest(sc.id)
+    attrs["gen_ai.usage.input_tokens"] = t.input_tokens + t.cache_write_tokens
+    c = by_id(grade(sc, t, BASE, obs(), [span(attrs)]))["input_tokens"]
+    assert c.verdict == "wrong" and c.detail == "cache writes counted twice"
+
+
+def test_two_equal_parts_of_a_cache_write_are_not_told_apart():
+    t = Truth(
+        request_model="claude-sonnet-5-5",
+        input_tokens=900,
+        cache_write_tokens=200,
+        cache_write_long_tokens=100,
+    )
+    assert _formula("cache_write_tokens", 100, t) == "one part of the cache writes left out"
+    assert _formula("input_tokens", 800, t) == "one part of the cache writes left out"
+
+
+def test_a_cache_scenario_without_a_ttl_breakdown_gets_no_new_guess():
+    t = scenarios.truth(scenarios.get("anthropic/cache-hit"))
+    assert _formula("cache_write_tokens", 2 * t.cache_write_tokens, t) == ""
+    assert _formula("input_tokens", t.input_tokens + t.cache_write_tokens, t) == ""

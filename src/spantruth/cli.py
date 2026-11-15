@@ -8,7 +8,7 @@ import sys
 import traceback
 from pathlib import Path
 
-from . import __version__, expectations, paths, report, runner, scenarios, subjects
+from . import __version__, doctor, expectations, paths, report, runner, scenarios, subjects, watch
 
 # GitHub caps a step summary at 1 MiB. Stay below it, and say where the rest is.
 SUMMARY_LIMIT = 1_000_000
@@ -56,6 +56,8 @@ def _run(args: argparse.Namespace) -> int:
         return _usage(exc)
     except KeyError as exc:
         return _usage(exc.args[0])
+    if args.comment and len(selected) != 1:
+        return _usage("--comment takes exactly one --subject")
     if (args.expect or args.write_expect) and len(selected) != 1:
         return _usage("--expect and --write-expect take exactly one --subject")
     if (args.expect or args.write_expect) and not any(
@@ -114,9 +116,35 @@ def _run(args: argparse.Namespace) -> int:
         print(f"wrote {written}")
     if args.summary:
         _append_summary(Path(args.summary), text)
+    if args.comment:
+        compared = differences if expected is not None and not gaps else None
+        body = report.comment(doc, selected[0].name, compared, args.comment_link or "")
+        Path(args.comment).write_text(body)
     for gap in gaps:
         print(f"spantruth: incomplete run: {gap}", file=sys.stderr)
     return exit_code(doc, differences)
+
+
+def _doctor(args: argparse.Namespace) -> int:
+    try:
+        return doctor.run(
+            Path(args.path),
+            Path(args.out),
+            Path(args.cache),
+            jobs=args.jobs,
+            scenario=args.scenario,
+            as_json=args.json,
+        )
+    except doctor.DoctorError as exc:
+        return _usage(exc)
+
+
+def _watch(args: argparse.Namespace) -> int:
+    try:
+        return watch.run(Path(args.results), Path(args.state), Path(args.out))
+    except watch.WatchError as exc:
+        print(f"spantruth: could not read the state: {exc}", file=sys.stderr)
+        return 3
 
 
 def _report(args: argparse.Namespace) -> int:
@@ -125,13 +153,17 @@ def _report(args: argparse.Namespace) -> int:
         Path(args.html).parent.mkdir(parents=True, exist_ok=True)
         Path(args.html).write_text(report.html(doc))
         print(f"wrote {args.html}")
+    if args.bugs:
+        Path(args.bugs).parent.mkdir(parents=True, exist_ok=True)
+        Path(args.bugs).write_text(report.bugs_html(doc))
+        print(f"wrote {args.bugs}")
     if args.badges:
         out = Path(args.badges)
         out.mkdir(parents=True, exist_ok=True)
         for name, badge in report.badges(doc).items():
             (out / f"{name}.json").write_text(json.dumps(badge) + "\n")
         print(f"wrote badges to {out}")
-    if args.markdown or not (args.html or args.badges):
+    if args.markdown or not (args.html or args.badges or args.bugs):
         print(report.markdown(doc))
     return 0
 
@@ -188,13 +220,57 @@ def parser() -> argparse.ArgumentParser:
         metavar="FILE",
         help="append the Markdown report to this file, such as $GITHUB_STEP_SUMMARY",
     )
+    run.add_argument(
+        "--comment",
+        metavar="FILE",
+        help="write a short pull request comment for the one selected subject to this file",
+    )
+    run.add_argument("--comment-link", metavar="URL", help="the page the comment links to")
     run.set_defaults(func=_run)
+    doc = sub.add_parser(
+        "doctor",
+        help="read your project's lock file and show what your versions get wrong",
+        description="Read the versions of a project, run its instrumentation libraries at those "
+        "versions against the fake provider, and say what they get wrong. It does not run your "
+        "application. Exit code: 0 no problem found, 1 a problem found, 2 nothing to check, 3 "
+        "spantruth could not run something.",
+    )
+    doc.add_argument("path", nargs="?", default=".", help="the project directory (default: .)")
+    doc.add_argument("--json", action="store_true", help="print the result as JSON")
+    doc.add_argument("--scenario", action="append", help="scenario id, repeatable")
+    doc.add_argument(
+        "--out",
+        default=str(cache / "results" / "doctor.json"),
+        help="where to write the results document (default: %(default)s)",
+    )
+    doc.add_argument(
+        "--cache",
+        default=str(cache / "venvs"),
+        help="where to keep the subject environments (default: %(default)s)",
+    )
+    doc.add_argument("--jobs", type=int, default=4)
+    doc.set_defaults(func=_doctor)
+    wat = sub.add_parser(
+        "watch",
+        help="compare a run with the last one, and write the history and the feed",
+        description="Compare a results document with the one in --state, add it to the history, "
+        "and write history.jsonl, changes.jsonl, feed.xml and changes.html to --out.",
+    )
+    wat.add_argument("results", help="the results document of this run")
+    wat.add_argument(
+        "--state",
+        required=True,
+        help="a directory with the last run's latest.json, history.jsonl and changes.jsonl",
+    )
+    wat.add_argument("--out", required=True, help="where to write the files")
+    wat.set_defaults(func=_watch)
     rep = sub.add_parser("report", help="render a results document")
     rep.add_argument("results")
     rep.add_argument("--html", help="write a static HTML report to this path")
     rep.add_argument(
         "--badges", help="write a shields.io endpoint JSON per library to this directory"
     )
+    rep.add_argument("--bugs", help="write the page of bug classes to this path")
     rep.add_argument("--markdown", action="store_true", help="print the Markdown matrix")
     rep.set_defaults(func=_report)
     return parser

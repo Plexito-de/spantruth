@@ -88,8 +88,11 @@ def _openai_response(call: _Call, r: Any) -> None:
 
 def _openai_usage(call: _Call, u: Any) -> None:
     cached = getattr(u.prompt_tokens_details, "cached_tokens", 0) or 0
+    written = getattr(u.prompt_tokens_details, "cache_write_tokens", 0) or 0
     reasoning = getattr(u.completion_tokens_details, "reasoning_tokens", 0) or 0
-    call.usage(u.prompt_tokens, u.completion_tokens, read=cached, reasoning=reasoning)
+    call.usage(
+        u.prompt_tokens, u.completion_tokens, read=cached, write=written, reasoning=reasoning
+    )
 
 
 def _openai_chunk(call: _Call, c: Any) -> None:
@@ -125,11 +128,13 @@ def _anthropic_response(call: _Call, r: Any) -> None:
     call.set("gen_ai.response.id", r.id)
     call.finish = [r.stop_reason]
     u = r.usage
+    thinking = getattr(getattr(u, "output_tokens_details", None), "thinking_tokens", 0) or 0
     call.usage(
         u.input_tokens,
         u.output_tokens,
         u.cache_read_input_tokens or 0,
         u.cache_creation_input_tokens or 0,
+        reasoning=thinking,
     )
 
 
@@ -145,6 +150,11 @@ def _anthropic_event(call: _Call, e: Any) -> None:
     elif e.type == "message_delta":
         # Output is cumulative here. Input and cache counts, when repeated, are not added again.
         call.set("gen_ai.usage.output_tokens", e.usage.output_tokens)
+        thinking = (
+            getattr(getattr(e.usage, "output_tokens_details", None), "thinking_tokens", 0) or 0
+        )
+        if thinking:
+            call.set("gen_ai.usage.reasoning.output_tokens", thinking)
         if e.delta.stop_reason:
             call.finish = [e.delta.stop_reason]
     elif e.type == "content_block_delta" and e.delta.type == "text_delta":
@@ -180,6 +190,21 @@ class _Stream:
             self._call.fail(exc)
             raise
         self._call.end()
+
+    def parse(self) -> Any:
+        parsed = self._inner.parse()
+        if hasattr(parsed, "__await__"):
+
+            async def _aparse():
+                res = await parsed
+                if hasattr(res, "__aiter__"):
+                    return _Stream(res, self._call, self._on_event)
+                return res
+
+            return _aparse()
+        if hasattr(parsed, "__iter__"):
+            return _Stream(parsed, self._call, self._on_event)
+        return parsed
 
     def _closed(self) -> None:
         if "close-leaks-span" not in self._call.faults:

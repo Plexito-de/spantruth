@@ -4,9 +4,11 @@
 "anthropic/async-stream-dropped" = { "error.status" = "wrong", "error.type" = "missing" }
 "anthropic/async-stream-early-exit" = { "span.ended" = "lost" }
 "anthropic/async-stream-error-event" = { "error.status" = "wrong", "error.type" = "missing" }
+"anthropic/cache-1h" = { "input_tokens" = "wrong" }
 "anthropic/cache-hit" = { "input_tokens" = "wrong" }
 "anthropic/rate-limited" = { "error.status" = "wrong", "error.type" = "missing" }
 "anthropic/retry-429" = { "status.unset" = "wrong" }
+"anthropic/stream-cache-1h" = { "input_tokens" = "wrong" }
 "anthropic/stream-cache-cumulative" = { "input_tokens" = "wrong" }
 "anthropic/stream-cache-hit" = { "input_tokens" = "wrong" }
 "anthropic/stream-dropped" = { "error.status" = "wrong", "error.type" = "missing" }

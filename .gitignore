@@ -7,6 +7,8 @@ __pycache__/
 dist/
 build/
 *.egg-info/
-site/
+/site/
 results/*
 !results/2026-11-03-pinned.json
+!results/2026-11-06-double-spans/
+.playwright-mcp/

@@ -24,7 +24,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
       - run: uv sync --locked
       # Exit code 3 means the harness could not run a cell or build an environment, for example
       # when a new upstream release fails to install. Publish the report anyway, so the gap shows
@@ -39,10 +39,26 @@ jobs:
           rc=0
           uv run spantruth run --latest --out site/latest.json || rc=$?
           if [ "$rc" -eq 3 ]; then echo "::warning::incomplete latest run"; elif [ "$rc" -ne 0 ]; then exit "$rc"; fi
+      # The history and the feed live on the site. A missing file (404) means the first run. Any
+      # other failure stops the job: publishing without the old files would lose the history.
+      - name: Fetch the last published state
+        run: |
+          mkdir -p state
+          for file in latest.json history.jsonl changes.jsonl; do
+            code=$(curl -sS -L -o "state/$file" -w '%{http_code}' "https://plexito-de.github.io/spantruth/$file")
+            case "$code" in
+              200) ;;
+              404) rm -f "state/$file" ;;
+              *) echo "::error::$file answered $code"; exit 1 ;;
+            esac
+          done
+      - name: Compare with the last run
+        run: uv run spantruth watch site/latest.json --state state --out site
       - name: Render
         run: |
-          uv run spantruth report site/pinned.json --html site/index.html
+          uv run spantruth report site/pinned.json --html site/index.html --bugs site/bugs.html
           uv run spantruth report site/latest.json --html site/latest.html --badges site/badges
+          cp -R docs/site/. site/
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: site

@@ -63,6 +63,9 @@ class Truth:
     output_tokens: int | None = None
     cache_read_tokens: int | None = None
     cache_write_tokens: int | None = None
+    # The part of `cache_write_tokens` cached for 1 hour, which costs more than the 5-minute part.
+    # Only the cost figure reads it: no convention attribute separates the two, so no check does.
+    cache_write_long_tokens: int | None = None
     reasoning_tokens: int | None = None
     # Why the call failed, as the app experienced it: "HTTP 429", "connection dropped", ...
     error: str | None = None
@@ -96,6 +99,7 @@ class Scenario:
     stream_usage: bool = True
     asynchronous: bool = False
     api: str = "chat"
+    entrypoint: str = "create"
     catches: str = ""
     tags: tuple[str, ...] = field(default_factory=tuple)
     responses: tuple[Response, ...] = ()
