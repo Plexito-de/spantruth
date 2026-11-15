@@ -22,6 +22,9 @@ All notable changes to this project are documented here. The format follows
 - The cost figure prices a 1-hour cache write at its own rate (`cache_write_long` in `prices.toml`,
   $4.00 per million tokens for Claude Sonnet 5.5). It used the 5-minute rate for every cache
   write. No scenario sent a 1-hour write before, so no published figure changes.
+- The test suite fails on a fixture whose `usage` has a field the cost figure does not price: a
+  batch, priority or fast tier, US-only inference, an Anthropic web search or code execution,
+  audio tokens, or an OpenAI cache write. The scenario that adds one decides its price first.
 - The test suite fails on a built fixture with a field that the provider's SDK types do not
   declare. The SDK types accept an unknown field, so such a fixture parsed before.
 - Prices checked against both pricing pages on 2026-11-15.
