@@ -362,3 +362,21 @@ def test_the_price_guard_reads_a_usage_inside_json_text():
     response = Response(events=(Event(json.dumps(completed), event="response.completed"),))
     found = [impact.unpriced("openai", h) for h in _billed(response)]
     assert ["service_tier='priority'"] in found
+
+
+@pytest.mark.parametrize(
+    ("sid", "tokens"),
+    [
+        ("openai/cache-write", (6619, 2753, 3181)),
+        ("openai/stream-cache-write", (8237, 3967, 3539)),
+    ],
+)
+def test_openai_prompt_tokens_include_cache_reads_and_writes(sid, tokens):
+    t = scenarios.truth(scenarios.get(sid))
+    assert (t.input_tokens, t.cache_read_tokens, t.cache_write_tokens) == tokens
+    assert t.cache_write_long_tokens is None  # Chat Completions has no 12-hour lifetime
+    assert scenarios.get(sid).request_model == "gpt-5.6-luna"
+
+
+def test_an_openai_fixture_without_cache_writes_has_none():
+    assert scenarios.truth(scenarios.get("openai/cache-hit")).cache_write_tokens is None

@@ -16,6 +16,9 @@ All notable changes to this project are documented here. The format follows
   1-hour part and a 5-minute part. The response carries the `cache_creation` breakdown, so a
   library that adds the breakdown to the total, or reports one part alone, shows a wrong count.
   The report names that arithmetic.
+- `openai/cache-write` and `openai/stream-cache-write` scenarios for a prompt-cache write on
+  GPT-5.6, which OpenAI bills at its own rate and reports as `prompt_tokens_details.cache_write_tokens`.
+  The cost figure prices it, with a `gpt-5.6-luna` row in `prices.toml`.
 
 ### Changed
 
