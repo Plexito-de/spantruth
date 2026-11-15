@@ -196,7 +196,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: Plexito-de/spantruth@v0.4.2
+      - uses: Plexito-de/spantruth@v0.5.0
         with:
           subject: ./spantruth                       # or a built-in subject, such as openllmetry
           with: ./packages/my-instrumentation        # your checkout, one per line
