@@ -9,10 +9,10 @@ import openai.types.responses
 import pydantic
 import pytest
 
-from spantruth import calls, scenarios
+from spantruth import calls, impact, scenarios
 from spantruth import wire_anthropic as an
 from spantruth.mockserver import MockServer
-from spantruth.model import Response
+from spantruth.model import Event, Response
 
 ALL = list(scenarios.SCENARIOS.values())
 # A recording is a real provider stream, and the provider can be ahead of the SDK's types.
@@ -322,3 +322,43 @@ def test_anthropic_truth_reads_the_one_hour_share_of_cache_writes(sid, tokens):
 
 def test_a_fixture_without_a_ttl_breakdown_has_no_one_hour_writes():
     assert scenarios.truth(scenarios.get("anthropic/cache-hit")).cache_write_long_tokens is None
+
+
+def _billed(response):
+    """Every object of a fixture that holds a `usage`: a body, an event, or an event's message."""
+    if response.body is not None:
+        yield response.body
+    for e in response.events or ():
+        data = e.data
+        if isinstance(data, str):
+            try:
+                data = json.loads(data)
+            except ValueError:  # OpenAI ends a stream with the plain text `[DONE]`
+                continue
+        if isinstance(data, dict):
+            # Anthropic's message_start holds a message, a Responses event holds a response.
+            yield from (data, data.get("message") or {}, data.get("response") or {})
+
+
+@pytest.mark.parametrize("sc", ALL, ids=lambda s: s.id)
+def test_no_fixture_sends_a_field_the_cost_figure_does_not_price(sc):
+    holders = [h for r in sc.responses for h in _billed(r) if isinstance(h.get("usage"), dict)]
+    if scenarios.truth(sc).input_tokens is not None:
+        assert holders, f"{sc.id} has token counts, but this test found no usage to read"
+    for holder in holders:
+        assert impact.unpriced(sc.provider, holder) == [], (
+            f"{sc.id} sends fields that change the price and that impact.py does not price. "
+            "Decide what each one does to a cost figure, then teach impact.py."
+        )
+
+
+def test_the_price_guard_reads_a_usage_inside_json_text():
+    # A recorded fixture keeps its events as JSON text. A guard that skipped text would pass on
+    # any recorded stream, whatever its tier.
+    completed = {
+        "type": "response.completed",
+        "response": {"service_tier": "priority", "usage": {"input_tokens": 9, "output_tokens": 3}},
+    }
+    response = Response(events=(Event(json.dumps(completed), event="response.completed"),))
+    found = [impact.unpriced("openai", h) for h in _billed(response)]
+    assert ["service_tier='priority'"] in found

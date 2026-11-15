@@ -19,6 +19,101 @@ from . import bugclasses, paths
 PRICES = paths.data("prices.toml")
 MILLION = 1_000_000
 
+# The fields of a provider's `usage` that this module prices, as dotted paths. Each one is a count
+# with a rate in prices.toml, or a part of such a count that bills at the same rate.
+PRICED: dict[str, frozenset[str]] = {
+    "anthropic": frozenset(
+        {
+            "input_tokens",
+            "output_tokens",
+            "cache_read_input_tokens",
+            "cache_creation_input_tokens",
+            "cache_creation.ephemeral_5m_input_tokens",
+            "cache_creation.ephemeral_1h_input_tokens",
+            "output_tokens_details.thinking_tokens",  # inside output_tokens
+            "server_tool_use.web_fetch_requests",  # a web fetch bills through its tokens only
+        }
+    ),
+    "openai": frozenset(
+        {
+            # Chat Completions
+            "prompt_tokens",
+            "completion_tokens",
+            "total_tokens",
+            "prompt_tokens_details.cached_tokens",
+            # The next three are inside completion_tokens and bill at the output rate.
+            "completion_tokens_details.reasoning_tokens",
+            "completion_tokens_details.accepted_prediction_tokens",
+            "completion_tokens_details.rejected_prediction_tokens",
+            # Responses
+            "input_tokens",
+            "output_tokens",
+            "input_tokens_details.cached_tokens",
+            "output_tokens_details.reasoning_tokens",  # inside output_tokens
+        }
+    ),
+}
+# Fields that multiply every rate of a call, and the values that leave the standard rates in force.
+STANDARD: dict[str, dict[str, frozenset[str]]] = {
+    "anthropic": {
+        "service_tier": frozenset({"standard"}),  # `priority` and `batch` have other rates
+        "inference_geo": frozenset({"global"}),  # `us` costs 1.1x
+        "speed": frozenset({"standard"}),  # `fast` has premium rates
+    },
+    "openai": {
+        "service_tier": frozenset({"default"}),  # `flex`, `priority` and `scale` have other rates
+    },
+}
+
+
+def _leaves(value: Any, prefix: str = "") -> Iterable[tuple[str, Any]]:
+    if isinstance(value, Mapping):
+        for key, inner in value.items():
+            yield from _leaves(inner, f"{prefix}.{key}" if prefix else str(key))
+    else:
+        yield prefix, value
+
+
+def _bills_nothing(value: Any, standard: frozenset[str]) -> bool:
+    """True for an absent value, a count of zero, an empty list and a tier at the standard rates."""
+    if value is None or (isinstance(value, (list, tuple)) and not value):
+        return True
+    if isinstance(value, str):
+        return value in standard
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and value == 0
+
+
+def unpriced(provider: str, response: Mapping[str, Any]) -> list[str]:
+    """The fields of one response that change its price in a way this module does not know.
+
+    `response` is the object that holds `usage`: a message, a completion, a stream chunk or event.
+    A count of zero and an absent value bill nothing. Any other field outside `PRICED` and
+    `STANDARD` is named: a batch or priority tier, US-only inference, an Anthropic web search or
+    code execution, audio tokens, or a cache write on an OpenAI model that bills one. A cost
+    figure for such a call would be wrong, so tests/test_wire.py fails on a fixture that sends
+    one, and the scenario that adds it decides its price first.
+
+    Only `usage` and the tier are read. A charge that neither one carries is not named: an OpenAI
+    tool call that bills per call is an item of the output, and the higher rates of a long prompt
+    follow from the input count.
+    """
+    if provider not in PRICED:
+        raise ValueError(
+            f"no price rules for provider {provider!r}: add it to impact.PRICED and impact.STANDARD"
+        )
+    usage = response.get("usage")
+    if not isinstance(usage, Mapping):
+        return []  # Nothing is billed here, so a tier on this object says nothing yet.
+    standard = STANDARD[provider]
+    # OpenAI names the tier next to `usage`, Anthropic inside it.
+    fields = [*_leaves(usage), *((k, response.get(k)) for k in standard if k not in usage)]
+    return sorted(
+        f"{path}={value!r}"
+        for path, value in fields
+        if path not in PRICED[provider]
+        and not _bills_nothing(value, standard.get(path, frozenset()))
+    )
+
 
 @dataclass(frozen=True)
 class Price:

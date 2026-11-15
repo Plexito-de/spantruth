@@ -1,9 +1,7 @@
 # Plan: price 1-hour cache writes, and name every other field that changes a price
 
-Status: decisions 1 to 4 and 6 to 8 are built, on 2026-11-15. Decision 5, the guard in
-`impact.unpriced`, follows in its own pull request. Grounded in the code read directly: `impact.py`,
-`wire_anthropic.py`, `reference.py`, `checks.py`, `scenarios.py`,
-`subjects/control-faulty/expected.toml`.
+Status: built on 2026-11-15. Grounded in the code read directly: `impact.py`, `wire_anthropic.py`,
+`reference.py`, `checks.py`, `scenarios.py`, `subjects/control-faulty/expected.toml`.
 
 ## Problem
 

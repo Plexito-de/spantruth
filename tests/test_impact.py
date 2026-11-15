@@ -250,3 +250,103 @@ def test_a_wrong_write_count_keeps_the_wire_share_of_one_hour_writes():
 def test_every_model_has_a_one_hour_write_price_at_least_the_five_minute_one():
     for price in impact.load_prices().values():
         assert price.cache_write_long >= price.cache_write
+
+
+ANTHROPIC_USAGE = {
+    "input_tokens": 1307,
+    "output_tokens": 389,
+    "cache_read_input_tokens": 2861,
+    "cache_creation_input_tokens": 2120,
+    "cache_creation": {"ephemeral_5m_input_tokens": 457, "ephemeral_1h_input_tokens": 1663},
+    "output_tokens_details": {"thinking_tokens": 211},
+}
+OPENAI_USAGE = {
+    "prompt_tokens": 5379,
+    "completion_tokens": 377,
+    "total_tokens": 5756,
+    "prompt_tokens_details": {"cached_tokens": 4096, "audio_tokens": 0},
+    "completion_tokens_details": {"reasoning_tokens": 64, "rejected_prediction_tokens": 12},
+}
+
+
+@pytest.mark.parametrize(
+    ("provider", "response"),
+    [
+        ("anthropic", {"usage": ANTHROPIC_USAGE}),
+        # The tiers and the server tools at their standard values, as the API sends them.
+        (
+            "anthropic",
+            {
+                "usage": ANTHROPIC_USAGE
+                | {
+                    "service_tier": "standard",
+                    "inference_geo": "global",
+                    "speed": "standard",
+                    "server_tool_use": {"web_search_requests": 0, "web_fetch_requests": 0},
+                }
+            },
+        ),
+        ("anthropic", {"usage": ANTHROPIC_USAGE | {"service_tier": None, "speed": None}}),
+        ("openai", {"service_tier": "default", "usage": OPENAI_USAGE}),
+        ("openai", {"usage": OPENAI_USAGE}),
+        # A chunk before the usage chunk bills nothing, so its tier says nothing yet.
+        ("openai", {"service_tier": "auto", "usage": None}),
+    ],
+)
+def test_a_call_at_the_standard_rates_has_no_unpriced_field(provider, response):
+    assert impact.unpriced(provider, response) == []
+
+
+@pytest.mark.parametrize(
+    ("provider", "response", "named"),
+    [
+        ("anthropic", {"usage": ANTHROPIC_USAGE | {"service_tier": "batch"}}, "service_tier"),
+        ("anthropic", {"usage": ANTHROPIC_USAGE | {"service_tier": "priority"}}, "service_tier"),
+        ("anthropic", {"usage": ANTHROPIC_USAGE | {"inference_geo": "us"}}, "inference_geo"),
+        ("anthropic", {"usage": ANTHROPIC_USAGE | {"speed": "fast"}}, "speed"),
+        (
+            "anthropic",
+            {"usage": ANTHROPIC_USAGE | {"server_tool_use": {"web_search_requests": 2}}},
+            "server_tool_use.web_search_requests",
+        ),
+        ("openai", {"service_tier": "flex", "usage": OPENAI_USAGE}, "service_tier"),
+        ("openai", {"service_tier": "priority", "usage": OPENAI_USAGE}, "service_tier"),
+        (
+            "openai",
+            {"usage": OPENAI_USAGE | {"prompt_tokens_details": {"audio_tokens": 40}}},
+            "prompt_tokens_details.audio_tokens",
+        ),
+        (
+            "openai",
+            {"usage": OPENAI_USAGE | {"prompt_tokens_details": {"cache_write_tokens": 700}}},
+            "prompt_tokens_details.cache_write_tokens",
+        ),
+        ("openai", {"usage": OPENAI_USAGE | {"a_field_of_next_year": 5}}, "a_field_of_next_year"),
+    ],
+)
+def test_a_field_that_changes_the_price_is_named(provider, response, named):
+    assert [field.split("=")[0] for field in impact.unpriced(provider, response)] == [named]
+
+
+@pytest.mark.parametrize(
+    "extra",
+    [
+        # A web fetch bills through its tokens only.
+        {"server_tool_use": {"web_fetch_requests": 3, "web_search_requests": 0}},
+        {"iterations": []},
+    ],
+)
+def test_a_field_with_no_charge_of_its_own_is_not_named(extra):
+    assert impact.unpriced("anthropic", {"usage": ANTHROPIC_USAGE | extra}) == []
+
+
+def test_code_execution_is_named_because_it_bills_by_time():
+    usage = ANTHROPIC_USAGE | {"server_tool_use": {"code_execution_requests": 1}}
+    assert impact.unpriced("anthropic", {"usage": usage}) == [
+        "server_tool_use.code_execution_requests=1"
+    ]
+
+
+def test_a_provider_with_no_price_rules_is_an_error_that_says_so():
+    with pytest.raises(ValueError, match="gemini"):
+        impact.unpriced("gemini", {"usage": {"promptTokenCount": 5}})
