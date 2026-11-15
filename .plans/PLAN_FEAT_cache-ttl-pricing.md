@@ -99,8 +99,10 @@ prediction counts, and nothing said what they do to a price.
   row models them. No fixture has either.
 - **The span's share of long writes is an assumption.** A span that reports one part of a write
   alone is priced at the wire's mix of both lifetimes. No library does this today.
-- **An OpenAI cache-write scenario.** GPT-5.6 and later bill a cache write and report
-  `cache_write_tokens`. A scenario needs a GPT-5.6 model in the registry with its two write rates,
+- **An OpenAI cache-write scenario.** Built on 2026-11-15 for Chat Completions (#66):
+  `openai/cache-write` and `openai/stream-cache-write` on `gpt-5.6-luna`. The 12-hour lifetime of
+  the Responses API stays open, with the rest of that API. The text below is the plan it followed.
+  GPT-5.6 and later bill a cache write and report `cache_write_tokens`. A scenario needs a GPT-5.6 model in the registry with its two write rates,
   the OpenAI truth for `cache_write_tokens`, and a look at each library before the report shows a
   red cell. The 12-hour breakdown (`cache_write_tokens_details`) is in the Responses API only, and
   a Responses stream that ends is not graded yet (E3 in [PLAN.md](../PLAN.md)).

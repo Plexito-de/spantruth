@@ -41,6 +41,7 @@ PRICED: dict[str, frozenset[str]] = {
             "completion_tokens",
             "total_tokens",
             "prompt_tokens_details.cached_tokens",
+            "prompt_tokens_details.cache_write_tokens",  # GPT-5.6 and later, at `cache_write`
             # The next three are inside completion_tokens and bill at the output rate.
             "completion_tokens_details.reasoning_tokens",
             "completion_tokens_details.accepted_prediction_tokens",

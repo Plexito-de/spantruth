@@ -15,6 +15,9 @@ from .model import Scenario, Truth
 
 OPENAI_MODEL = "gpt-5-mini"
 OPENAI_SERVED = "gpt-5-mini-2026-08-07"
+# GPT-5.6 and later bill a prompt-cache write and report it, so the cache-write scenarios use one.
+OPENAI_CACHE_MODEL = "gpt-5.6-luna"
+OPENAI_CACHE_SERVED = "gpt-5.6-luna-2026-10-14"
 ANTHROPIC_MODEL = "claude-sonnet-5-5"
 ANTHROPIC_SERVED = "claude-sonnet-5-5-20260915"
 PARTS = ("The capital", " of France", " is Paris.")
@@ -39,9 +42,8 @@ def _openai() -> list[Scenario]:
             provider="openai",
             title=title,
             catches=catches,
-            request_model=OPENAI_MODEL,
             response=response,
-            **kw,
+            **{"request_model": OPENAI_MODEL} | kw,
         )
 
     body = dict(model=OPENAI_SERVED, text="The capital of France is Paris.", finish="stop")
@@ -83,6 +85,35 @@ def _openai() -> list[Scenario]:
             oa.chunks(
                 id="chatcmpl-wt-scache", prompt=7213, completion_tokens=511, cached=6144, **stream
             ),
+            stream=True,
+        ),
+        sc(
+            "cache-write",
+            "Prompt cache read and write",
+            "cache writes dropped from usage",
+            oa.completion(
+                id="chatcmpl-wt-cwrite",
+                prompt=6619,
+                completion_tokens=401,
+                cached=2753,
+                cache_write=3181,
+                **body | {"model": OPENAI_CACHE_SERVED},
+            ),
+            request_model=OPENAI_CACHE_MODEL,
+        ),
+        sc(
+            "stream-cache-write",
+            "Prompt cache read and write, streamed",
+            "cache writes lost in a stream",
+            oa.chunks(
+                id="chatcmpl-wt-scwrite",
+                prompt=8237,
+                completion_tokens=457,
+                cached=3967,
+                cache_write=3539,
+                **stream | {"model": OPENAI_CACHE_SERVED},
+            ),
+            request_model=OPENAI_CACHE_MODEL,
             stream=True,
         ),
         sc(

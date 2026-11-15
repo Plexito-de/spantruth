@@ -88,8 +88,11 @@ def _openai_response(call: _Call, r: Any) -> None:
 
 def _openai_usage(call: _Call, u: Any) -> None:
     cached = getattr(u.prompt_tokens_details, "cached_tokens", 0) or 0
+    written = getattr(u.prompt_tokens_details, "cache_write_tokens", 0) or 0
     reasoning = getattr(u.completion_tokens_details, "reasoning_tokens", 0) or 0
-    call.usage(u.prompt_tokens, u.completion_tokens, read=cached, reasoning=reasoning)
+    call.usage(
+        u.prompt_tokens, u.completion_tokens, read=cached, write=written, reasoning=reasoning
+    )
 
 
 def _openai_chunk(call: _Call, c: Any) -> None:

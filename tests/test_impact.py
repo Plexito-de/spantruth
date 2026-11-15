@@ -318,8 +318,8 @@ def test_a_call_at_the_standard_rates_has_no_unpriced_field(provider, response):
         ),
         (
             "openai",
-            {"usage": OPENAI_USAGE | {"prompt_tokens_details": {"cache_write_tokens": 700}}},
-            "prompt_tokens_details.cache_write_tokens",
+            {"usage": {"input_tokens": 90, "input_tokens_details": {"cache_write_tokens": 70}}},
+            "input_tokens_details.cache_write_tokens",
         ),
         ("openai", {"usage": OPENAI_USAGE | {"a_field_of_next_year": 5}}, "a_field_of_next_year"),
     ],
@@ -350,3 +350,34 @@ def test_code_execution_is_named_because_it_bills_by_time():
 def test_a_provider_with_no_price_rules_is_an_error_that_says_so():
     with pytest.raises(ValueError, match="gemini"):
         impact.unpriced("gemini", {"usage": {"promptTokenCount": 5}})
+
+
+def test_an_openai_cache_write_is_priced_at_its_own_rate():
+    wire = {
+        "request_model": "gpt-5.6-luna",
+        "error": None,
+        "input_tokens": 6619,
+        "output_tokens": 401,
+        "cache_read_tokens": 2753,
+        "cache_write_tokens": 3181,
+    }
+    checks = [
+        check("input_tokens", "pass", 6619, 6619),
+        check("output_tokens", "pass", 401, 401),
+        check("cache_read_tokens", "pass", 2753, 2753),
+        check("cache_write_tokens", "missing", 3181),
+    ]
+    result = impact.cell_cost(wire, checks)
+    # 685 uncached at $0.20, 2753 read at $0.02, 3181 written at $0.25, 401 output at $1.20.
+    assert result.real == pytest.approx(
+        (685 * 0.20 + 2753 * 0.02 + 3181 * 0.25 + 401 * 1.20) / 1_000_000
+    )
+    # A missing write count prices the 3181 tokens as uncached input instead.
+    assert result.real - result.reported == pytest.approx(3181 * (0.25 - 0.20) / 1_000_000)
+
+
+def test_a_chat_completions_cache_write_count_is_priced():
+    usage = OPENAI_USAGE | {
+        "prompt_tokens_details": {"cached_tokens": 4096, "cache_write_tokens": 7}
+    }
+    assert impact.unpriced("openai", {"usage": usage}) == []
