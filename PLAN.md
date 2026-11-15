@@ -11,6 +11,9 @@ are in [`.plans/`](.plans/), and the research behind this plan is in
   files and exit codes (#23), findings people can link to (#24), and the GitHub Action (#25). The
   SDK bump found that the Anthropic SDK traces itself since 1.14.0, so any library on top reports
   each call twice. Open from E0: the PyPI publisher and the three contributor pull requests.
+- **2026-11-15.** The cost figure prices a 1-hour cache write at its own rate, and two scenarios
+  send one: [PLAN_FEAT_cache-ttl-pricing.md](.plans/PLAN_FEAT_cache-ttl-pricing.md). Open: OpenAI
+  bills a cache write on GPT-5.6 and later, and no scenario covers it.
 
 ## The goal
 
