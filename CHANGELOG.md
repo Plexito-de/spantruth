@@ -6,6 +6,11 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Pydantic Logfire is a subject (`logfire==5.4.0`), instrumenting the OpenAI and Anthropic SDKs
+  with no Logfire account.
+
 ## [0.5.0] - 2026-11-15
 
 ### Added
