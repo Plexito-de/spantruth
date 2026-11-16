@@ -6,6 +6,11 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- `doctor` read no pin from a `requirements.txt` compiled with `--generate-hashes`, and graded
+  spantruth's own versions instead (#60).
+
 ## [0.5.0] - 2026-11-15
 
 ### Added
