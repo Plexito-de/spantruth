@@ -77,7 +77,11 @@ def _requirements(paths: list[Path]) -> dict[str, str | None]:
             text = path.read_text()
         except (OSError, UnicodeDecodeError) as exc:
             raise DoctorError(f"cannot read {path}: {exc}") from None
+        # A line ending in a backslash continues on the next, as `--generate-hashes` writes them,
+        # and the `--hash` options after a pin are not part of it.
+        text = re.sub(r"\\\r?\n", " ", text)
         for line in text.splitlines():
+            line = re.sub(r"\s--hash[=\s]\S+", "", line)
             if parsed := _requirement(line):
                 out.setdefault(*parsed)
     return out

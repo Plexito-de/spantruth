@@ -384,3 +384,16 @@ def test_doctor_end_to_end_openinference_hands_the_sdk_a_silent_span(tmp_path, c
         cli.main(["doctor", str(tmp_path), "--out", str(out), "--scenario", "anthropic/basic"]) == 0
     )
     assert "ST02" not in capsys.readouterr().out
+
+
+def test_requirements_with_hashes_keep_their_pins(tmp_path):
+    req = tmp_path / "requirements.txt"
+    req.write_text(
+        "anthropic==1.13.0 \\\n"
+        "    --hash=sha256:157bd74dbf6a595cf9e5fcac557c791fd297924dc48261f57470c2ed6f4e6671 \\\n"
+        "    --hash=sha256:ad11d9bb9adafdfea26113943bcde9973e2a439ebeeda6c89ff3e3d85bb2f5c1\n"
+        "    # via -r requirements.in\n"
+        "opentelemetry-sdk==1.45.2 \\\n"
+        "    --hash=sha256:aaaa\n"
+    )
+    assert doctor._requirements([req]) == {"anthropic": "1.13.0", "opentelemetry-sdk": "1.45.2"}
