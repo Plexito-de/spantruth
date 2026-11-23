@@ -30,12 +30,14 @@ the project's code.
 | 2 | Nothing to check, such as no known library. | For a wrapper of the project's own, go to the next section. |
 | 3 | spantruth could not run something. | This is not a result. Read the message, and do not report a pass. |
 
-Each class has an `id`, a `name`, a `summary`, a `remedy`, a `largest_cost_error` in percent, an `example`
-and `upstream` links. Report them as they are. A cost figure is for the token mix of one scenario at list
-price, so do not apply it to the whole application.
+Each class has an `id`, a `name`, a `summary`, a `remedy`, a `largest_cost_error` in percent, an `example`,
+`upstream` links, and `upstream_issues` with each link's `status` and `note`. Report them as they are. A
+cost figure is for the token mix of one scenario at list price, so do not apply it to the whole
+application.
 
-When `remedy` has a value, the project can act today. Otherwise check for a newer release of the library
-in the `upstream` link. Ask before you change a version.
+When `remedy` has a value, the project can act today. When an upstream issue has the status
+`fixed-upstream`, the library has fixed it: suggest the upgrade that its `note` names. Otherwise check for
+a newer release of the library in the `upstream` link. Ask before you change a version.
 
 ## A wrapper or instrumentation that the project wrote itself
 

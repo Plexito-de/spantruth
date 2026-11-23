@@ -5,7 +5,7 @@ from dataclasses import replace
 
 import pytest
 
-from spantruth import cli, doctor, subjects
+from spantruth import cli, doctor, report, subjects
 
 UV_LOCK = """
 version = 1
@@ -320,6 +320,60 @@ def test_a_library_value_stays_on_one_line_in_the_text():
         "a\nFake line"
     )
     text = doctor.render_text(doctor.Found("uv.lock", {}), doctor.summarize(doc), "/tmp/r.json")
+    assert "\nFake line" not in text
+
+
+FIXED = {
+    "subject": "openinference",
+    "scenarios": ["anthropic/stream"],
+    "check": "span.ended",
+    "status": "fixed-upstream",
+    "url": "https://example.com/issues/1",
+    "note": "Fixed in openinference-instrumentation-anthropic 3.1.0.",
+}
+REPORTED = {
+    "subject": "openinference",
+    "scenarios": ["anthropic/basic"],
+    "check": "tokens.single-report",
+    "status": "reported",
+    "url": "https://example.com/issues/2",
+    "note": "Reported upstream.",
+}
+
+
+@pytest.fixture
+def known(monkeypatch):
+    monkeypatch.setattr(report, "known_issues", lambda: [FIXED, REPORTED])
+
+
+def test_a_fixed_upstream_finding_prints_its_note_with_the_link(known):
+    text = doctor.render_text(doctor.Found("uv.lock", {}), doctor.summarize(result_doc()), "x")
+    assert f"Fixed upstream: {FIXED['note']} {FIXED['url']}" in text
+    assert f"Tracked at {FIXED['url']}" not in text
+
+
+def test_a_reported_finding_keeps_tracked_at(known):
+    text = doctor.render_text(doctor.Found("uv.lock", {}), doctor.summarize(result_doc()), "x")
+    assert f"Tracked at {REPORTED['url']}" in text
+    assert REPORTED["note"] not in text
+
+
+def test_json_keeps_upstream_as_urls_with_status_and_note_beside_it(known):
+    (subject,) = doctor.summarize(result_doc())
+    ghost, double = subject["classes"]
+    assert ghost["upstream"] == [FIXED["url"]]
+    assert ghost["upstream_issues"] == [
+        {"url": FIXED["url"], "status": "fixed-upstream", "note": FIXED["note"]}
+    ]
+    assert double["upstream"] == [REPORTED["url"]]
+    assert double["upstream_issues"][0]["status"] == "reported"
+    json.dumps(subject)
+
+
+def test_a_fixed_upstream_note_stays_on_one_line(monkeypatch):
+    monkeypatch.setattr(report, "known_issues", lambda: [{**FIXED, "note": "a\nFake line"}])
+    text = doctor.render_text(doctor.Found("uv.lock", {}), doctor.summarize(result_doc()), "x")
+    assert "Fixed upstream: a Fake line" in text
     assert "\nFake line" not in text
 
 
