@@ -5,7 +5,7 @@ from dataclasses import replace
 
 import pytest
 
-from spantruth import cli, doctor, subjects
+from spantruth import cli, doctor, report, subjects
 
 UV_LOCK = """
 version = 1
@@ -323,6 +323,60 @@ def test_a_library_value_stays_on_one_line_in_the_text():
     assert "\nFake line" not in text
 
 
+FIXED = {
+    "subject": "openinference",
+    "scenarios": ["anthropic/stream"],
+    "check": "span.ended",
+    "status": "fixed-upstream",
+    "url": "https://example.com/issues/1",
+    "note": "Fixed in openinference-instrumentation-anthropic 3.1.0.",
+}
+REPORTED = {
+    "subject": "openinference",
+    "scenarios": ["anthropic/basic"],
+    "check": "tokens.single-report",
+    "status": "reported",
+    "url": "https://example.com/issues/2",
+    "note": "Reported upstream.",
+}
+
+
+@pytest.fixture
+def known(monkeypatch):
+    monkeypatch.setattr(report, "known_issues", lambda: [FIXED, REPORTED])
+
+
+def test_a_fixed_upstream_finding_prints_its_note_with_the_link(known):
+    text = doctor.render_text(doctor.Found("uv.lock", {}), doctor.summarize(result_doc()), "x")
+    assert f"Fixed upstream: {FIXED['note']} {FIXED['url']}" in text
+    assert f"Tracked at {FIXED['url']}" not in text
+
+
+def test_a_reported_finding_keeps_tracked_at(known):
+    text = doctor.render_text(doctor.Found("uv.lock", {}), doctor.summarize(result_doc()), "x")
+    assert f"Tracked at {REPORTED['url']}" in text
+    assert REPORTED["note"] not in text
+
+
+def test_json_keeps_upstream_as_urls_with_status_and_note_beside_it(known):
+    (subject,) = doctor.summarize(result_doc())
+    ghost, double = subject["classes"]
+    assert ghost["upstream"] == [FIXED["url"]]
+    assert ghost["upstream_issues"] == [
+        {"url": FIXED["url"], "status": "fixed-upstream", "note": FIXED["note"]}
+    ]
+    assert double["upstream"] == [REPORTED["url"]]
+    assert double["upstream_issues"][0]["status"] == "reported"
+    json.dumps(subject)
+
+
+def test_a_fixed_upstream_note_stays_on_one_line(monkeypatch):
+    monkeypatch.setattr(report, "known_issues", lambda: [{**FIXED, "note": "a\nFake line"}])
+    text = doctor.render_text(doctor.Found("uv.lock", {}), doctor.summarize(result_doc()), "x")
+    assert "Fixed upstream: a Fake line" in text
+    assert "\nFake line" not in text
+
+
 def test_doctor_with_no_known_library_exits_2(tmp_path, capsys):
     project(tmp_path, requirements__txt="rich==14.0\n")
     assert cli.main(["doctor", str(tmp_path)]) == 2
@@ -384,3 +438,16 @@ def test_doctor_end_to_end_openinference_hands_the_sdk_a_silent_span(tmp_path, c
         cli.main(["doctor", str(tmp_path), "--out", str(out), "--scenario", "anthropic/basic"]) == 0
     )
     assert "ST02" not in capsys.readouterr().out
+
+
+def test_requirements_with_hashes_keep_their_pins(tmp_path):
+    req = tmp_path / "requirements.txt"
+    req.write_text(
+        "anthropic==1.13.0 \\\n"
+        "    --hash=sha256:157bd74dbf6a595cf9e5fcac557c791fd297924dc48261f57470c2ed6f4e6671 \\\n"
+        "    --hash=sha256:ad11d9bb9adafdfea26113943bcde9973e2a439ebeeda6c89ff3e3d85bb2f5c1\n"
+        "    # via -r requirements.in\n"
+        "opentelemetry-sdk==1.45.2 \\\n"
+        "    --hash=sha256:aaaa\n"
+    )
+    assert doctor._requirements([req]) == {"anthropic": "1.13.0", "opentelemetry-sdk": "1.45.2"}

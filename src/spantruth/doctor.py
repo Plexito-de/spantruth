@@ -77,7 +77,11 @@ def _requirements(paths: list[Path]) -> dict[str, str | None]:
             text = path.read_text()
         except (OSError, UnicodeDecodeError) as exc:
             raise DoctorError(f"cannot read {path}: {exc}") from None
+        # A line ending in a backslash continues on the next, as `--generate-hashes` writes them,
+        # and the `--hash` options after a pin are not part of it.
+        text = re.sub(r"\\\r?\n", " ", text)
         for line in text.splitlines():
+            line = re.sub(r"\s--hash[=\s]\S+", "", line)
             if parsed := _requirement(line):
                 out.setdefault(*parsed)
     return out
@@ -238,7 +242,8 @@ def summarize(doc: dict) -> list[dict[str, Any]]:
             costs = [
                 f["class_cost"].percent for f in mine if f["class_cost"] and f["class_cost"].percent
             ]
-            links = sorted({f["issue"]["url"] for f in mine if f["issue"]})
+            issues = {f["issue"]["url"]: f["issue"] for f in mine if f["issue"]}
+            links = sorted(issues)
             classes.append(
                 {
                     "id": c.id,
@@ -248,7 +253,16 @@ def summarize(doc: dict) -> list[dict[str, Any]]:
                     "scenarios": len({f["scenario"] for f in mine}),
                     "largest_cost_error": max(costs, key=abs) if costs else None,
                     "example": _example(mine[0]),
+                    # The skill reads `upstream` as a list of URLs, so it stays one.
                     "upstream": links,
+                    "upstream_issues": [
+                        {
+                            "url": u,
+                            "status": issues[u].get("status", "reported"),
+                            "note": issues[u].get("note", ""),
+                        }
+                        for u in links
+                    ],
                 }
             )
         out.append(
@@ -297,7 +311,7 @@ def render_text(found: Found, summary: list[dict[str, Any]], results: str) -> st
             lines.append(f"    For example, {c['example']}")
             if c["remedy"]:
                 lines.append(f"    Today: {c['remedy']}")
-            lines += [f"    Tracked at {u}" for u in c["upstream"]]
+            lines += [_upstream_line(i) for i in c["upstream_issues"]]
             lines.append(f"    More: {report.BUGS_URL}#{c['id']}")
         if s["other"]:
             lines.append(f"  Other failing checks: {_line(', '.join(s['other']))}")
@@ -316,6 +330,14 @@ def render_text(found: Found, summary: list[dict[str, Any]], results: str) -> st
         f"Open a report: spantruth report {results} --html report.html",
     ]
     return "\n".join(lines)
+
+
+def _upstream_line(issue: dict[str, str]) -> str:
+    """A fixed-upstream issue says how it was fixed, so the reader knows to upgrade."""
+    if issue["status"] == "fixed-upstream":
+        parts = ["    Fixed upstream:", _line(issue["note"]), _line(issue["url"])]
+        return " ".join(p for p in parts if p)
+    return f"    Tracked at {_line(issue['url'])}"
 
 
 def _unread(subject_name: str, found: Found) -> list[str]:
