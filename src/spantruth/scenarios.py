@@ -7,6 +7,7 @@ never as a coincidental pass. Model names are placeholders: no request leaves th
 from __future__ import annotations
 
 from dataclasses import replace
+from typing import Any
 
 from . import recorded
 from . import wire_anthropic as an
@@ -539,3 +540,11 @@ def truth(scenario: Scenario) -> Truth:
     else:
         derive = oa.truth if scenario.provider == "openai" else an.truth
     return derive(scenario.request_model, scenario.response, scenario.read_events)
+
+
+def call_plan(scenario_id: str) -> dict[str, Any]:
+    return get(scenario_id).call_plan()
+
+
+def all_call_plans() -> dict[str, dict[str, Any]]:
+    return {s.id: s.call_plan() for s in SCENARIOS.values()}

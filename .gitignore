@@ -12,3 +12,5 @@ results/*
 !results/2026-11-03-pinned.json
 !results/2026-11-06-double-spans/
 .playwright-mcp/
+node_modules/
+.DS_Store

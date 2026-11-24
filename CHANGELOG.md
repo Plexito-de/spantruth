@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Node.js driver foundations for running scenarios against JavaScript instrumentation libraries (#5).
+- Scenario call-plan serialization protocol (`Scenario.call_plan()` and `all_call_plans()`).
+- Support for chunked transfer-encoding requests in `spantruth.receiver`.
+
 ### Fixed
 
 - `doctor` read no pin from a `requirements.txt` compiled with `--generate-hashes`, and graded

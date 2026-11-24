@@ -91,6 +91,23 @@ def _decode_count(kind: str, payload: bytes) -> int:
     return sum(len(s.metrics) for r in req.resource_metrics for s in r.scope_metrics)
 
 
+def _read_payload(handler: BaseHTTPRequestHandler) -> bytes:
+    if handler.headers.get("transfer-encoding", "").lower() == "chunked":
+        chunks = []
+        while True:
+            line = handler.rfile.readline().strip()
+            if not line:
+                break
+            length = int(line.split(b";")[0], 16)
+            if length == 0:
+                handler.rfile.readline()
+                break
+            chunks.append(handler.rfile.read(length))
+            handler.rfile.readline()
+        return b"".join(chunks)
+    return handler.rfile.read(int(handler.headers.get("content-length") or 0))
+
+
 class _Handler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
     server: Receiver
@@ -99,7 +116,7 @@ class _Handler(BaseHTTPRequestHandler):
         return
 
     def do_POST(self) -> None:
-        payload = self.rfile.read(int(self.headers.get("content-length") or 0))
+        payload = _read_payload(self)
         if self.headers.get("content-encoding") == "gzip":
             payload = gzip.decompress(payload)
         kind = {"/v1/traces": "traces", "/v1/logs": "logs", "/v1/metrics": "metrics"}.get(self.path)
