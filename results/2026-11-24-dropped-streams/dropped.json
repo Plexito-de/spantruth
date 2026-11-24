@@ -1,0 +1,3294 @@
+{
+ "created": "2026-11-24T15:02:15+00:00",
+ "mode": "pinned",
+ "python": "3.12",
+ "scenarios": {
+  "anthropic/stream-dropped": {
+   "catches": "an error swallowed into a cut-off answer",
+   "provider": "anthropic",
+   "title": "Connection drops mid-stream",
+   "truth": {
+    "cache_read_tokens": null,
+    "cache_write_long_tokens": null,
+    "cache_write_tokens": null,
+    "error": "connection dropped",
+    "finish_reasons": null,
+    "input_tokens": null,
+    "no_usage": false,
+    "output_tokens": null,
+    "reasoning_tokens": null,
+    "request_model": "claude-sonnet-5-5",
+    "response_id": null,
+    "response_model": null,
+    "unread_counts": []
+   }
+  },
+  "anthropic/stream-error-event": {
+   "catches": "an error event swallowed into a cut-off answer",
+   "provider": "anthropic",
+   "title": "Overloaded error event mid-stream",
+   "truth": {
+    "cache_read_tokens": null,
+    "cache_write_long_tokens": null,
+    "cache_write_tokens": null,
+    "error": "error event: overloaded_error",
+    "finish_reasons": null,
+    "input_tokens": null,
+    "no_usage": false,
+    "output_tokens": null,
+    "reasoning_tokens": null,
+    "request_model": "claude-sonnet-5-5",
+    "response_id": null,
+    "response_model": null,
+    "unread_counts": []
+   }
+  },
+  "openai/responses-stream-missing-finish-abort": {
+   "catches": "an aborted stream recorded as a success",
+   "provider": "openai",
+   "title": "Responses API stream cut after eight recorded events",
+   "truth": {
+    "cache_read_tokens": null,
+    "cache_write_long_tokens": null,
+    "cache_write_tokens": null,
+    "error": "connection dropped",
+    "finish_reasons": null,
+    "input_tokens": null,
+    "no_usage": false,
+    "output_tokens": null,
+    "reasoning_tokens": null,
+    "request_model": "gpt-6-luna",
+    "response_id": null,
+    "response_model": null,
+    "unread_counts": []
+   }
+  },
+  "openai/stream-dropped": {
+   "catches": "an error swallowed into a cut-off answer",
+   "provider": "openai",
+   "title": "Connection drops mid-stream",
+   "truth": {
+    "cache_read_tokens": null,
+    "cache_write_long_tokens": null,
+    "cache_write_tokens": null,
+    "error": "connection dropped",
+    "finish_reasons": null,
+    "input_tokens": null,
+    "no_usage": false,
+    "output_tokens": null,
+    "reasoning_tokens": null,
+    "request_model": "gpt-5-mini",
+    "response_id": null,
+    "response_model": null,
+    "unread_counts": []
+   }
+  }
+ },
+ "schema": 1,
+ "semconv_genai": "6fd0d763",
+ "spantruth": "0.5.0",
+ "subjects": {
+  "anthropic-sdk": {
+   "cells": {
+    "anthropic/stream-dropped": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "span.parented",
+       "rule": "The span belongs to the trace that was active when the application made the call.",
+       "rule_url": "https://opentelemetry.io/docs/specs/otel/trace/api/#context-interaction",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": "ERROR",
+       "got": [
+        "ERROR"
+       ],
+       "id": "error.status",
+       "rule": "Span status SHOULD follow Recording Errors: an operation that ended in an error sets the status to Error.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": "connection_error",
+       "id": "error.type",
+       "rule": "`error.type` is conditionally required if the operation ended in an error. Any low-cardinality identifier is allowed, so only its presence is graded.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/spans.yaml#L3-L12",
+       "verdict": "pass",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {
+        "error.type": "connection_error",
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "anthropic",
+        "gen_ai.request.max_tokens": 1024,
+        "gen_ai.request.model": "claude-sonnet-5-5",
+        "gen_ai.request.stream": true,
+        "gen_ai.response.id": "msg_wt_drop",
+        "gen_ai.response.model": "claude-sonnet-5-5-20260915",
+        "gen_ai.response.time_to_first_chunk": 0.036128455,
+        "gen_ai.usage.cache_read.input_tokens": 0,
+        "gen_ai.usage.cache_write.input_tokens": 0,
+        "gen_ai.usage.input_tokens": 1427,
+        "http.request.method": "POST",
+        "http.response.status_code": 200,
+        "http.route": "/v1/messages",
+        "server.address": "127.0.0.1",
+        "server.port": 34177,
+        "url.full": "http://127.0.0.1:34177/s/anthropic--stream-dropped/v1/messages",
+        "url.path": "/s/anthropic--stream-dropped/v1/messages",
+        "url.scheme": "http"
+       },
+       "name": "anthropic.messages.create",
+       "scope": "com.anthropic.sdk.python",
+       "status": "ERROR"
+      },
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "pass"
+    },
+    "anthropic/stream-error-event": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "span.parented",
+       "rule": "The span belongs to the trace that was active when the application made the call.",
+       "rule_url": "https://opentelemetry.io/docs/specs/otel/trace/api/#context-interaction",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": "ERROR",
+       "got": [
+        "ERROR"
+       ],
+       "id": "error.status",
+       "rule": "Span status SHOULD follow Recording Errors: an operation that ended in an error sets the status to Error.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": "overloaded_error",
+       "id": "error.type",
+       "rule": "`error.type` is conditionally required if the operation ended in an error. Any low-cardinality identifier is allowed, so only its presence is graded.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/spans.yaml#L3-L12",
+       "verdict": "pass",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {
+        "error.type": "overloaded_error",
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "anthropic",
+        "gen_ai.request.max_tokens": 1024,
+        "gen_ai.request.model": "claude-sonnet-5-5",
+        "gen_ai.request.stream": true,
+        "gen_ai.response.id": "msg_wt_overload",
+        "gen_ai.response.model": "claude-sonnet-5-5-20260915",
+        "gen_ai.response.time_to_first_chunk": 0.036040601,
+        "gen_ai.usage.cache_read.input_tokens": 0,
+        "gen_ai.usage.cache_write.input_tokens": 0,
+        "gen_ai.usage.input_tokens": 1301,
+        "http.request.method": "POST",
+        "http.response.status_code": 200,
+        "http.route": "/v1/messages",
+        "server.address": "127.0.0.1",
+        "server.port": 34177,
+        "url.full": "http://127.0.0.1:34177/s/anthropic--stream-error-event/v1/messages",
+        "url.path": "/s/anthropic--stream-error-event/v1/messages",
+        "url.scheme": "http"
+       },
+       "name": "anthropic.messages.create",
+       "scope": "com.anthropic.sdk.python",
+       "status": "ERROR"
+      },
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "pass"
+    }
+   },
+   "homepage": "https://github.com/anthropics/anthropic-sdk-python",
+   "kind": "library",
+   "notes": "The SDK's own spans, with no instrumentation library. On by default since anthropic 1.14.0 when a tracer provider is registered.",
+   "ref": "anthropic-sdk",
+   "title": "Anthropic SDK, built-in tracing",
+   "versions": {
+    "anthropic": "2.4.0",
+    "openai": "3.42.1",
+    "opentelemetry-exporter-otlp-proto-http": "1.45.2",
+    "opentelemetry-sdk": "1.45.2"
+   }
+  },
+  "control-faulty": {
+   "cells": {
+    "anthropic/stream-dropped": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "span.parented",
+       "rule": "The span belongs to the trace that was active when the application made the call.",
+       "rule_url": "https://opentelemetry.io/docs/specs/otel/trace/api/#context-interaction",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": "ERROR",
+       "got": [
+        "UNSET"
+       ],
+       "id": "error.status",
+       "rule": "Span status SHOULD follow Recording Errors: an operation that ended in an error sets the status to Error.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md",
+       "verdict": "wrong",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "error.type",
+       "rule": "`error.type` is conditionally required if the operation ended in an error. Any low-cardinality identifier is allowed, so only its presence is graded.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/spans.yaml#L3-L12",
+       "verdict": "missing",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "anthropic",
+        "gen_ai.request.model": "claude-sonnet-5-5",
+        "gen_ai.response.id": "msg_wt_drop",
+        "gen_ai.response.model": "claude-sonnet-5-5-20260915",
+        "gen_ai.usage.input_tokens": 1427
+       },
+       "name": "chat claude-sonnet-5-5",
+       "scope": "spantruth.reference",
+       "status": "UNSET"
+      },
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "wrong"
+    },
+    "anthropic/stream-error-event": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "span.parented",
+       "rule": "The span belongs to the trace that was active when the application made the call.",
+       "rule_url": "https://opentelemetry.io/docs/specs/otel/trace/api/#context-interaction",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": "ERROR",
+       "got": [
+        "UNSET"
+       ],
+       "id": "error.status",
+       "rule": "Span status SHOULD follow Recording Errors: an operation that ended in an error sets the status to Error.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md",
+       "verdict": "wrong",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "error.type",
+       "rule": "`error.type` is conditionally required if the operation ended in an error. Any low-cardinality identifier is allowed, so only its presence is graded.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/spans.yaml#L3-L12",
+       "verdict": "missing",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "anthropic",
+        "gen_ai.request.model": "claude-sonnet-5-5",
+        "gen_ai.response.id": "msg_wt_overload",
+        "gen_ai.response.model": "claude-sonnet-5-5-20260915",
+        "gen_ai.usage.input_tokens": 1301
+       },
+       "name": "chat claude-sonnet-5-5",
+       "scope": "spantruth.reference",
+       "status": "UNSET"
+      },
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "wrong"
+    },
+    "openai/responses-stream-missing-finish-abort": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "span.parented",
+       "rule": "The span belongs to the trace that was active when the application made the call.",
+       "rule_url": "https://opentelemetry.io/docs/specs/otel/trace/api/#context-interaction",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": "ERROR",
+       "got": [
+        "UNSET"
+       ],
+       "id": "error.status",
+       "rule": "Span status SHOULD follow Recording Errors: an operation that ended in an error sets the status to Error.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md",
+       "verdict": "wrong",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "error.type",
+       "rule": "`error.type` is conditionally required if the operation ended in an error. Any low-cardinality identifier is allowed, so only its presence is graded.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/spans.yaml#L3-L12",
+       "verdict": "missing",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": "gpt-6-luna",
+        "gen_ai.response.id": "resp_025c23fff6653590006acbfc0086cc87d18124e70e8d3ff838",
+        "gen_ai.response.model": "gpt-6-luna",
+        "gen_ai.usage.output_tokens": 4
+       },
+       "name": "chat gpt-6-luna",
+       "scope": "spantruth.reference",
+       "status": "UNSET"
+      },
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "wrong"
+    },
+    "openai/stream-dropped": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "span.parented",
+       "rule": "The span belongs to the trace that was active when the application made the call.",
+       "rule_url": "https://opentelemetry.io/docs/specs/otel/trace/api/#context-interaction",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": "ERROR",
+       "got": [
+        "UNSET"
+       ],
+       "id": "error.status",
+       "rule": "Span status SHOULD follow Recording Errors: an operation that ended in an error sets the status to Error.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md",
+       "verdict": "wrong",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "error.type",
+       "rule": "`error.type` is conditionally required if the operation ended in an error. Any low-cardinality identifier is allowed, so only its presence is graded.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/spans.yaml#L3-L12",
+       "verdict": "missing",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": "gpt-5-mini",
+        "gen_ai.response.id": "chatcmpl-wt-drop",
+        "gen_ai.response.model": "gpt-5-mini-2026-08-07",
+        "gen_ai.usage.output_tokens": 5
+       },
+       "name": "chat gpt-5-mini",
+       "scope": "spantruth.reference",
+       "status": "UNSET"
+      },
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "wrong"
+    }
+   },
+   "homepage": "https://github.com/Plexito-de/spantruth/blob/main/src/spantruth/reference.py",
+   "kind": "control",
+   "notes": "Must fail exactly the checks listed in expected.toml. If it does not, the suite is wrong.",
+   "ref": "control-faulty",
+   "title": "Control: reference instrumentation with four planted faults",
+   "versions": {
+    "anthropic": "2.4.0",
+    "openai": "3.42.1",
+    "opentelemetry-exporter-otlp-proto-http": "1.45.2",
+    "opentelemetry-sdk": "1.45.2"
+   }
+  },
+  "control-honest": {
+   "cells": {
+    "anthropic/stream-dropped": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "span.parented",
+       "rule": "The span belongs to the trace that was active when the application made the call.",
+       "rule_url": "https://opentelemetry.io/docs/specs/otel/trace/api/#context-interaction",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": "ERROR",
+       "got": [
+        "ERROR"
+       ],
+       "id": "error.status",
+       "rule": "Span status SHOULD follow Recording Errors: an operation that ended in an error sets the status to Error.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": "RemoteProtocolError",
+       "id": "error.type",
+       "rule": "`error.type` is conditionally required if the operation ended in an error. Any low-cardinality identifier is allowed, so only its presence is graded.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/spans.yaml#L3-L12",
+       "verdict": "pass",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {
+        "error.type": "RemoteProtocolError",
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "anthropic",
+        "gen_ai.request.model": "claude-sonnet-5-5",
+        "gen_ai.response.id": "msg_wt_drop",
+        "gen_ai.response.model": "claude-sonnet-5-5-20260915",
+        "gen_ai.usage.input_tokens": 1427
+       },
+       "name": "chat claude-sonnet-5-5",
+       "scope": "spantruth.reference",
+       "status": "ERROR"
+      },
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "pass"
+    },
+    "anthropic/stream-error-event": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "span.parented",
+       "rule": "The span belongs to the trace that was active when the application made the call.",
+       "rule_url": "https://opentelemetry.io/docs/specs/otel/trace/api/#context-interaction",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": "ERROR",
+       "got": [
+        "ERROR"
+       ],
+       "id": "error.status",
+       "rule": "Span status SHOULD follow Recording Errors: an operation that ended in an error sets the status to Error.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": "APIStatusError",
+       "id": "error.type",
+       "rule": "`error.type` is conditionally required if the operation ended in an error. Any low-cardinality identifier is allowed, so only its presence is graded.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/spans.yaml#L3-L12",
+       "verdict": "pass",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {
+        "error.type": "APIStatusError",
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "anthropic",
+        "gen_ai.request.model": "claude-sonnet-5-5",
+        "gen_ai.response.id": "msg_wt_overload",
+        "gen_ai.response.model": "claude-sonnet-5-5-20260915",
+        "gen_ai.usage.input_tokens": 1301
+       },
+       "name": "chat claude-sonnet-5-5",
+       "scope": "spantruth.reference",
+       "status": "ERROR"
+      },
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "pass"
+    },
+    "openai/responses-stream-missing-finish-abort": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "span.parented",
+       "rule": "The span belongs to the trace that was active when the application made the call.",
+       "rule_url": "https://opentelemetry.io/docs/specs/otel/trace/api/#context-interaction",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": "ERROR",
+       "got": [
+        "ERROR"
+       ],
+       "id": "error.status",
+       "rule": "Span status SHOULD follow Recording Errors: an operation that ended in an error sets the status to Error.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": "APIConnectionError",
+       "id": "error.type",
+       "rule": "`error.type` is conditionally required if the operation ended in an error. Any low-cardinality identifier is allowed, so only its presence is graded.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/spans.yaml#L3-L12",
+       "verdict": "pass",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {
+        "error.type": "APIConnectionError",
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": "gpt-6-luna",
+        "gen_ai.response.id": "resp_025c23fff6653590006acbfc0086cc87d18124e70e8d3ff838",
+        "gen_ai.response.model": "gpt-6-luna"
+       },
+       "name": "chat gpt-6-luna",
+       "scope": "spantruth.reference",
+       "status": "ERROR"
+      },
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "pass"
+    },
+    "openai/stream-dropped": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "span.parented",
+       "rule": "The span belongs to the trace that was active when the application made the call.",
+       "rule_url": "https://opentelemetry.io/docs/specs/otel/trace/api/#context-interaction",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": "ERROR",
+       "got": [
+        "ERROR"
+       ],
+       "id": "error.status",
+       "rule": "Span status SHOULD follow Recording Errors: an operation that ended in an error sets the status to Error.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": "APIConnectionError",
+       "id": "error.type",
+       "rule": "`error.type` is conditionally required if the operation ended in an error. Any low-cardinality identifier is allowed, so only its presence is graded.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/spans.yaml#L3-L12",
+       "verdict": "pass",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {
+        "error.type": "APIConnectionError",
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": "gpt-5-mini",
+        "gen_ai.response.id": "chatcmpl-wt-drop",
+        "gen_ai.response.model": "gpt-5-mini-2026-08-07"
+       },
+       "name": "chat gpt-5-mini",
+       "scope": "spantruth.reference",
+       "status": "ERROR"
+      },
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "pass"
+    }
+   },
+   "homepage": "https://github.com/Plexito-de/spantruth/blob/main/src/spantruth/reference.py",
+   "kind": "control",
+   "notes": "Must pass every check. If it does not, the suite is wrong, not a library.",
+   "ref": "control-honest",
+   "title": "Control: reference instrumentation",
+   "versions": {
+    "anthropic": "2.4.0",
+    "openai": "3.42.1",
+    "opentelemetry-exporter-otlp-proto-http": "1.45.2",
+    "opentelemetry-sdk": "1.45.2"
+   }
+  },
+  "ddtrace": {
+   "cells": {
+    "anthropic/stream-dropped": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "span.parented",
+       "rule": "The span belongs to the trace that was active when the application made the call.",
+       "rule_url": "https://opentelemetry.io/docs/specs/otel/trace/api/#context-interaction",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": "ERROR",
+       "got": [
+        "ERROR"
+       ],
+       "id": "error.status",
+       "rule": "Span status SHOULD follow Recording Errors: an operation that ended in an error sets the status to Error.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": "httpx2.RemoteProtocolError",
+       "id": "error.type",
+       "rule": "`error.type` is conditionally required if the operation ended in an error. Any low-cardinality identifier is allowed, so only its presence is graded.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/spans.yaml#L3-L12",
+       "verdict": "pass",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {
+        "_dd.llmobs.artificial_gen_ai_tags": "true",
+        "_dd.llmobs.cache_read_input_tokens": 0,
+        "_dd.llmobs.cache_write_input_tokens": 0,
+        "_dd.llmobs.enabled": 1,
+        "_dd.llmobs.input_tokens": 1427,
+        "_dd.llmobs.model_name": "claude-sonnet-5-5",
+        "_dd.llmobs.model_provider": "anthropic",
+        "_dd.llmobs.span_kind": "llm",
+        "_dd.measured": 1,
+        "_dd.svc_src": "m",
+        "anthropic.request.model": "claude-sonnet-5-5",
+        "error.message": "peer closed connection without sending complete message body (incomplete chunked read)",
+        "error.stack": "Traceback (most recent call last):\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpcore2/_exceptions.py\", line 13, in map_exceptions\n    yield\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpcore2/_sync/http11.py\", line 197, in _receive_event\n    event = self._h11_state.next_event()\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/h11/_connection.py\", line 481, in next_event\n    event = self._extract_next_receive_event()\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/h11/_connection.py\", line 431, in _extract_next_receive_event\n    event = self._reader.read_eof()\n            ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/h11/_readers.py\", line 207, in read_eof\n    raise RemoteProtocolError(\nh11._util.RemoteProtocolError: peer closed connection without sending complete message body (incomplete chunked read)\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpx2/_transports/default.py\", line 98, in map_httpcore_exceptions\n    yield\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpx2/_transports/default.py\", line 124, in __iter__\n    yield from self._httpcore_stream\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpcore2/_sync/connection_pool.py\", line 426, in __iter__\n    for chunk in iterator:\n                 ^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpcore2/_sync/http11.py\", line 320, in __iter__\n    raise exc\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpcore2/_sync/http11.py\", line 312, in __iter__\n    for chunk in iterator:\n                 ^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpcore2/_sync/http11.py\", line 188, in _receive_response_body\n    event = self._receive_event(timeout=timeout)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpcore2/_sync/http11.py\", line 196, in _receive_event\n    with map_exceptions({h11.RemoteProtocolError: RemoteProtocolError}):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/chris/.local/share/uv/python/cpython-3.12.14-linux-x86_64-gnu/lib/python3.12/contextlib.py\", line 158, in __exit__\n    self.gen.throw(value)\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpcore2/_exceptions.py\", line 17, in map_exceptions\n    raise to_exc(exc) from exc\nhttpcore2.RemoteProtocolError: peer closed connection without sending complete message body (incomplete chunked read)\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/ddtrace/llmobs/_integrations/base_stream_handler.py\", line 238, in __iter__\n    for chunk in self._self_stream_iter:\n                 ^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/anthropic/_streaming.py\", line 65, in __iter__\n    for item in self._iterator:\n                ^^^^^^^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/anthropic/_streaming.py\", line 92, in __stream__\n    for sse in iterator:\n               ^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/anthropic/_streaming.py\", line 71, in _iter_events\n    yield from self._decoder.iter_bytes(self.response.iter_bytes())\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/anthropic/_streaming.py\", line 351, in iter_bytes\n    for chunk in self._iter_chunks(iterator):\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/anthropic/_streaming.py\", line 362, in _iter_chunks\n    for chunk in iterator:\n                 ^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpx2/_models.py\", line 893, in iter_bytes\n    for raw_bytes in self.iter_raw():\n                     ^^^^^^^^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpx2/_models.py\", line 948, in iter_raw\n    for raw_stream_bytes in self.stream:\n                            ^^^^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpx2/_client.py\", line 143, in __iter__\n    yield from self._stream\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpx2/_transports/default.py\", line 123, in __iter__\n    with map_httpcore_exceptions():\n         ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/chris/.local/share/uv/python/cpython-3.12.14-linux-x86_64-gnu/lib/python3.12/contextlib.py\", line 158, in __exit__\n    self.gen.throw(value)\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpx2/_transports/default.py\", line 115, in map_httpcore_exceptions\n    raise mapped_exc(message) from exc\nhttpx2.RemoteProtocolError: peer closed connection without sending complete message body (incomplete chunked read)\n",
+        "error.type": "httpx2.RemoteProtocolError",
+        "gen_ai.application.name": "spantruth",
+        "gen_ai.operation.name": "llm",
+        "gen_ai.provider.name": "anthropic",
+        "gen_ai.request.model": "claude-sonnet-5-5",
+        "gen_ai.usage.cache_read_input_tokens": 0,
+        "gen_ai.usage.cache_write_input_tokens": 0,
+        "gen_ai.usage.input_tokens": 1427,
+        "llmobs_parent_id": "11290492370154193587",
+        "llmobs_trace_id": "6b05a70a000000006faf10b4638e77a5",
+        "process_id": 1901278,
+        "runtime-id": "e2f7405c34ec4d9ebc4fdf18cd674269"
+       },
+       "name": "anthropic.request",
+       "scope": "ddtrace.adapter",
+       "status": "ERROR"
+      },
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "pass"
+    },
+    "anthropic/stream-error-event": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "span.parented",
+       "rule": "The span belongs to the trace that was active when the application made the call.",
+       "rule_url": "https://opentelemetry.io/docs/specs/otel/trace/api/#context-interaction",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": "ERROR",
+       "got": [
+        "ERROR"
+       ],
+       "id": "error.status",
+       "rule": "Span status SHOULD follow Recording Errors: an operation that ended in an error sets the status to Error.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": "anthropic.APIStatusError",
+       "id": "error.type",
+       "rule": "`error.type` is conditionally required if the operation ended in an error. Any low-cardinality identifier is allowed, so only its presence is graded.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/spans.yaml#L3-L12",
+       "verdict": "pass",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {
+        "_dd.llmobs.artificial_gen_ai_tags": "true",
+        "_dd.llmobs.cache_read_input_tokens": 0,
+        "_dd.llmobs.cache_write_input_tokens": 0,
+        "_dd.llmobs.enabled": 1,
+        "_dd.llmobs.input_tokens": 1301,
+        "_dd.llmobs.model_name": "claude-sonnet-5-5",
+        "_dd.llmobs.model_provider": "anthropic",
+        "_dd.llmobs.span_kind": "llm",
+        "_dd.measured": 1,
+        "_dd.svc_src": "m",
+        "anthropic.request.model": "claude-sonnet-5-5",
+        "error.message": "{'type': 'error', 'error': {'type': 'overloaded_error', 'message': 'Overloaded'}}",
+        "error.stack": "Traceback (most recent call last):\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/ddtrace/llmobs/_integrations/base_stream_handler.py\", line 238, in __iter__\n    for chunk in self._self_stream_iter:\n                 ^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/anthropic/_streaming.py\", line 65, in __iter__\n    for item in self._iterator:\n                ^^^^^^^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/anthropic/_streaming.py\", line 108, in __stream__\n    raise self._client._make_status_error(\nanthropic.APIStatusError: {'type': 'error', 'error': {'type': 'overloaded_error', 'message': 'Overloaded'}}\n",
+        "error.type": "anthropic.APIStatusError",
+        "gen_ai.application.name": "spantruth",
+        "gen_ai.operation.name": "llm",
+        "gen_ai.provider.name": "anthropic",
+        "gen_ai.request.model": "claude-sonnet-5-5",
+        "gen_ai.usage.cache_read_input_tokens": 0,
+        "gen_ai.usage.cache_write_input_tokens": 0,
+        "gen_ai.usage.input_tokens": 1301,
+        "llmobs_parent_id": "9874878210817486539",
+        "llmobs_trace_id": "6b05a7100000000093eeb6194f3e232e",
+        "process_id": 1901426,
+        "runtime-id": "897e26ec0c7648cf9afd7fd018474266"
+       },
+       "name": "anthropic.request",
+       "scope": "ddtrace.adapter",
+       "status": "ERROR"
+      },
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "pass"
+    },
+    "openai/responses-stream-missing-finish-abort": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "span.parented",
+       "rule": "The span belongs to the trace that was active when the application made the call.",
+       "rule_url": "https://opentelemetry.io/docs/specs/otel/trace/api/#context-interaction",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": "ERROR",
+       "got": [
+        "ERROR"
+       ],
+       "id": "error.status",
+       "rule": "Span status SHOULD follow Recording Errors: an operation that ended in an error sets the status to Error.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": "openai.APIConnectionError",
+       "id": "error.type",
+       "rule": "`error.type` is conditionally required if the operation ended in an error. Any low-cardinality identifier is allowed, so only its presence is graded.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/spans.yaml#L3-L12",
+       "verdict": "pass",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {
+        "_dd.llmobs.artificial_gen_ai_tags": "true",
+        "_dd.llmobs.enabled": 1,
+        "_dd.llmobs.model_name": "gpt-6-luna",
+        "_dd.llmobs.model_provider": "openai",
+        "_dd.llmobs.span_kind": "llm",
+        "_dd.measured": 1,
+        "_dd.svc_src": "m",
+        "component": "openai",
+        "error.message": "Connection error.",
+        "error.stack": "Traceback (most recent call last):\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpcore2/_exceptions.py\", line 13, in map_exceptions\n    yield\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpcore2/_sync/http11.py\", line 197, in _receive_event\n    event = self._h11_state.next_event()\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/h11/_connection.py\", line 481, in next_event\n    event = self._extract_next_receive_event()\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/h11/_connection.py\", line 431, in _extract_next_receive_event\n    event = self._reader.read_eof()\n            ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/h11/_readers.py\", line 207, in read_eof\n    raise RemoteProtocolError(\nh11._util.RemoteProtocolError: peer closed connection without sending complete message body (incomplete chunked read)\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpx2/_transports/default.py\", line 98, in map_httpcore_exceptions\n    yield\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpx2/_transports/default.py\", line 124, in __iter__\n    yield from self._httpcore_stream\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpcore2/_sync/connection_pool.py\", line 426, in __iter__\n    for chunk in iterator:\n                 ^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpcore2/_sync/http11.py\", line 320, in __iter__\n    raise exc\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpcore2/_sync/http11.py\", line 312, in __iter__\n    for chunk in iterator:\n                 ^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpcore2/_sync/http11.py\", line 188, in _receive_response_body\n    event = self._receive_event(timeout=timeout)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpcore2/_sync/http11.py\", line 196, in _receive_event\n    with map_exceptions({h11.RemoteProtocolError: RemoteProtocolError}):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/chris/.local/share/uv/python/cpython-3.12.14-linux-x86_64-gnu/lib/python3.12/contextlib.py\", line 158, in __exit__\n    self.gen.throw(value)\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpcore2/_exceptions.py\", line 17, in map_exceptions\n    raise to_exc(exc) from exc\nhttpcore2.RemoteProtocolError: peer closed connection without sending complete message body (incomplete chunked read)\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/openai/_streaming.py\", line 57, in _iter_events\n    yield from self._decoder.iter_bytes(self.response.iter_bytes())\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/openai/_streaming.py\", line 371, in iter_bytes\n    for chunk in iterator:\n                 ^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpx2/_models.py\", line 893, in iter_bytes\n    for raw_bytes in self.iter_raw():\n                     ^^^^^^^^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpx2/_models.py\", line 948, in iter_raw\n    for raw_stream_bytes in self.stream:\n                            ^^^^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpx2/_client.py\", line 143, in __iter__\n    yield from self._stream\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpx2/_transports/default.py\", line 123, in __iter__\n    with map_httpcore_exceptions():\n         ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/chris/.local/share/uv/python/cpython-3.12.14-linux-x86_64-gnu/lib/python3.12/contextlib.py\", line 158, in __exit__\n    self.gen.throw(value)\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpx2/_transports/default.py\", line 115, in map_httpcore_exceptions\n    raise mapped_exc(message) from exc\nhttpx2.RemoteProtocolError: peer closed connection without sending complete message body (incomplete chunked read)\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/ddtrace/llmobs/_integrations/base_stream_handler.py\", line 238, in __iter__\n    for chunk in self._self_stream_iter:\n                 ^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/openai/_streaming.py\", line 52, in __iter__\n    for item in self._iterator:\n                ^^^^^^^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/openai/_streaming.py\", line 70, in __stream__\n    for sse in iterator:\n               ^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/openai/_streaming.py\", line 61, in _iter_events\n    raise APIConnectionError(request=self.response.request) from err\nopenai.APIConnectionError: Connection error.\n",
+        "error.type": "openai.APIConnectionError",
+        "gen_ai.application.name": "spantruth",
+        "gen_ai.operation.name": "llm",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": "gpt-6-luna",
+        "llmobs_parent_id": "17519475219279345063",
+        "llmobs_trace_id": "6b05a6fe000000005f558c8e448eca53",
+        "openai.request.endpoint": "/v1/responses",
+        "openai.request.method": "POST",
+        "openai.request.model": "gpt-6-luna",
+        "openai.request.provider": "OpenAI",
+        "openai.response.model": "gpt-6-luna",
+        "process_id": 1900269,
+        "runtime-id": "73599465ad764988b189f7aeeafc6548"
+       },
+       "name": "openai.request",
+       "scope": "ddtrace.adapter",
+       "status": "ERROR"
+      },
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "pass"
+    },
+    "openai/stream-dropped": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "span.parented",
+       "rule": "The span belongs to the trace that was active when the application made the call.",
+       "rule_url": "https://opentelemetry.io/docs/specs/otel/trace/api/#context-interaction",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": "ERROR",
+       "got": [
+        "ERROR"
+       ],
+       "id": "error.status",
+       "rule": "Span status SHOULD follow Recording Errors: an operation that ended in an error sets the status to Error.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": "openai.APIConnectionError",
+       "id": "error.type",
+       "rule": "`error.type` is conditionally required if the operation ended in an error. Any low-cardinality identifier is allowed, so only its presence is graded.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/spans.yaml#L3-L12",
+       "verdict": "pass",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {
+        "_dd.llmobs.artificial_gen_ai_tags": "true",
+        "_dd.llmobs.enabled": 1,
+        "_dd.llmobs.input_tokens": 7,
+        "_dd.llmobs.model_name": "gpt-5-mini-2026-08-07",
+        "_dd.llmobs.model_provider": "openai",
+        "_dd.llmobs.output_tokens": 5,
+        "_dd.llmobs.span_kind": "llm",
+        "_dd.llmobs.total_tokens": 12,
+        "_dd.measured": 1,
+        "_dd.svc_src": "m",
+        "component": "openai",
+        "error.message": "Connection error.",
+        "error.stack": "Traceback (most recent call last):\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpcore2/_exceptions.py\", line 13, in map_exceptions\n    yield\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpcore2/_sync/http11.py\", line 197, in _receive_event\n    event = self._h11_state.next_event()\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/h11/_connection.py\", line 481, in next_event\n    event = self._extract_next_receive_event()\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/h11/_connection.py\", line 431, in _extract_next_receive_event\n    event = self._reader.read_eof()\n            ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/h11/_readers.py\", line 207, in read_eof\n    raise RemoteProtocolError(\nh11._util.RemoteProtocolError: peer closed connection without sending complete message body (incomplete chunked read)\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpx2/_transports/default.py\", line 98, in map_httpcore_exceptions\n    yield\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpx2/_transports/default.py\", line 124, in __iter__\n    yield from self._httpcore_stream\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpcore2/_sync/connection_pool.py\", line 426, in __iter__\n    for chunk in iterator:\n                 ^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpcore2/_sync/http11.py\", line 320, in __iter__\n    raise exc\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpcore2/_sync/http11.py\", line 312, in __iter__\n    for chunk in iterator:\n                 ^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpcore2/_sync/http11.py\", line 188, in _receive_response_body\n    event = self._receive_event(timeout=timeout)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpcore2/_sync/http11.py\", line 196, in _receive_event\n    with map_exceptions({h11.RemoteProtocolError: RemoteProtocolError}):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/chris/.local/share/uv/python/cpython-3.12.14-linux-x86_64-gnu/lib/python3.12/contextlib.py\", line 158, in __exit__\n    self.gen.throw(value)\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpcore2/_exceptions.py\", line 17, in map_exceptions\n    raise to_exc(exc) from exc\nhttpcore2.RemoteProtocolError: peer closed connection without sending complete message body (incomplete chunked read)\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/openai/_streaming.py\", line 57, in _iter_events\n    yield from self._decoder.iter_bytes(self.response.iter_bytes())\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/openai/_streaming.py\", line 371, in iter_bytes\n    for chunk in iterator:\n                 ^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpx2/_models.py\", line 893, in iter_bytes\n    for raw_bytes in self.iter_raw():\n                     ^^^^^^^^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpx2/_models.py\", line 948, in iter_raw\n    for raw_stream_bytes in self.stream:\n                            ^^^^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpx2/_client.py\", line 143, in __iter__\n    yield from self._stream\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpx2/_transports/default.py\", line 123, in __iter__\n    with map_httpcore_exceptions():\n         ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/chris/.local/share/uv/python/cpython-3.12.14-linux-x86_64-gnu/lib/python3.12/contextlib.py\", line 158, in __exit__\n    self.gen.throw(value)\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/httpx2/_transports/default.py\", line 115, in map_httpcore_exceptions\n    raise mapped_exc(message) from exc\nhttpx2.RemoteProtocolError: peer closed connection without sending complete message body (incomplete chunked read)\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/ddtrace/llmobs/_integrations/base_stream_handler.py\", line 238, in __iter__\n    for chunk in self._self_stream_iter:\n                 ^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/openai/_streaming.py\", line 52, in __iter__\n    for item in self._iterator:\n                ^^^^^^^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/openai/_streaming.py\", line 70, in __stream__\n    for sse in iterator:\n               ^^^^^^^^\n  File \"/home/chris/.cache/spantruth/venvs/ddtrace-d96a4e105e7f/lib/python3.12/site-packages/openai/_streaming.py\", line 61, in _iter_events\n    raise APIConnectionError(request=self.response.request) from err\nopenai.APIConnectionError: Connection error.\n",
+        "error.type": "openai.APIConnectionError",
+        "gen_ai.application.name": "spantruth",
+        "gen_ai.operation.name": "llm",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": "gpt-5-mini-2026-08-07",
+        "gen_ai.usage.input_tokens": 7,
+        "gen_ai.usage.output_tokens": 5,
+        "gen_ai.usage.total_tokens": 12,
+        "llmobs_parent_id": "15753137772644709291",
+        "llmobs_trace_id": "6b05a70400000000c923d1f1fa33770a",
+        "openai.request.endpoint": "/v1/chat/completions",
+        "openai.request.method": "POST",
+        "openai.request.model": "gpt-5-mini",
+        "openai.request.provider": "OpenAI",
+        "openai.response.model": "gpt-5-mini-2026-08-07",
+        "process_id": 1901080,
+        "runtime-id": "419c4d76fc56462db66c16527e6763e6"
+       },
+       "name": "openai.request",
+       "scope": "ddtrace.adapter",
+       "status": "ERROR"
+      },
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "pass"
+    }
+   },
+   "homepage": "https://github.com/DataDog/dd-trace-py",
+   "kind": "library",
+   "notes": "ddtrace spans are not OpenTelemetry spans. A local adapter in instrument.py shows ddtrace's own LLM spans to the harness: tag and metric keys and values are unchanged, span.error becomes ERROR, and a span ddtrace never finishes stays open and is lost. span.parented comes from the adapter, not from ddtrace, whose spans form their own trace. What is graded is the APM span with its gen_ai.* tags, not the LLMObs event sent to Datadog, which holds finish_reason in its metadata. OpenAI's response model is also on the tag openai.response.model, a name the suite does not read. No Agent and no account: LLMObs.enable(agentless_enabled=False) tries a local Agent on 127.0.0.1:8126, finds none and drops the events. Telemetry and remote configuration are off.",
+   "ref": "ddtrace",
+   "title": "Datadog ddtrace LLM Observability",
+   "versions": {
+    "anthropic": "2.4.0",
+    "ddtrace": "4.16.3",
+    "openai": "3.42.1",
+    "opentelemetry-exporter-otlp-proto-http": "1.45.2",
+    "opentelemetry-sdk": "1.45.2"
+   }
+  },
+  "langfuse": {
+   "cells": {
+    "openai/responses-stream-missing-finish-abort": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "span.parented",
+       "rule": "The span belongs to the trace that was active when the application made the call.",
+       "rule_url": "https://opentelemetry.io/docs/specs/otel/trace/api/#context-interaction",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": "ERROR",
+       "got": [
+        "UNSET"
+       ],
+       "id": "error.status",
+       "rule": "Span status SHOULD follow Recording Errors: an operation that ended in an error sets the status to Error.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md",
+       "verdict": "wrong",
+       "where": null
+      },
+      {
+       "detail": "Langfuse records errors as span status and level",
+       "expected": null,
+       "got": null,
+       "id": "error.type",
+       "rule": "`error.type` is conditionally required if the operation ended in an error. Any low-cardinality identifier is allowed, so only its presence is graded.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/spans.yaml#L3-L12",
+       "verdict": "n/a",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {
+        "langfuse.internal.is_app_root": true,
+        "langfuse.observation.completion_start_time": "\"2026-11-24T15:02:26.602879Z\"",
+        "langfuse.observation.input": "[{\"role\": \"user\", \"content\": \"What is the capital of France?\"}]",
+        "langfuse.observation.metadata.background": "false",
+        "langfuse.observation.metadata.id": "\"resp_025c23fff6653590006acbfc0086cc87d18124e70e8d3ff838\"",
+        "langfuse.observation.metadata.max_output_tokens": "16",
+        "langfuse.observation.metadata.metadata": "{}",
+        "langfuse.observation.metadata.object": "\"response\"",
+        "langfuse.observation.metadata.parallel_tool_calls": "true",
+        "langfuse.observation.metadata.prompt_cache_retention": "\"24h\"",
+        "langfuse.observation.metadata.reasoning": "{\"context\":\"all_turns\",\"effort\":\"none\",\"generate_summary\":null,\"mode\":\"standard\",\"summary\":null}",
+        "langfuse.observation.metadata.service_tier": "\"auto\"",
+        "langfuse.observation.metadata.status": "\"in_progress\"",
+        "langfuse.observation.metadata.temperature": "1.0",
+        "langfuse.observation.metadata.tool_choice": "\"auto\"",
+        "langfuse.observation.metadata.tool_usage": "{\"image_gen\":{\"input_tokens\":0,\"input_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"output_tokens\":0,\"total_tokens\":0,\"cached_tokens\":null,\"cached_tokens_details\":null,\"output_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0}},\"web_search\":{\"num_requests\":0}}",
+        "langfuse.observation.metadata.tools": "[]",
+        "langfuse.observation.metadata.top_logprobs": "0",
+        "langfuse.observation.metadata.top_p": "0.98",
+        "langfuse.observation.metadata.truncation": "\"disabled\"",
+        "langfuse.observation.model.name": "gpt-6-luna",
+        "langfuse.observation.model.parameters": "{\"temperature\": 1, \"max_tokens\": \"Infinity\", \"top_p\": 1, \"frequency_penalty\": 0, \"presence_penalty\": 0, \"service_tier\": \"auto\"}",
+        "langfuse.observation.type": "generation"
+       },
+       "name": "OpenAI-generation",
+       "scope": "langfuse-sdk",
+       "status": "UNSET"
+      },
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "wrong"
+    },
+    "openai/stream-dropped": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "span.parented",
+       "rule": "The span belongs to the trace that was active when the application made the call.",
+       "rule_url": "https://opentelemetry.io/docs/specs/otel/trace/api/#context-interaction",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": "ERROR",
+       "got": [
+        "UNSET"
+       ],
+       "id": "error.status",
+       "rule": "Span status SHOULD follow Recording Errors: an operation that ended in an error sets the status to Error.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md",
+       "verdict": "wrong",
+       "where": null
+      },
+      {
+       "detail": "Langfuse records errors as span status and level",
+       "expected": null,
+       "got": null,
+       "id": "error.type",
+       "rule": "`error.type` is conditionally required if the operation ended in an error. Any low-cardinality identifier is allowed, so only its presence is graded.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/spans.yaml#L3-L12",
+       "verdict": "n/a",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {
+        "langfuse.internal.is_app_root": true,
+        "langfuse.observation.completion_start_time": "\"2026-11-24T15:02:27.836415Z\"",
+        "langfuse.observation.input": "[{\"role\": \"user\", \"content\": \"What is the capital of France?\"}]",
+        "langfuse.observation.model.name": "gpt-5-mini-2026-08-07",
+        "langfuse.observation.model.parameters": "{\"temperature\": 1, \"max_tokens\": \"Infinity\", \"top_p\": 1, \"frequency_penalty\": 0, \"presence_penalty\": 0, \"service_tier\": \"default\"}",
+        "langfuse.observation.output": "The capital of France",
+        "langfuse.observation.type": "generation"
+       },
+       "name": "OpenAI-generation",
+       "scope": "langfuse-sdk",
+       "status": "UNSET"
+      },
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "wrong"
+    }
+   },
+   "homepage": "https://github.com/langfuse/langfuse-python",
+   "kind": "library",
+   "notes": "The documented setup: from langfuse.openai import openai, with a throwaway key so Langfuse does not turn itself off. base_url points at the harness receiver so Langfuse's own export does not attempt an outbound connection; any POST to its own path (/api/public/otel/v1/traces) is answered 200 by the receiver. The driver's tracer provider exports the span to /v1/traces.",
+   "ref": "langfuse",
+   "title": "Langfuse Python SDK",
+   "versions": {
+    "anthropic": "2.4.0",
+    "langfuse": "5.2.0",
+    "openai": "3.42.1",
+    "opentelemetry-exporter-otlp-proto-http": "1.45.2",
+    "opentelemetry-sdk": "1.45.2"
+   }
+  },
+  "mlflow": {
+   "cells": {
+    "anthropic/stream-dropped": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "span.parented",
+       "rule": "The span belongs to the trace that was active when the application made the call.",
+       "rule_url": "https://opentelemetry.io/docs/specs/otel/trace/api/#context-interaction",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": "ERROR",
+       "got": [
+        "OK"
+       ],
+       "id": "error.status",
+       "rule": "Span status SHOULD follow Recording Errors: an operation that ended in an error sets the status to Error.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md",
+       "verdict": "wrong",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "error.type",
+       "rule": "`error.type` is conditionally required if the operation ended in an error. Any low-cardinality identifier is allowed, so only its presence is graded.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/spans.yaml#L3-L12",
+       "verdict": "missing",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {
+        "mlflow.llm.model": "\"claude-sonnet-5-5\"",
+        "mlflow.llm.provider": "\"anthropic\"",
+        "mlflow.message.format": "\"anthropic\"",
+        "mlflow.spanInputs": "{\"max_tokens\": 1024, \"messages\": [{\"role\": \"user\", \"content\": \"What is the capital of France?\"}], \"model\": \"claude-sonnet-5-5\", \"stream\": true}",
+        "mlflow.spanLogLevel": "20",
+        "mlflow.spanOutputs": "\"<anthropic.Stream object at 0x7cb0196b4e30>\"",
+        "mlflow.spanType": "\"CHAT_MODEL\"",
+        "mlflow.traceRequestId": "\"tr-0c9b5a271274e80baaf5450a1967772a\""
+       },
+       "name": "Messages.create",
+       "scope": "mlflow.tracing.provider",
+       "status": "OK"
+      },
+      {
+       "attributes": {
+        "mlflow.spanType": "null",
+        "mlflow.traceRequestId": "\"tr-0c9b5a271274e80baaf5450a1967772a\""
+       },
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      },
+      {
+       "attributes": {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "anthropic",
+        "gen_ai.request.model": "claude-sonnet-5-5"
+       },
+       "name": "chat claude-sonnet-5-5",
+       "scope": "mlflow.tracing.provider",
+       "status": "OK"
+      },
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "wrong"
+    },
+    "anthropic/stream-error-event": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "span.parented",
+       "rule": "The span belongs to the trace that was active when the application made the call.",
+       "rule_url": "https://opentelemetry.io/docs/specs/otel/trace/api/#context-interaction",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": "ERROR",
+       "got": [
+        "OK"
+       ],
+       "id": "error.status",
+       "rule": "Span status SHOULD follow Recording Errors: an operation that ended in an error sets the status to Error.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md",
+       "verdict": "wrong",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "error.type",
+       "rule": "`error.type` is conditionally required if the operation ended in an error. Any low-cardinality identifier is allowed, so only its presence is graded.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/spans.yaml#L3-L12",
+       "verdict": "missing",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {
+        "mlflow.llm.model": "\"claude-sonnet-5-5\"",
+        "mlflow.llm.provider": "\"anthropic\"",
+        "mlflow.message.format": "\"anthropic\"",
+        "mlflow.spanInputs": "{\"max_tokens\": 1024, \"messages\": [{\"role\": \"user\", \"content\": \"What is the capital of France?\"}], \"model\": \"claude-sonnet-5-5\", \"stream\": true}",
+        "mlflow.spanLogLevel": "20",
+        "mlflow.spanOutputs": "\"<anthropic.Stream object at 0x7e1d0d1eef60>\"",
+        "mlflow.spanType": "\"CHAT_MODEL\"",
+        "mlflow.traceRequestId": "\"tr-3271c7dee633f7a11e37f30c8d270da3\""
+       },
+       "name": "Messages.create",
+       "scope": "mlflow.tracing.provider",
+       "status": "OK"
+      },
+      {
+       "attributes": {
+        "mlflow.spanType": "null",
+        "mlflow.traceRequestId": "\"tr-3271c7dee633f7a11e37f30c8d270da3\""
+       },
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      },
+      {
+       "attributes": {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "anthropic",
+        "gen_ai.request.model": "claude-sonnet-5-5"
+       },
+       "name": "chat claude-sonnet-5-5",
+       "scope": "mlflow.tracing.provider",
+       "status": "OK"
+      },
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "wrong"
+    },
+    "openai/responses-stream-missing-finish-abort": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "span.parented",
+       "rule": "The span belongs to the trace that was active when the application made the call.",
+       "rule_url": "https://opentelemetry.io/docs/specs/otel/trace/api/#context-interaction",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": "ERROR",
+       "got": [
+        "ERROR"
+       ],
+       "id": "error.status",
+       "rule": "Span status SHOULD follow Recording Errors: an operation that ended in an error sets the status to Error.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "error.type",
+       "rule": "`error.type` is conditionally required if the operation ended in an error. Any low-cardinality identifier is allowed, so only its presence is graded.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/spans.yaml#L3-L12",
+       "verdict": "missing",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {
+        "mlflow.message.format": "\"openai\"",
+        "mlflow.spanInputs": "{\"model\": \"gpt-6-luna\", \"input\": [{\"role\": \"user\", \"content\": \"What is the capital of France?\"}], \"stream\": true}",
+        "mlflow.spanLogLevel": "40",
+        "mlflow.spanType": "\"CHAT_MODEL\"",
+        "mlflow.traceRequestId": "\"tr-b7a90b2dee1dc6bb85c3824f1814a836\"",
+        "model": "\"gpt-6-luna\"",
+        "stream": "true"
+       },
+       "name": "Responses",
+       "scope": "mlflow.tracing.provider",
+       "status": "ERROR"
+      },
+      {
+       "attributes": {
+        "mlflow.spanType": "null",
+        "mlflow.traceRequestId": "\"tr-b7a90b2dee1dc6bb85c3824f1814a836\""
+       },
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      },
+      {
+       "attributes": {
+        "gen_ai.input.messages": "[{\"role\": \"user\", \"parts\": [{\"type\": \"text\", \"content\": \"What is the capital of France?\"}]}]",
+        "gen_ai.operation.name": "chat",
+        "model": "\"gpt-6-luna\"",
+        "stream": "true"
+       },
+       "name": "chat",
+       "scope": "mlflow.tracing.provider",
+       "status": "ERROR"
+      },
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "missing"
+    },
+    "openai/stream-dropped": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "span.parented",
+       "rule": "The span belongs to the trace that was active when the application made the call.",
+       "rule_url": "https://opentelemetry.io/docs/specs/otel/trace/api/#context-interaction",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": "ERROR",
+       "got": [
+        "ERROR"
+       ],
+       "id": "error.status",
+       "rule": "Span status SHOULD follow Recording Errors: an operation that ended in an error sets the status to Error.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "error.type",
+       "rule": "`error.type` is conditionally required if the operation ended in an error. Any low-cardinality identifier is allowed, so only its presence is graded.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/spans.yaml#L3-L12",
+       "verdict": "missing",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {
+        "mlflow.message.format": "\"openai\"",
+        "mlflow.spanInputs": "{\"model\": \"gpt-5-mini\", \"messages\": [{\"role\": \"user\", \"content\": \"What is the capital of France?\"}], \"stream\": true, \"stream_options\": {\"include_usage\": true}}",
+        "mlflow.spanLogLevel": "40",
+        "mlflow.spanType": "\"CHAT_MODEL\"",
+        "mlflow.traceRequestId": "\"tr-b27f78b7f90bf22eba226e87c8dfcd55\"",
+        "model": "\"gpt-5-mini\"",
+        "stream": "true",
+        "stream_options": "{\"include_usage\": true}"
+       },
+       "name": "Completions",
+       "scope": "mlflow.tracing.provider",
+       "status": "ERROR"
+      },
+      {
+       "attributes": {
+        "mlflow.spanType": "null",
+        "mlflow.traceRequestId": "\"tr-b27f78b7f90bf22eba226e87c8dfcd55\""
+       },
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      },
+      {
+       "attributes": {
+        "gen_ai.input.messages": "[{\"role\": \"user\", \"parts\": [{\"type\": \"text\", \"content\": \"What is the capital of France?\"}]}]",
+        "gen_ai.operation.name": "chat",
+        "model": "\"gpt-5-mini\"",
+        "stream": "true",
+        "stream_options": "{\"include_usage\": true}"
+       },
+       "name": "chat",
+       "scope": "mlflow.tracing.provider",
+       "status": "ERROR"
+      },
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "missing"
+    }
+   },
+   "homepage": "https://github.com/mlflow/mlflow",
+   "kind": "library",
+   "notes": "MLflow's own OTLP export with its own option MLFLOW_ENABLE_OTEL_GENAI_SEMCONV=true, which translates mlflow.* attributes to GenAI names before export. No adapter. The findings on tokens and models are about that translation: MLflow's native attribute mlflow.chat.tokenUsage keeps the cache counts. The driver's provider also exports the untranslated copy of each span, which the suite does not grade. MLFLOW_USE_DEFAULT_TRACER_PROVIDER=false joins the app's trace, and mlflow.tracing.enable() sets up the processors before the app's parent span starts. MLFLOW_DISABLE_TELEMETRY=true stops the usage telemetry fetch and post (mlflow/telemetry/client.py).",
+   "ref": "mlflow",
+   "title": "MLflow Tracing",
+   "versions": {
+    "anthropic": "2.4.0",
+    "mlflow-skinny": "3.18.0",
+    "openai": "3.42.1",
+    "opentelemetry-exporter-otlp-proto-http": "1.45.2",
+    "opentelemetry-sdk": "1.45.2"
+   }
+  },
+  "openinference": {
+   "cells": {
+    "anthropic/stream-dropped": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "span.parented",
+       "rule": "The span belongs to the trace that was active when the application made the call.",
+       "rule_url": "https://opentelemetry.io/docs/specs/otel/trace/api/#context-interaction",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": "ERROR",
+       "got": [
+        "ERROR"
+       ],
+       "id": "error.status",
+       "rule": "Span status SHOULD follow Recording Errors: an operation that ended in an error sets the status to Error.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "OpenInference records errors as span status and events",
+       "expected": null,
+       "got": null,
+       "id": "error.type",
+       "rule": "`error.type` is conditionally required if the operation ended in an error. Any low-cardinality identifier is allowed, so only its presence is graded.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/spans.yaml#L3-L12",
+       "verdict": "n/a",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {
+        "input.mime_type": "application/json",
+        "input.value": "{\"model\": \"claude-sonnet-5-5\", \"max_tokens\": 1024, \"messages\": [{\"role\": \"user\", \"content\": \"What is the capital of France?\"}], \"stream\": true}",
+        "llm.input_messages.0.message.content": "What is the capital of France?",
+        "llm.input_messages.0.message.role": "user",
+        "llm.invocation_parameters": "{\"max_tokens\": 1024, \"stream\": true}",
+        "llm.model_name": "claude-sonnet-5-5-20260915",
+        "llm.output_messages.0.message.contents.0.message_content.text": "The capital",
+        "llm.output_messages.0.message.contents.0.message_content.type": "text",
+        "llm.output_messages.0.message.role": "assistant",
+        "llm.provider": "anthropic",
+        "llm.request.model_name": "claude-sonnet-5-5",
+        "llm.response.model_name": "claude-sonnet-5-5-20260915",
+        "llm.system": "anthropic",
+        "llm.token_count.prompt": 1427,
+        "openinference.span.kind": "LLM",
+        "output.mime_type": "application/json",
+        "output.value": "{\"id\": \"msg_wt_drop\", \"container\": null, \"content\": [{\"citations\": null, \"text\": \"The capital\", \"type\": \"text\"}], \"diagnostics\": null, \"model\": \"claude-sonnet-5-5-20260915\", \"role\": \"assistant\", \"stop_details\": null, \"stop_reason\": null, \"stop_sequence\": null, \"type\": \"message\", \"usage\": {\"cache_creation\": null, \"cache_creation_input_tokens\": 0, \"cache_read_input_tokens\": 0, \"inference_geo\": null, \"input_tokens\": 1427, \"output_tokens_details\": null, \"server_tool_use\": null, \"service_tier\": null, \"speed\": null}}"
+       },
+       "name": "messages.create",
+       "scope": "openinference.instrumentation.anthropic",
+       "status": "ERROR"
+      },
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "pass"
+    },
+    "anthropic/stream-error-event": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "span.parented",
+       "rule": "The span belongs to the trace that was active when the application made the call.",
+       "rule_url": "https://opentelemetry.io/docs/specs/otel/trace/api/#context-interaction",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": "ERROR",
+       "got": [
+        "ERROR"
+       ],
+       "id": "error.status",
+       "rule": "Span status SHOULD follow Recording Errors: an operation that ended in an error sets the status to Error.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "OpenInference records errors as span status and events",
+       "expected": null,
+       "got": null,
+       "id": "error.type",
+       "rule": "`error.type` is conditionally required if the operation ended in an error. Any low-cardinality identifier is allowed, so only its presence is graded.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/spans.yaml#L3-L12",
+       "verdict": "n/a",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {
+        "input.mime_type": "application/json",
+        "input.value": "{\"model\": \"claude-sonnet-5-5\", \"max_tokens\": 1024, \"messages\": [{\"role\": \"user\", \"content\": \"What is the capital of France?\"}], \"stream\": true}",
+        "llm.input_messages.0.message.content": "What is the capital of France?",
+        "llm.input_messages.0.message.role": "user",
+        "llm.invocation_parameters": "{\"max_tokens\": 1024, \"stream\": true}",
+        "llm.model_name": "claude-sonnet-5-5-20260915",
+        "llm.output_messages.0.message.contents.0.message_content.text": "The capital",
+        "llm.output_messages.0.message.contents.0.message_content.type": "text",
+        "llm.output_messages.0.message.role": "assistant",
+        "llm.provider": "anthropic",
+        "llm.request.model_name": "claude-sonnet-5-5",
+        "llm.response.model_name": "claude-sonnet-5-5-20260915",
+        "llm.system": "anthropic",
+        "llm.token_count.prompt": 1301,
+        "openinference.span.kind": "LLM",
+        "output.mime_type": "application/json",
+        "output.value": "{\"id\": \"msg_wt_overload\", \"container\": null, \"content\": [{\"citations\": null, \"text\": \"The capital\", \"type\": \"text\"}], \"diagnostics\": null, \"model\": \"claude-sonnet-5-5-20260915\", \"role\": \"assistant\", \"stop_details\": null, \"stop_reason\": null, \"stop_sequence\": null, \"type\": \"message\", \"usage\": {\"cache_creation\": null, \"cache_creation_input_tokens\": 0, \"cache_read_input_tokens\": 0, \"inference_geo\": null, \"input_tokens\": 1301, \"output_tokens_details\": null, \"server_tool_use\": null, \"service_tier\": null, \"speed\": null}}"
+       },
+       "name": "messages.create",
+       "scope": "openinference.instrumentation.anthropic",
+       "status": "ERROR"
+      },
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "pass"
+    },
+    "openai/responses-stream-missing-finish-abort": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "span.parented",
+       "rule": "The span belongs to the trace that was active when the application made the call.",
+       "rule_url": "https://opentelemetry.io/docs/specs/otel/trace/api/#context-interaction",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": "ERROR",
+       "got": [
+        "ERROR"
+       ],
+       "id": "error.status",
+       "rule": "Span status SHOULD follow Recording Errors: an operation that ended in an error sets the status to Error.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "OpenInference records errors as span status and events",
+       "expected": null,
+       "got": null,
+       "id": "error.type",
+       "rule": "`error.type` is conditionally required if the operation ended in an error. Any low-cardinality identifier is allowed, so only its presence is graded.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/spans.yaml#L3-L12",
+       "verdict": "n/a",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {
+        "input.mime_type": "application/json",
+        "input.value": "{\"model\": \"gpt-6-luna\", \"stream\": true, \"input\": [{\"role\": \"user\", \"content\": \"What is the capital of France?\"}]}",
+        "llm.input_messages.1.message.content": "What is the capital of France?",
+        "llm.input_messages.1.message.role": "user",
+        "llm.invocation_parameters": "{\"model\": \"gpt-6-luna\", \"stream\": true}",
+        "llm.model_name": "gpt-6-luna",
+        "llm.system": "openai",
+        "openinference.span.kind": "LLM"
+       },
+       "name": "Response",
+       "scope": "openinference.instrumentation.openai",
+       "status": "ERROR"
+      },
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "pass"
+    },
+    "openai/stream-dropped": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "span.parented",
+       "rule": "The span belongs to the trace that was active when the application made the call.",
+       "rule_url": "https://opentelemetry.io/docs/specs/otel/trace/api/#context-interaction",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": "ERROR",
+       "got": [
+        "ERROR"
+       ],
+       "id": "error.status",
+       "rule": "Span status SHOULD follow Recording Errors: an operation that ended in an error sets the status to Error.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "OpenInference records errors as span status and events",
+       "expected": null,
+       "got": null,
+       "id": "error.type",
+       "rule": "`error.type` is conditionally required if the operation ended in an error. Any low-cardinality identifier is allowed, so only its presence is graded.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/spans.yaml#L3-L12",
+       "verdict": "n/a",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {
+        "input.mime_type": "application/json",
+        "input.value": "{\"model\": \"gpt-5-mini\", \"stream\": true, \"messages\": [{\"role\": \"user\", \"content\": \"What is the capital of France?\"}], \"stream_options\": {\"include_usage\": true}}",
+        "llm.input_messages.0.message.content": "What is the capital of France?",
+        "llm.input_messages.0.message.role": "user",
+        "llm.invocation_parameters": "{\"model\": \"gpt-5-mini\", \"stream\": true, \"stream_options\": {\"include_usage\": true}}",
+        "llm.model_name": "gpt-5-mini-2026-08-07",
+        "llm.output_messages.0.message.content": "The capital of France",
+        "llm.output_messages.0.message.role": "assistant",
+        "llm.system": "openai",
+        "openinference.span.kind": "LLM",
+        "output.mime_type": "application/json",
+        "output.value": "{\"choices\": [{\"message\": {\"content\": \"The capital of France\", \"role\": \"assistant\"}, \"index\": 0}], \"id\": \"chatcmpl-wt-drop\", \"created\": 1760000000, \"model\": \"gpt-5-mini-2026-08-07\", \"object\": \"chat.completion.chunk\", \"service_tier\": \"default\", \"system_fingerprint\": \"fp_wt0001\"}"
+       },
+       "name": "ChatCompletion",
+       "scope": "openinference.instrumentation.openai",
+       "status": "ERROR"
+      },
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "pass"
+    }
+   },
+   "homepage": "https://github.com/Arize-ai/openinference",
+   "kind": "library",
+   "notes": "",
+   "ref": "openinference",
+   "title": "OpenInference",
+   "versions": {
+    "anthropic": "2.4.0",
+    "openai": "3.42.1",
+    "openinference-instrumentation-anthropic": "3.3.0",
+    "openinference-instrumentation-openai": "0.1.69",
+    "opentelemetry-exporter-otlp-proto-http": "1.45.2",
+    "opentelemetry-sdk": "1.45.2"
+   }
+  },
+  "openlit": {
+   "cells": {
+    "anthropic/stream-dropped": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "never ended: chat claude-sonnet-5-5",
+       "expected": null,
+       "got": null,
+       "id": "span.ended",
+       "rule": "GenAI spans SHOULD end when the response is fully received or the operation is terminated due to an error or cancellation.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/docs/gen-ai/gen-ai-spans.md#L29-L31",
+       "verdict": "lost",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {
+        "http.method": "POST",
+        "http.status_code": 200,
+        "http.url": "http://127.0.0.1:34177/s/anthropic--stream-dropped/v1/messages"
+       },
+       "name": "POST",
+       "scope": "opentelemetry.instrumentation.httpx",
+       "status": "UNSET"
+      },
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "lost"
+    },
+    "anthropic/stream-error-event": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "never ended: chat claude-sonnet-5-5",
+       "expected": null,
+       "got": null,
+       "id": "span.ended",
+       "rule": "GenAI spans SHOULD end when the response is fully received or the operation is terminated due to an error or cancellation.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/docs/gen-ai/gen-ai-spans.md#L29-L31",
+       "verdict": "lost",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {
+        "http.method": "POST",
+        "http.status_code": 200,
+        "http.url": "http://127.0.0.1:34177/s/anthropic--stream-error-event/v1/messages"
+       },
+       "name": "POST",
+       "scope": "opentelemetry.instrumentation.httpx",
+       "status": "UNSET"
+      },
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "lost"
+    },
+    "openai/responses-stream-missing-finish-abort": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "never ended: chat gpt-6-luna",
+       "expected": null,
+       "got": null,
+       "id": "span.ended",
+       "rule": "GenAI spans SHOULD end when the response is fully received or the operation is terminated due to an error or cancellation.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/docs/gen-ai/gen-ai-spans.md#L29-L31",
+       "verdict": "lost",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {
+        "http.method": "POST",
+        "http.status_code": 200,
+        "http.url": "http://127.0.0.1:34177/s/openai--responses-stream-missing-finish-abort/v1/responses"
+       },
+       "name": "POST",
+       "scope": "opentelemetry.instrumentation.httpx",
+       "status": "UNSET"
+      },
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "lost"
+    },
+    "openai/stream-dropped": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "never ended: chat gpt-5-mini",
+       "expected": null,
+       "got": null,
+       "id": "span.ended",
+       "rule": "GenAI spans SHOULD end when the response is fully received or the operation is terminated due to an error or cancellation.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/docs/gen-ai/gen-ai-spans.md#L29-L31",
+       "verdict": "lost",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {
+        "http.method": "POST",
+        "http.status_code": 200,
+        "http.url": "http://127.0.0.1:34177/s/openai--stream-dropped/v1/chat/completions"
+       },
+       "name": "POST",
+       "scope": "opentelemetry.instrumentation.httpx",
+       "status": "UNSET"
+      },
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "lost"
+    }
+   },
+   "homepage": "https://github.com/openlit/openlit",
+   "kind": "library",
+   "notes": "",
+   "ref": "openlit",
+   "title": "OpenLIT",
+   "versions": {
+    "anthropic": "0.125.0",
+    "openai": "2.54.0",
+    "openlit": "1.45.0",
+    "opentelemetry-exporter-otlp-proto-http": "1.45.2",
+    "opentelemetry-sdk": "1.45.2"
+   }
+  },
+  "openllmetry": {
+   "cells": {
+    "anthropic/stream-dropped": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "never ended: anthropic.chat",
+       "expected": null,
+       "got": null,
+       "id": "span.ended",
+       "rule": "GenAI spans SHOULD end when the response is fully received or the operation is terminated due to an error or cancellation.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/docs/gen-ai/gen-ai-spans.md#L29-L31",
+       "verdict": "lost",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "lost"
+    },
+    "anthropic/stream-error-event": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "never ended: anthropic.chat",
+       "expected": null,
+       "got": null,
+       "id": "span.ended",
+       "rule": "GenAI spans SHOULD end when the response is fully received or the operation is terminated due to an error or cancellation.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/docs/gen-ai/gen-ai-spans.md#L29-L31",
+       "verdict": "lost",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "lost"
+    },
+    "openai/responses-stream-missing-finish-abort": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "span.parented",
+       "rule": "The span belongs to the trace that was active when the application made the call.",
+       "rule_url": "https://opentelemetry.io/docs/specs/otel/trace/api/#context-interaction",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": "ERROR",
+       "got": [
+        "ERROR"
+       ],
+       "id": "error.status",
+       "rule": "Span status SHOULD follow Recording Errors: an operation that ended in an error sets the status to Error.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": "APIConnectionError",
+       "id": "error.type",
+       "rule": "`error.type` is conditionally required if the operation ended in an error. Any low-cardinality identifier is allowed, so only its presence is graded.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/spans.yaml#L3-L12",
+       "verdict": "pass",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {
+        "error.type": "APIConnectionError",
+        "gen_ai.is_streaming": true,
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": "gpt-6-luna"
+       },
+       "name": "openai.response",
+       "scope": "opentelemetry.instrumentation.openai.v1",
+       "status": "ERROR"
+      },
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "pass"
+    },
+    "openai/stream-dropped": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "span.parented",
+       "rule": "The span belongs to the trace that was active when the application made the call.",
+       "rule_url": "https://opentelemetry.io/docs/specs/otel/trace/api/#context-interaction",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": "ERROR",
+       "got": [
+        "OK"
+       ],
+       "id": "error.status",
+       "rule": "Span status SHOULD follow Recording Errors: an operation that ended in an error sets the status to Error.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md",
+       "verdict": "wrong",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "error.type",
+       "rule": "`error.type` is conditionally required if the operation ended in an error. Any low-cardinality identifier is allowed, so only its presence is graded.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/spans.yaml#L3-L12",
+       "verdict": "missing",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {
+        "gen_ai.input.messages": "[{\"role\": \"user\", \"parts\": [{\"content\": \"What is the capital of France?\", \"type\": \"text\"}]}]",
+        "gen_ai.is_streaming": true,
+        "gen_ai.openai.api_base": "http://127.0.0.1:34177/s/openai--stream-dropped/v1/",
+        "gen_ai.operation.name": "chat",
+        "gen_ai.output.messages": "[{\"role\": \"assistant\", \"parts\": [{\"content\": \"The capital of France\", \"type\": \"text\"}], \"finish_reason\": \"\"}]",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": "gpt-5-mini",
+        "gen_ai.response.id": "chatcmpl-wt-drop",
+        "gen_ai.response.model": "gpt-5-mini-2026-08-07"
+       },
+       "name": "openai.chat",
+       "scope": "opentelemetry.instrumentation.openai.v1",
+       "status": "OK"
+      },
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "wrong"
+    }
+   },
+   "homepage": "https://github.com/traceloop/openllmetry",
+   "kind": "library",
+   "notes": "",
+   "ref": "openllmetry",
+   "title": "OpenLLMetry",
+   "versions": {
+    "anthropic": "2.4.0",
+    "openai": "3.42.1",
+    "opentelemetry-exporter-otlp-proto-http": "1.45.2",
+    "opentelemetry-instrumentation-anthropic": "0.62.4",
+    "opentelemetry-instrumentation-openai": "0.62.4",
+    "opentelemetry-sdk": "1.45.2"
+   }
+  },
+  "otel-official": {
+   "cells": {
+    "anthropic/stream-dropped": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "span.parented",
+       "rule": "The span belongs to the trace that was active when the application made the call.",
+       "rule_url": "https://opentelemetry.io/docs/specs/otel/trace/api/#context-interaction",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": "ERROR",
+       "got": [
+        "ERROR"
+       ],
+       "id": "error.status",
+       "rule": "Span status SHOULD follow Recording Errors: an operation that ended in an error sets the status to Error.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": "httpx2.RemoteProtocolError",
+       "id": "error.type",
+       "rule": "`error.type` is conditionally required if the operation ended in an error. Any low-cardinality identifier is allowed, so only its presence is graded.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/spans.yaml#L3-L12",
+       "verdict": "pass",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {
+        "error.type": "httpx2.RemoteProtocolError",
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "anthropic",
+        "gen_ai.request.max_tokens": 1024,
+        "gen_ai.request.model": "claude-sonnet-5-5",
+        "gen_ai.request.stream": true,
+        "gen_ai.response.id": "msg_wt_drop",
+        "gen_ai.response.model": "claude-sonnet-5-5-20260915",
+        "gen_ai.response.time_to_first_chunk": 0.00968572600686457,
+        "gen_ai.usage.input_tokens": 1427,
+        "gen_ai.usage.output_tokens": 1,
+        "server.address": "127.0.0.1",
+        "server.port": 34177
+       },
+       "name": "chat claude-sonnet-5-5",
+       "scope": "opentelemetry.instrumentation.genai.anthropic",
+       "status": "ERROR"
+      },
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "pass"
+    },
+    "anthropic/stream-error-event": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "span.parented",
+       "rule": "The span belongs to the trace that was active when the application made the call.",
+       "rule_url": "https://opentelemetry.io/docs/specs/otel/trace/api/#context-interaction",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": "ERROR",
+       "got": [
+        "ERROR"
+       ],
+       "id": "error.status",
+       "rule": "Span status SHOULD follow Recording Errors: an operation that ended in an error sets the status to Error.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": "anthropic.APIStatusError",
+       "id": "error.type",
+       "rule": "`error.type` is conditionally required if the operation ended in an error. Any low-cardinality identifier is allowed, so only its presence is graded.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/spans.yaml#L3-L12",
+       "verdict": "pass",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {
+        "error.type": "anthropic.APIStatusError",
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "anthropic",
+        "gen_ai.request.max_tokens": 1024,
+        "gen_ai.request.model": "claude-sonnet-5-5",
+        "gen_ai.request.stream": true,
+        "gen_ai.response.id": "msg_wt_overload",
+        "gen_ai.response.model": "claude-sonnet-5-5-20260915",
+        "gen_ai.response.time_to_first_chunk": 0.011298151992377825,
+        "gen_ai.usage.input_tokens": 1301,
+        "gen_ai.usage.output_tokens": 1,
+        "server.address": "127.0.0.1",
+        "server.port": 34177
+       },
+       "name": "chat claude-sonnet-5-5",
+       "scope": "opentelemetry.instrumentation.genai.anthropic",
+       "status": "ERROR"
+      },
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "pass"
+    },
+    "openai/responses-stream-missing-finish-abort": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "span.parented",
+       "rule": "The span belongs to the trace that was active when the application made the call.",
+       "rule_url": "https://opentelemetry.io/docs/specs/otel/trace/api/#context-interaction",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": "ERROR",
+       "got": [
+        "ERROR"
+       ],
+       "id": "error.status",
+       "rule": "Span status SHOULD follow Recording Errors: an operation that ended in an error sets the status to Error.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": "openai.APIConnectionError",
+       "id": "error.type",
+       "rule": "`error.type` is conditionally required if the operation ended in an error. Any low-cardinality identifier is allowed, so only its presence is graded.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/spans.yaml#L3-L12",
+       "verdict": "pass",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {
+        "error.type": "openai.APIConnectionError",
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": "gpt-6-luna",
+        "gen_ai.request.stream": true,
+        "gen_ai.response.model": "gpt-6-luna",
+        "gen_ai.response.time_to_first_chunk": 0.050918544991873205,
+        "openai.api.type": "responses",
+        "server.address": "127.0.0.1",
+        "server.port": 34177
+       },
+       "name": "chat gpt-6-luna",
+       "scope": "opentelemetry.instrumentation.genai.openai",
+       "status": "ERROR"
+      },
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "pass"
+    },
+    "openai/stream-dropped": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "span.parented",
+       "rule": "The span belongs to the trace that was active when the application made the call.",
+       "rule_url": "https://opentelemetry.io/docs/specs/otel/trace/api/#context-interaction",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": "ERROR",
+       "got": [
+        "ERROR"
+       ],
+       "id": "error.status",
+       "rule": "Span status SHOULD follow Recording Errors: an operation that ended in an error sets the status to Error.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": "openai.APIConnectionError",
+       "id": "error.type",
+       "rule": "`error.type` is conditionally required if the operation ended in an error. Any low-cardinality identifier is allowed, so only its presence is graded.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/spans.yaml#L3-L12",
+       "verdict": "pass",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {
+        "error.type": "openai.APIConnectionError",
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": "gpt-5-mini",
+        "gen_ai.request.stream": true,
+        "gen_ai.response.id": "chatcmpl-wt-drop",
+        "gen_ai.response.model": "gpt-5-mini-2026-08-07",
+        "gen_ai.response.time_to_first_chunk": 0.009628414001781493,
+        "openai.response.service_tier": "default",
+        "server.address": "127.0.0.1",
+        "server.port": 34177
+       },
+       "name": "chat gpt-5-mini",
+       "scope": "opentelemetry.instrumentation.genai.openai",
+       "status": "ERROR"
+      },
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "pass"
+    }
+   },
+   "homepage": "https://github.com/open-telemetry/opentelemetry-python-genai",
+   "kind": "library",
+   "notes": "",
+   "ref": "otel-official",
+   "title": "OpenTelemetry GenAI instrumentation",
+   "versions": {
+    "anthropic": "2.4.0",
+    "openai": "3.42.1",
+    "opentelemetry-exporter-otlp-proto-http": "1.45.2",
+    "opentelemetry-instrumentation-genai-anthropic": "1.3b0",
+    "opentelemetry-instrumentation-genai-openai": "1.3b0",
+    "opentelemetry-sdk": "1.45.2"
+   }
+  },
+  "otel-official-sdk-on": {
+   "cells": {
+    "anthropic/stream-dropped": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "span.parented",
+       "rule": "The span belongs to the trace that was active when the application made the call.",
+       "rule_url": "https://opentelemetry.io/docs/specs/otel/trace/api/#context-interaction",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": "ERROR",
+       "got": [
+        "ERROR"
+       ],
+       "id": "error.status",
+       "rule": "Span status SHOULD follow Recording Errors: an operation that ended in an error sets the status to Error.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": "connection_error",
+       "id": "error.type",
+       "rule": "`error.type` is conditionally required if the operation ended in an error. Any low-cardinality identifier is allowed, so only its presence is graded.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/spans.yaml#L3-L12",
+       "verdict": "pass",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {
+        "error.type": "connection_error",
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "anthropic",
+        "gen_ai.request.max_tokens": 1024,
+        "gen_ai.request.model": "claude-sonnet-5-5",
+        "gen_ai.request.stream": true,
+        "gen_ai.response.id": "msg_wt_drop",
+        "gen_ai.response.model": "claude-sonnet-5-5-20260915",
+        "gen_ai.response.time_to_first_chunk": 0.028168992,
+        "gen_ai.usage.cache_read.input_tokens": 0,
+        "gen_ai.usage.cache_write.input_tokens": 0,
+        "gen_ai.usage.input_tokens": 1427,
+        "http.request.method": "POST",
+        "http.response.status_code": 200,
+        "http.route": "/v1/messages",
+        "server.address": "127.0.0.1",
+        "server.port": 34177,
+        "url.full": "http://127.0.0.1:34177/s/anthropic--stream-dropped/v1/messages",
+        "url.path": "/s/anthropic--stream-dropped/v1/messages",
+        "url.scheme": "http"
+       },
+       "name": "anthropic.messages.create",
+       "scope": "com.anthropic.sdk.python",
+       "status": "ERROR"
+      },
+      {
+       "attributes": {
+        "error.type": "httpx2.RemoteProtocolError",
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "anthropic",
+        "gen_ai.request.max_tokens": 1024,
+        "gen_ai.request.model": "claude-sonnet-5-5",
+        "gen_ai.request.stream": true,
+        "gen_ai.response.id": "msg_wt_drop",
+        "gen_ai.response.model": "claude-sonnet-5-5-20260915",
+        "gen_ai.response.time_to_first_chunk": 0.024020599987125024,
+        "gen_ai.usage.input_tokens": 1427,
+        "gen_ai.usage.output_tokens": 1,
+        "server.address": "127.0.0.1",
+        "server.port": 34177
+       },
+       "name": "chat claude-sonnet-5-5",
+       "scope": "opentelemetry.instrumentation.genai.anthropic",
+       "status": "ERROR"
+      },
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "pass"
+    },
+    "anthropic/stream-error-event": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "span.parented",
+       "rule": "The span belongs to the trace that was active when the application made the call.",
+       "rule_url": "https://opentelemetry.io/docs/specs/otel/trace/api/#context-interaction",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": "ERROR",
+       "got": [
+        "ERROR"
+       ],
+       "id": "error.status",
+       "rule": "Span status SHOULD follow Recording Errors: an operation that ended in an error sets the status to Error.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": "overloaded_error",
+       "id": "error.type",
+       "rule": "`error.type` is conditionally required if the operation ended in an error. Any low-cardinality identifier is allowed, so only its presence is graded.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/spans.yaml#L3-L12",
+       "verdict": "pass",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {
+        "error.type": "overloaded_error",
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "anthropic",
+        "gen_ai.request.max_tokens": 1024,
+        "gen_ai.request.model": "claude-sonnet-5-5",
+        "gen_ai.request.stream": true,
+        "gen_ai.response.id": "msg_wt_overload",
+        "gen_ai.response.model": "claude-sonnet-5-5-20260915",
+        "gen_ai.response.time_to_first_chunk": 0.027280234,
+        "gen_ai.usage.cache_read.input_tokens": 0,
+        "gen_ai.usage.cache_write.input_tokens": 0,
+        "gen_ai.usage.input_tokens": 1301,
+        "http.request.method": "POST",
+        "http.response.status_code": 200,
+        "http.route": "/v1/messages",
+        "server.address": "127.0.0.1",
+        "server.port": 34177,
+        "url.full": "http://127.0.0.1:34177/s/anthropic--stream-error-event/v1/messages",
+        "url.path": "/s/anthropic--stream-error-event/v1/messages",
+        "url.scheme": "http"
+       },
+       "name": "anthropic.messages.create",
+       "scope": "com.anthropic.sdk.python",
+       "status": "ERROR"
+      },
+      {
+       "attributes": {
+        "error.type": "anthropic.APIStatusError",
+        "gen_ai.operation.name": "chat",
+        "gen_ai.provider.name": "anthropic",
+        "gen_ai.request.max_tokens": 1024,
+        "gen_ai.request.model": "claude-sonnet-5-5",
+        "gen_ai.request.stream": true,
+        "gen_ai.response.id": "msg_wt_overload",
+        "gen_ai.response.model": "claude-sonnet-5-5-20260915",
+        "gen_ai.response.time_to_first_chunk": 0.02354419499170035,
+        "gen_ai.usage.input_tokens": 1301,
+        "gen_ai.usage.output_tokens": 1,
+        "server.address": "127.0.0.1",
+        "server.port": 34177
+       },
+       "name": "chat claude-sonnet-5-5",
+       "scope": "opentelemetry.instrumentation.genai.anthropic",
+       "status": "ERROR"
+      },
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "pass"
+    }
+   },
+   "homepage": "https://github.com/anthropics/anthropic-sdk-python",
+   "kind": "library",
+   "notes": "What an app gets by default: this library passes every scenario alone, so each difference here comes from the SDK tracing itself since anthropic 1.14.0. The other subjects turn the SDK's spans off with ANTHROPIC_OPEN_TELEMETRY=false.",
+   "ref": "otel-official-sdk-on",
+   "title": "OpenTelemetry GenAI instrumentation, with the Anthropic SDK's own tracing left on",
+   "versions": {
+    "anthropic": "2.4.0",
+    "openai": "3.42.1",
+    "opentelemetry-exporter-otlp-proto-http": "1.45.2",
+    "opentelemetry-instrumentation-genai-anthropic": "1.3b0",
+    "opentelemetry-sdk": "1.45.2"
+   }
+  },
+  "sentry": {
+   "cells": {
+    "anthropic/stream-dropped": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "span.parented",
+       "rule": "The span belongs to the trace that was active when the application made the call.",
+       "rule_url": "https://opentelemetry.io/docs/specs/otel/trace/api/#context-interaction",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": "ERROR",
+       "got": [
+        "ERROR"
+       ],
+       "id": "error.status",
+       "rule": "Span status SHOULD follow Recording Errors: an operation that ended in an error sets the status to Error.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "error.type",
+       "rule": "`error.type` is conditionally required if the operation ended in an error. Any low-cardinality identifier is allowed, so only its presence is graded.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/spans.yaml#L3-L12",
+       "verdict": "missing",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.request.max_tokens": 1024,
+        "gen_ai.request.model": "claude-sonnet-5-5",
+        "gen_ai.response.id": "msg_wt_drop",
+        "gen_ai.response.model": "claude-sonnet-5-5-20260915",
+        "gen_ai.response.streaming": true,
+        "gen_ai.system": "anthropic",
+        "gen_ai.usage.input_tokens": 1427,
+        "gen_ai.usage.input_tokens.cache_write": 0,
+        "gen_ai.usage.input_tokens.cached": 0,
+        "gen_ai.usage.output_tokens": 1,
+        "gen_ai.usage.total_tokens": 1428,
+        "thread.id": "125097665632064",
+        "thread.name": "MainThread"
+       },
+       "name": "chat claude-sonnet-5-5",
+       "scope": "sentry_sdk.adapter",
+       "status": "ERROR"
+      },
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "missing"
+    },
+    "anthropic/stream-error-event": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "span.parented",
+       "rule": "The span belongs to the trace that was active when the application made the call.",
+       "rule_url": "https://opentelemetry.io/docs/specs/otel/trace/api/#context-interaction",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": "ERROR",
+       "got": [
+        "ERROR"
+       ],
+       "id": "error.status",
+       "rule": "Span status SHOULD follow Recording Errors: an operation that ended in an error sets the status to Error.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "error.type",
+       "rule": "`error.type` is conditionally required if the operation ended in an error. Any low-cardinality identifier is allowed, so only its presence is graded.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/spans.yaml#L3-L12",
+       "verdict": "missing",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.request.max_tokens": 1024,
+        "gen_ai.request.model": "claude-sonnet-5-5",
+        "gen_ai.response.id": "msg_wt_overload",
+        "gen_ai.response.model": "claude-sonnet-5-5-20260915",
+        "gen_ai.response.streaming": true,
+        "gen_ai.system": "anthropic",
+        "gen_ai.usage.input_tokens": 1301,
+        "gen_ai.usage.input_tokens.cache_write": 0,
+        "gen_ai.usage.input_tokens.cached": 0,
+        "gen_ai.usage.output_tokens": 1,
+        "gen_ai.usage.total_tokens": 1302,
+        "thread.id": "126509678421824",
+        "thread.name": "MainThread"
+       },
+       "name": "chat claude-sonnet-5-5",
+       "scope": "sentry_sdk.adapter",
+       "status": "ERROR"
+      },
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "missing"
+    },
+    "openai/responses-stream-missing-finish-abort": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "never ended: gen_ai.responses",
+       "expected": null,
+       "got": null,
+       "id": "span.ended",
+       "rule": "GenAI spans SHOULD end when the response is fully received or the operation is terminated due to an error or cancellation.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/docs/gen-ai/gen-ai-spans.md#L29-L31",
+       "verdict": "lost",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "lost"
+    },
+    "openai/stream-dropped": {
+     "checks": [
+      {
+       "detail": "",
+       "expected": null,
+       "got": null,
+       "id": "app.unchanged",
+       "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+       "rule_url": "",
+       "verdict": "pass",
+       "where": null
+      },
+      {
+       "detail": "never ended: gen_ai.chat",
+       "expected": null,
+       "got": null,
+       "id": "span.ended",
+       "rule": "GenAI spans SHOULD end when the response is fully received or the operation is terminated due to an error or cancellation.",
+       "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/docs/gen-ai/gen-ai-spans.md#L29-L31",
+       "verdict": "lost",
+       "where": null
+      }
+     ],
+     "spans": [
+      {
+       "attributes": {},
+       "name": "spantruth.scenario",
+       "scope": "spantruth.driver",
+       "status": "UNSET"
+      }
+     ],
+     "stderr": "",
+     "verdict": "lost"
+    }
+   },
+   "homepage": "https://github.com/getsentry/sentry-python",
+   "kind": "library",
+   "notes": "Sentry spans are not OpenTelemetry spans, and the SDK has no OTLP export for them (its OTLP integration sends OpenTelemetry spans to Sentry). A local adapter in instrument.py shows the SDK's own gen_ai spans to the harness: span data keys and values are unchanged, a Sentry status other than ok becomes ERROR, and a span the SDK never finishes stays open and is lost. span.parented comes from the adapter, not from Sentry, whose spans form their own trace. No DSN and no account: without a DSN the SDK has no transport, so nothing is sent.",
+   "ref": "sentry",
+   "title": "Sentry SDK",
+   "versions": {
+    "anthropic": "2.4.0",
+    "openai": "3.42.1",
+    "opentelemetry-exporter-otlp-proto-http": "1.45.2",
+    "opentelemetry-sdk": "1.45.2",
+    "sentry-sdk": "2.74.0"
+   }
+  }
+ }
+}
