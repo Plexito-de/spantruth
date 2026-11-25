@@ -45,7 +45,7 @@ The cells below PASS:
 
 PASS means every MUST requirement of the scenario is met. LOSSY means the library doesn't contradict what happened,
 but the fact is only in raw metadata or missing. WRONG means it reports something that contradicts what happened.
-UNSUPPORTED means the library doesn't support that provider or feature.
+UNSUPPORTED means the library doesn't support that provider or feature, according to its documentation.
 
 ## What spans record (spantruth)
 
