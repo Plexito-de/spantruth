@@ -44,9 +44,13 @@ def _subjects(doc: dict) -> list[str]:
 
 
 STATUSES = ("reported", "disputed", "fixed-upstream")
-# A release that has the fix: a package name and one lower bound or pin, such as `pkg>=3.1.0`.
-FIXED_IN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*\s*(>=|==|~=|>)\s*[0-9][A-Za-z0-9.+!-]*")
+# The first release that has the fix: a package name and `>=` or `==` that version.
+FIXED_IN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*\s*(>=|==)\s*[0-9][A-Za-z0-9.+!-]*")
+# The keys a fixed-upstream entry has, and any other entry has not.
+FIX_KEYS = ("fixed_on", "fixed_in", "fix_url", "fixed_by")
 ISO_DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
+# A GitHub login: letters, digits and single hyphens, at most 39 characters.
+LOGIN = re.compile(r"[A-Za-z0-9](?:-?[A-Za-z0-9]){0,38}")
 
 
 def _check_issue(issue: dict[str, Any]) -> None:
@@ -54,11 +58,21 @@ def _check_issue(issue: dict[str, Any]) -> None:
     where = issue.get("url", "an entry")
     if issue.get("status") not in STATUSES:
         raise ValueError(f"known issue {where}: status must be one of {', '.join(STATUSES)}")
+    fixed = issue["status"] == "fixed-upstream"
+    for key in FIX_KEYS:
+        if (key in issue) != fixed:
+            need = "needs" if fixed else "cannot have"
+            raise ValueError(f"known issue {where}: a {issue['status']} entry {need} {key}")
     fixed_in = issue.get("fixed_in", [])
     if not isinstance(fixed_in, list) or not all(
         isinstance(s, str) and FIXED_IN.fullmatch(s) for s in fixed_in
     ):
         raise ValueError(f"known issue {where}: fixed_in must be a list such as ['pkg>=1.2.0']")
+    for key in ("reported_by", "fixed_by"):
+        if key in issue and not (isinstance(issue[key], str) and LOGIN.fullmatch(issue[key])):
+            raise ValueError(f"known issue {where}: {key} must be a GitHub login")
+    if "fix_url" in issue and not str(issue["fix_url"]).startswith("https://"):
+        raise ValueError(f"known issue {where}: fix_url must be an https address")
     dates = {}
     for key in ("reported_on", "fixed_on"):
         if key not in issue:
@@ -77,7 +91,7 @@ def _check_issue(issue: dict[str, Any]) -> None:
 
 
 def known_issues(path: Path = KNOWN) -> list[dict[str, Any]]:
-    """The entries of known_issues.toml. `fixed_in`, `reported_on` and `fixed_on` are optional."""
+    """The entries of known_issues.toml. Its header lists the optional keys."""
     issues = tomllib.loads(path.read_text()).get("issue", []) if path.exists() else []
     for issue in issues:
         _check_issue(issue)
@@ -300,3 +314,19 @@ def bugs_html(doc: dict, findings_page: str = "index.html") -> str:
     from .site import render_bugs
 
     return render_bugs(doc, findings_page)
+
+
+def bug_pages(doc: dict) -> dict[str, str]:
+    """The pages that `--bugs` writes beside the bug page, by path from its directory."""
+    from .site import render_class, render_fixes, render_method, sitemap
+
+    known = known_issues()
+    return {
+        "fixes.html": render_fixes(known),
+        "method.html": render_method(doc, known),
+        **{
+            f"bugs/{bugclasses.slug(c)}.html": render_class(doc, c, known)
+            for c in bugclasses.CLASSES
+        },
+        "sitemap.xml": sitemap(),
+    }

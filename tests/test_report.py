@@ -301,51 +301,76 @@ def test_comment_says_when_the_run_is_incomplete():
 
 def test_the_shipped_known_issues_carry_dates_and_fixed_versions():
     for issue in report.known_issues():
-        assert issue["reported_on"], issue["url"]
+        assert issue["reported_on"] and issue["reported_by"], issue["url"]
         tracked = {subjects.package_name(p) for p in subjects.load(issue["subject"]).track}
-        if issue["status"] == "fixed-upstream":
-            assert issue["fixed_on"] and issue["fixed_in"], issue["url"]
-        else:
-            assert "fixed_on" not in issue and "fixed_in" not in issue, issue["url"]
         for spec in issue.get("fixed_in", []):
             assert subjects.package_name(spec) in tracked, spec
 
 
-def _issue_file(tmp_path, extra: str, status: str = "fixed-upstream"):
+FIX = {
+    "reported_on": '"2026-10-04"',
+    "reported_by": '"alice"',
+    "fixed_on": '"2026-10-12"',
+    "fixed_in": '["lib-x>=3.1.0"]',
+    "fix_url": '"https://example.com/2"',
+    "fixed_by": '"bob"',
+}
+
+
+def _issue_file(tmp_path, status: str = "fixed-upstream", **keys):
+    """One entry: a valid fixed-upstream entry, with `keys` replacing or, as None, removing keys."""
+    values = {**FIX, **keys}
+    lines = "".join(f"{k} = {v}\n" for k, v in values.items() if v is not None)
     path = tmp_path / "known_issues.toml"
     path.write_text(
         '[[issue]]\nsubject = "lib"\nscenarios = ["anthropic/stream"]\ncheck = "output_tokens"\n'
-        f'status = "{status}"\nurl = "https://example.com/1"\n{extra}\n'
+        f'status = "{status}"\nurl = "https://example.com/1"\n{lines}'
     )
     return path
 
 
+OPEN = {"fixed_on": None, "fixed_in": None, "fix_url": None, "fixed_by": None}
+
+
 def test_known_issues_read_the_optional_fix_keys(tmp_path):
-    extra = 'fixed_in = ["lib-x>=3.1.0"]\nreported_on = "2026-10-04"\nfixed_on = "2026-10-12"'
-    (issue,) = report.known_issues(_issue_file(tmp_path, extra))
+    (issue,) = report.known_issues(_issue_file(tmp_path))
     assert issue["fixed_in"] == ["lib-x>=3.1.0"]
     assert (issue["reported_on"], issue["fixed_on"]) == ("2026-10-04", "2026-10-12")
-    assert "fixed_in" not in report.known_issues(_issue_file(tmp_path, ""))[0]
+    (issue,) = report.known_issues(_issue_file(tmp_path, "reported", **OPEN, reported_by=None))
+    assert "fixed_in" not in issue and "reported_by" not in issue
 
 
 @pytest.mark.parametrize(
-    "extra",
+    ("key", "value"),
     [
-        'fixed_in = "lib-x>=3.1.0"',
-        'fixed_in = ["lib-x"]',
-        "fixed_in = [\"lib-x>=3.1.0; os_name == 'nt'\"]",
-        "fixed_in = [3]",
-        'reported_on = "2026-13-01"',
-        'reported_on = "20261001"',
-        "reported_on = 2026-10-01",
-        'reported_on = "2026-10-12"\nfixed_on = "2026-10-04"',
+        ("fixed_in", '"lib-x>=3.1.0"'),
+        ("fixed_in", '["lib-x"]'),
+        ("fixed_in", '["lib-x>3.1.0"]'),
+        ("fixed_in", "[\"lib-x>=3.1.0; os_name == 'nt'\"]"),
+        ("fixed_in", "[3]"),
+        ("reported_on", '"2026-13-01"'),
+        ("reported_on", '"20261001"'),
+        ("reported_on", "2026-10-01"),
+        ("reported_on", '"2026-10-14"'),
+        ("reported_by", '"a b"'),
+        ("fixed_by", '"<img>"'),
+        ("fixed_by", "3"),
+        ("fix_url", '"javascript:alert(1)"'),
     ],
 )
-def test_known_issues_reject_a_malformed_fix_key(tmp_path, extra):
+def test_known_issues_reject_a_malformed_fix_key(tmp_path, key, value):
     with pytest.raises(ValueError, match=r"https://example\.com/1"):
-        report.known_issues(_issue_file(tmp_path, extra))
+        report.known_issues(_issue_file(tmp_path, **{key: value}))
+
+
+@pytest.mark.parametrize("key", ["fixed_on", "fixed_in", "fix_url", "fixed_by"])
+def test_a_fixed_issue_names_its_fix_and_an_open_one_does_not(tmp_path, key):
+    with pytest.raises(ValueError, match=key):
+        report.known_issues(_issue_file(tmp_path, **{key: None}))
+    with pytest.raises(ValueError, match=key):
+        report.known_issues(_issue_file(tmp_path, "reported", **{**OPEN, key: FIX[key]}))
 
 
 def test_known_issues_reject_an_unknown_status(tmp_path):
     with pytest.raises(ValueError, match="status"):
-        report.known_issues(_issue_file(tmp_path, "", status="fixed"))
+        report.known_issues(_issue_file(tmp_path, "fixed"))
