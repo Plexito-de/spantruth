@@ -138,7 +138,13 @@ def _run(args: argparse.Namespace) -> int:
 
 
 def _doctor(args: argparse.Namespace) -> int:
+    if args.fast and args.json:
+        return _usage("--fast prints text; leave out --json")
     try:
+        if args.fast:
+            return history.fast(
+                Path(args.path), Path(args.out), Path(args.cache), args.jobs, args.scenario
+            )
         return doctor.run(
             Path(args.path),
             Path(args.out),
@@ -249,6 +255,12 @@ def parser() -> argparse.ArgumentParser:
     )
     doc.add_argument("path", nargs="?", default=".", help="the project directory (default: .)")
     doc.add_argument("--json", action="store_true", help="print the result as JSON")
+    doc.add_argument(
+        "--fast",
+        action="store_true",
+        help="answer from the version table that ships with spantruth, and run only the "
+        "libraries at versions it lacks",
+    )
     doc.add_argument("--scenario", action="append", help="scenario id, repeatable")
     doc.add_argument(
         "--out",

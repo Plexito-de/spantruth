@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from spantruth import cli, history, scenarios, subjects
+from spantruth import cli, doctor, history, scenarios, subjects
 
 REPO = Path(__file__).resolve().parents[1]
 
@@ -257,3 +257,98 @@ def test_the_nightly_job_publishes_the_table_and_keeps_the_last_one():
     assert (
         "cp state/versions.json site/versions.json" in steps["Keep the last version table"]["run"]
     )
+
+
+# `doctor --fast`
+
+
+def fast_table():
+    return {
+        "schema": 1,
+        "spantruth": "0.5.0",
+        "created": "2026-11-26T03:00:00+00:00",
+        "releases": 5,
+        "subjects": {
+            "openinference": {
+                "packages": {
+                    "openinference-instrumentation-anthropic": {
+                        "scenarios": ["anthropic/basic", "anthropic/stream-early-exit"],
+                        "versions": [
+                            line("3.2.0", {"anthropic/stream-early-exit": {"span.ended": "ST01"}}),
+                            line("3.3.0"),
+                        ],
+                        "first_fixed": [
+                            {
+                                "scenario": "anthropic/stream-early-exit",
+                                "check": "span.ended",
+                                "bug": "ST01",
+                                "version": "3.3.0",
+                            }
+                        ],
+                    },
+                    "openinference-instrumentation-openai": {
+                        "scenarios": ["openai/basic"],
+                        "versions": [line("0.1.69")],
+                        "first_fixed": [],
+                    },
+                }
+            }
+        },
+    }
+
+
+IDS = ["anthropic/basic", "anthropic/stream-early-exit"]
+
+
+def test_the_table_answers_a_version_it_ran_and_names_the_fix():
+    oi = subjects.load("openinference")
+    versions = {"openinference-instrumentation-anthropic": "3.2.0", "anthropic": "2.4.0"}
+    answered, missing = history.answer(fast_table(), [oi], versions, IDS)
+    assert missing == []
+    (row,) = answered[0]["packages"]
+    assert row["failing"] == {"anthropic/stream-early-exit": {"span.ended": "ST01"}}
+    assert row["fixed_in"] == {"anthropic/stream-early-exit span.ended": "3.3.0"}
+    text = history.render_answer(fast_table(), answered)
+    assert "span.ended (ST01 Ghost span), fixed in 3.3.0" in text
+    assert "without --fast" in text
+
+
+@pytest.mark.parametrize("version", ["3.1.0", None])
+def test_a_version_the_table_did_not_run_goes_to_a_local_run(version):
+    oi = subjects.load("openinference")
+    versions = {"openinference-instrumentation-anthropic": version}
+    assert history.answer(fast_table(), [oi], versions, IDS) == ([], ["openinference"])
+
+
+def test_a_subject_the_table_lacks_goes_to_a_local_run():
+    logfire = subjects.load("logfire")
+    assert history.answer(fast_table(), [logfire], {"logfire": "5.4.0"}, IDS) == ([], ["logfire"])
+
+
+def test_fast_runs_locally_only_what_the_table_lacks(tmp_path, monkeypatch, capsys):
+    (tmp_path / "requirements.txt").write_text(
+        "openinference-instrumentation-anthropic==3.2.0\nlogfire==5.4.0\nanthropic==2.4.0\n"
+    )
+    monkeypatch.setattr(history, "load", lambda path=None: fast_table())
+    ran = {}
+
+    def local(directory, out, cache, jobs=4, scenario=None, only=None, **kwargs):
+        ran["only"] = only
+        return 0
+
+    monkeypatch.setattr(doctor, "run", local)
+    code = cli.main(["doctor", "--fast", str(tmp_path)])
+    out = capsys.readouterr().out
+    assert ran["only"] == ["logfire"]
+    assert "From the version table of 2026-11-26" in out
+    assert code == 1  # the table's answer has a failing check
+
+
+def test_fast_with_every_answer_in_the_table_runs_nothing(tmp_path, monkeypatch, capsys):
+    (tmp_path / "requirements.txt").write_text(
+        "openinference-instrumentation-anthropic==3.3.0\nanthropic==2.4.0\n"
+    )
+    monkeypatch.setattr(history, "load", lambda path=None: fast_table())
+    monkeypatch.setattr(doctor, "run", lambda *a, **k: pytest.fail("ran locally"))
+    assert cli.main(["doctor", "--fast", str(tmp_path)]) == 0
+    assert "No problem in 2 scenarios" in capsys.readouterr().out

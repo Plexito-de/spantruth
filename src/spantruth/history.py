@@ -333,3 +333,106 @@ def main(args: argparse.Namespace) -> int:
     out.write_text(json.dumps(table, indent=1, sort_keys=True) + "\n")
     print(f"wrote {out}")
     return 0
+
+
+# `doctor --fast`: the answer from the shipped table, and a local run only for what it lacks.
+
+FAST_NOTE = (
+    "The table runs each library alone, with spantruth's pins for the other packages and the "
+    "Anthropic SDK's own tracing off. For your exact set of versions together, run "
+    "spantruth doctor without --fast."
+)
+
+
+def answer(
+    table: dict[str, Any],
+    selected: list[subjects.Subject],
+    versions: dict[str, str | None],
+    ids: list[str],
+) -> tuple[list[dict[str, Any]], list[str]]:
+    """The table's answer per subject it covers at the project's versions, and the subjects it
+    cannot answer: a version it did not run, a package with no pin, or a scenario it could not run.
+    """
+    answered, missing = [], []
+    for s in selected:
+        packages = table.get("subjects", {}).get(s.name, {}).get("packages", {})
+        rows = []
+        for package, data in packages.items():
+            if package not in versions:
+                continue
+            version = versions[package]
+            hit = lookup(table, s.name, package, version) if version else None
+            if hit is None or hit["error"] or set(hit["unknown"]) & set(ids):
+                rows = None
+                break
+            later = version_key(version)
+            rows.append(
+                {
+                    "package": package,
+                    "version": version,
+                    "run": hit["run"],
+                    "scenarios": len([i for i in data["scenarios"] if i in ids]),
+                    "failing": {sid: c for sid, c in sorted(hit["failing"].items()) if sid in ids},
+                    "fixed_in": {
+                        f"{f['scenario']} {f['check']}": f["version"]
+                        for f in data.get("first_fixed", ())
+                        if version_key(f["version"]) > later
+                    },
+                }
+            )
+        if rows:
+            answered.append({"name": s.name, "title": s.title, "packages": rows})
+        else:
+            missing.append(s.name)
+    return answered, missing
+
+
+def render_answer(table: dict[str, Any], answered: list[dict[str, Any]]) -> str:
+    lines = [
+        f"From the version table of {table['created'][:10]} (spantruth {table['spantruth']}), "
+        "with no run:",
+        "",
+    ]
+    for s in answered:
+        for p in s["packages"]:
+            lines.append(f"{s['title']}  ({p['package']} {p['version']})")
+            if not p["failing"]:
+                lines.append(f"  No problem in {p['scenarios']} scenarios.")
+                continue
+            lines.append(f"  {len(p['failing'])} of {p['scenarios']} scenarios fail:")
+            for sid, checks in p["failing"].items():
+                for check, bug in checks.items():
+                    name = f"{bug} {bugclasses.BY_ID[bug].name}" if bug in bugclasses.BY_ID else ""
+                    fixed = p["fixed_in"].get(f"{sid} {check}")
+                    tail = f", fixed in {fixed}" if fixed else ""
+                    lines.append(f"    {sid}: {check}{f' ({name})' if name else ''}{tail}")
+        lines.append("")
+    lines.append(FAST_NOTE)
+    return "\n".join(lines)
+
+
+def fast(directory: Path, out: Path, cache: Path, jobs: int = 4, scenario=None) -> int:
+    """`doctor --fast`: answer from the shipped table, and run locally only what it lacks."""
+    from . import doctor
+
+    found = doctor.read_versions(directory)
+    selected = doctor.match(found.versions)
+    table = load()
+    if not selected or table is None:
+        if table is None:
+            print(
+                "spantruth: no version table ships with this install; running doctor",
+                file=sys.stderr,
+            )
+        return doctor.run(directory, out, cache, jobs=jobs, scenario=scenario)
+    ids = scenario or doctor.scenario_ids(found.versions)
+    answered, missing = answer(table, selected, found.versions, ids)
+    print(f"Read {found.source}.")
+    if answered:
+        print(render_answer(table, answered))
+    code = 1 if any(p["failing"] for s in answered for p in s["packages"]) else 0
+    if not missing:
+        return code
+    print(f"\nNot in the table at your versions: {', '.join(missing)}. Running them now.\n")
+    local = doctor.run(directory, out, cache, jobs=jobs, scenario=scenario, only=missing)
+    return local if local == 3 else max(code, local)

@@ -369,9 +369,12 @@ def run(
     jobs: int = 4,
     scenario: list[str] | None = None,
     as_json: bool = False,
+    only: list[str] | None = None,
 ) -> int:
     found = read_versions(directory)
     selected = match(found.versions)
+    if only is not None:  # `--fast` runs only the libraries the version table lacks.
+        selected = [s for s in selected if s.name in only]
     if not selected:
         raise DoctorError(
             f"no instrumentation library in {found.source}. spantruth recognizes "
