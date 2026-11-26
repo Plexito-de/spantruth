@@ -8,7 +8,18 @@ import sys
 import traceback
 from pathlib import Path
 
-from . import __version__, doctor, expectations, paths, report, runner, scenarios, subjects, watch
+from . import (
+    __version__,
+    doctor,
+    expectations,
+    pack,
+    paths,
+    report,
+    runner,
+    scenarios,
+    subjects,
+    watch,
+)
 
 # GitHub caps a step summary at 1 MiB. Stay below it, and say where the rest is.
 SUMMARY_LIMIT = 1_000_000
@@ -282,7 +293,30 @@ def parser() -> argparse.ArgumentParser:
     )
     rep.add_argument("--markdown", action="store_true", help="print the Markdown matrix")
     rep.set_defaults(func=_report)
+    exp = sub.add_parser(
+        "export",
+        help="write every scenario as JSON, for a driver in another language",
+        description="Write the scenario pack: each scenario's call plan, the responses of the "
+        "fake provider, and the truth. See docs/scenario-pack.md.",
+    )
+    exp.add_argument("--out", metavar="FILE", help="write to this file (default: stdout)")
+    exp.add_argument(
+        "--calls-only",
+        action="store_true",
+        help="write only the call plans, keyed by scenario ID",
+    )
+    exp.set_defaults(func=_export)
     return parser
+
+
+def _export(args: argparse.Namespace) -> int:
+    text = pack.dumps(pack.calls_only() if args.calls_only else pack.export())
+    if args.out:
+        Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+        Path(args.out).write_text(text)
+    else:
+        sys.stdout.write(text)
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
