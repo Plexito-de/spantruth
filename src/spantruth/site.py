@@ -164,13 +164,23 @@ SITE = "https://plexito-de.github.io/spantruth/"
 ASSETS = "https://raw.githubusercontent.com/Plexito-de/spantruth/main/docs/assets/"
 
 
-def _head(title: str, description: str, path: str, image: str = "social-preview.png") -> str:
+def _head(title: str, description: str, path: str, card: tuple[str, str] | None = None) -> str:
     """Everything up to <main>: a title, a description, the canonical address and a link preview.
 
-    Every argument is spantruth's own text, and is escaped all the same.
+    `card` is a 1200x630 preview under docs/assets/ and its alternative text. Without one, the
+    page shows the repository's social preview. Every argument is spantruth's own text, and is
+    escaped all the same.
     """
     title, description = escape(title), escape(description)
     url = escape(SITE + path)
+    image = f'<meta property="og:image" content="{escape(ASSETS)}social-preview.png">'
+    if card:
+        image = (
+            f'<meta property="og:image" content="{escape(ASSETS + card[0])}">\n'
+            '<meta property="og:image:width" content="1200">\n'
+            '<meta property="og:image:height" content="630">\n'
+            f'<meta property="og:image:alt" content="{escape(card[1])}">'
+        )
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -183,7 +193,7 @@ def _head(title: str, description: str, path: str, image: str = "social-preview.
 <meta property="og:title" content="{title}">
 <meta property="og:description" content="{description}">
 <meta property="og:url" content="{url}">
-<meta property="og:image" content="{escape(ASSETS + image)}">
+{image}
 <meta name="twitter:card" content="summary_large_image">
 <style>{CSS}</style></head>
 <body><main>
@@ -560,7 +570,9 @@ def render_class(doc: dict, bug: bugclasses.BugClass, known: list[dict[str, Any]
         if page.article
         else ""
     )
-    head = _head(page.symptom, class_description(bug), f"bugs/{bugclasses.slug(bug)}.html")
+    slug = bugclasses.slug(bug)
+    card = (f"cards/{slug}.png", f"{page.symptom}. {bug.summary}")
+    head = _head(page.symptom, class_description(bug), f"bugs/{slug}.html", card)
     name = f"{bug.id} {escape(bug.name)}"
     return f"""{head}<p class="muted"><a href="../bugs.html#{bug.id}">{name}</a>, one of
 <a href="../bugs.html">ten ways LLM telemetry goes wrong</a></p>

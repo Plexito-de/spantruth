@@ -2,6 +2,8 @@
 
 import json
 import re
+import struct
+from pathlib import Path
 
 from test_report import doc
 
@@ -209,3 +211,24 @@ def test_the_method_page_is_linked_and_written_beside_the_bug_page():
         '<link rel="canonical" href="https://plexito-de.github.io/spantruth/method.html">' in page
     )
     assert "<script" not in page and "src=" not in page
+
+
+CARDS = Path(__file__).resolve().parents[1] / "docs" / "assets" / "cards"
+
+
+def test_every_class_has_a_committed_preview_card_of_1200_by_630():
+    for c in bugclasses.CLASSES:
+        data = (CARDS / f"{bugclasses.slug(c)}.png").read_bytes()
+        assert data[:8] == b"\x89PNG\r\n\x1a\n" and data[12:16] == b"IHDR"
+        assert struct.unpack(">II", data[16:24]) == (1200, 630), c.id
+
+
+def test_a_class_page_shows_its_own_card_as_the_link_preview():
+    page = site.render_class(doc(), bugclasses.BY_ID["ST04"], [])
+    assert (
+        '<meta property="og:image" content="https://raw.githubusercontent.com/Plexito-de/'
+        'spantruth/main/docs/assets/cards/phantom-tokens.png">'
+    ) in page
+    assert '<meta property="og:image:width" content="1200">' in page
+    alt = page.split('property="og:image:alt" content="')[1].split('"')[0]
+    assert "Streamed output tokens too high" in alt and "The span reports more tokens" in alt
