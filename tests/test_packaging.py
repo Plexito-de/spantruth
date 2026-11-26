@@ -123,6 +123,7 @@ def test_wheel_runs_a_control_without_a_clone(tmp_path):
     assert "spantruth/subjects/control-honest/subject.toml" in names
     assert "spantruth/known_issues.toml" in names
     assert "spantruth/prices.toml" in names
+    assert "spantruth/versions.json" in names
     assert {n.split("/")[0] for n in names} == {
         "spantruth",
         wheel.name.split("-py3")[0] + ".dist-info",

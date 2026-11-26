@@ -77,6 +77,8 @@ packages = ["src/spantruth"]
 "subjects" = "spantruth/subjects"
 "known_issues.toml" = "spantruth/known_issues.toml"
 "prices.toml" = "spantruth/prices.toml"
+# The version table that `doctor` reads offline. scripts/refresh-versions.sh refreshes it.
+"versions.json" = "spantruth/versions.json"
 
 [tool.uv]
 default-groups = ["test", "lint"]

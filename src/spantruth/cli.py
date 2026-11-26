@@ -13,12 +13,14 @@ from . import (
     doctor,
     doctor_base,
     expectations,
+    history,
     pack,
     paths,
     report,
     runner,
     scaffold,
     scenarios,
+    snapshots,
     subjects,
     watch,
 )
@@ -139,7 +141,17 @@ def _run(args: argparse.Namespace) -> int:
 
 
 def _doctor(args: argparse.Namespace) -> int:
+    if args.fast and args.json:
+        return _usage("--fast prints text; leave out --json")
     try:
+        if args.fast and (args.base or args.comment or args.summary):
+            return _usage(
+                "--fast answers from the version table; leave out --base, --comment and --summary"
+            )
+        if args.fast:
+            return history.fast(
+                Path(args.path), Path(args.out), Path(args.cache), args.jobs, args.scenario
+            )
         if args.base or args.comment or args.summary:
             return doctor_base.run(
                 Path(args.path),
@@ -276,6 +288,12 @@ def parser() -> argparse.ArgumentParser:
         help="the project directory, or one dependency file (default: .)",
     )
     doc.add_argument("--json", action="store_true", help="print the result as JSON")
+    doc.add_argument(
+        "--fast",
+        action="store_true",
+        help="answer from the version table that ships with spantruth, and run only the "
+        "libraries at versions it lacks",
+    )
     doc.add_argument("--scenario", action="append", help="scenario id, repeatable")
     doc.add_argument(
         "--out",
@@ -318,6 +336,25 @@ def parser() -> argparse.ArgumentParser:
     )
     wat.add_argument("--out", required=True, help="where to write the files")
     wat.set_defaults(func=_watch)
+    his = sub.add_parser(
+        "history",
+        help="run the last releases of each library and write the version table",
+        description="Run the last K releases of each tracked package, one package at a time, and "
+        "write a table of the failing checks per version, with the first version that fixed each "
+        "one. It reads the list of releases from PyPI, so it needs the network. The nightly job "
+        "runs it. doctor reads the table and stays offline.",
+    )
+    history.arguments(his)
+    his.set_defaults(func=history.main)
+    snap = sub.add_parser(
+        "snapshot",
+        help="keep a dated copy of the rendered report",
+        description="Copy the rendered report into SITE/snapshots/<date>/, or forward the date to "
+        "the last copy when the results did not change, and write the index. --state holds the "
+        "published snapshots/ with the copies to keep.",
+    )
+    snapshots.arguments(snap)
+    snap.set_defaults(func=snapshots.main)
     rep = sub.add_parser("report", help="render a results document")
     rep.add_argument("results")
     rep.add_argument("--html", help="write a static HTML report to this path")
