@@ -61,6 +61,10 @@ section h2{margin:0 0 6px}.id{color:var(--muted);font-weight:400;font-size:14px;
 .num{white-space:nowrap;text-align:right}
 pre{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px;
 overflow-x:auto}pre code{font-size:14px}.libs li{margin:10px 0;overflow-wrap:anywhere}
+@media (max-width:640px){.stack table,.stack tbody,.stack tr,.stack th,.stack td{display:block}
+.stack thead{display:none}.stack tr{border-bottom:1px solid var(--line);padding:8px 0}
+.stack th,.stack td{border:0;padding:2px 12px}.stack td[data-label]::before{
+content:attr(data-label) ": ";color:var(--muted)}}
 """
 
 
@@ -374,6 +378,7 @@ each one checked against what the provider actually sent.</p>
 project.</p>
 <p class="muted">{meta} · <a href="{escape(findings_page)}">the full report</a> ·
 <a href="fixes.html">fixed upstream</a> ·
+<a href="method.html">how we know a check is right</a> ·
 <a href="https://github.com/Plexito-de/spantruth">source</a></p>
 {"".join(sections)}
 <p class="muted">{_cost_note()}</p>
@@ -457,6 +462,7 @@ them.</p>
 run <code>uvx spantruth doctor</code> in your project.</p>
 <p class="muted">{count} · <a href="index.html">the report</a> ·
 <a href="bugs.html">the ten bug classes</a> ·
+<a href="method.html">how we know a check is right</a> ·
 <a href="https://github.com/Plexito-de/spantruth/blob/main/known_issues.toml">the data</a></p>
 {sections}
 <p class="muted">A fix that is missing here? Add it to known_issues.toml in a pull request, with
@@ -587,6 +593,7 @@ def sitemap() -> str:
         "latest.html",
         "bugs.html",
         "fixes.html",
+        "method.html",
         "changes.html",
         "double-spans.html",
         *(f"bugs/{bugclasses.slug(c)}.html" for c in bugclasses.CLASSES),
@@ -596,6 +603,165 @@ def sitemap() -> str:
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         f'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{urls}</urlset>\n'
     )
+
+
+REPO = "https://github.com/Plexito-de/spantruth"
+# The faults that control-faulty switches on in reference.py: what each one does wrong, and the
+# checks that must catch it. A test holds this to subjects/control-faulty/instrument.py.
+FAULTS = {
+    "anthropic-raw-input": (
+        "Copies Anthropic's input_tokens as it is, without the cache reads and writes.",
+        ("input_tokens",),
+    ),
+    "close-leaks-span": (
+        "Does not end the span when the app closes a stream or stops reading it early.",
+        ("span.ended",),
+    ),
+    "errors-as-success": (
+        "Ends the span of a failed call without status ERROR and without error.type.",
+        ("error.status", "error.type"),
+    ),
+    "estimate-tokens": (
+        "Guesses the output count from the length of the text when a stream carries no usage.",
+        ("output_tokens",),
+    ),
+    "retry-as-error": (
+        "Marks a call as failed when it succeeded after the SDK retried a 429.",
+        ("status.unset",),
+    ),
+}
+
+
+def _control_verdicts(doc: dict) -> str:
+    """What the two controls did in this run, compared by the code that CI uses."""
+    from . import expectations, subjects
+
+    out = []
+    honest = doc["subjects"].get("control-honest")
+    if honest is None:
+        out.append("control-honest is not in this run.")
+    elif expectations.failing(honest):
+        out.append("control-honest moved: it failed a check. The suite is wrong until it is fixed.")
+    else:
+        n = len(honest["cells"])
+        out.append(f"control-honest passed every check in {n} scenario{'' if n == 1 else 's'}.")
+    faulty = doc["subjects"].get("control-faulty")
+    if faulty is None:
+        out.append("control-faulty is not in this run.")
+    else:
+        expected = expectations.load(subjects.SUBJECTS / "control-faulty" / "expected.toml")
+        moved = expectations.compare(
+            expected, expectations.failing(faulty), ran=set(faulty["cells"])
+        )
+        out.append(
+            f"control-faulty moved in {len(moved)} check{'' if len(moved) == 1 else 's'}. "
+            "The suite is wrong until it is fixed."
+            if moved
+            else "control-faulty failed exactly its planted faults, and passed every other check."
+        )
+    return " ".join(out)
+
+
+def _fault_rows() -> tuple[str, str, int]:
+    """The table of planted faults, the size of the expectation file, and the checks it names."""
+    from . import expectations, subjects
+
+    expected = expectations.load(subjects.SUBJECTS / "control-faulty" / "expected.toml")
+    rows = []
+    for name, (what, checks) in FAULTS.items():
+        n = sum(1 for found in expected.values() if any(c in found for c in checks))
+        caught = ", ".join(f"<code>{escape(c)}</code>" for c in checks)
+        rows.append(
+            f'<tr><th scope="row"><code>{escape(name)}</code></th><td>{escape(what)}</td>'
+            f'<td data-label="Must fail">{caught}, in {n} scenario{"" if n == 1 else "s"}</td></tr>'
+        )
+    total = sum(len(found) for found in expected.values())
+    planted = len({c for found in expected.values() for c in found})
+    return "".join(rows), f"{total} failing checks in {len(expected)} scenarios", planted
+
+
+def _rule_rows() -> tuple[str, int, int]:
+    """The table of checks and rules, the number that cite a specification, and the total."""
+    from .rules import RULES
+
+    rows = []
+    for check, (text, url) in RULES.items():
+        source = _link("the spec", url) if _url(url) else "spantruth's own rule"
+        rows.append(
+            f'<tr><th scope="row"><code>{escape(check)}</code></th><td>{escape(text)}</td>'
+            f'<td data-label="Source">{source}</td></tr>'
+        )
+    return "".join(rows), sum(1 for _, url in RULES.values() if url), len(RULES)
+
+
+def render_method(doc: dict, known: list[dict[str, Any]]) -> str:
+    """Why a finding can be trusted, for a maintainer who doubts one, and how to dispute it."""
+    from .scenarios import SCENARIOS
+
+    faults, size, planted = _fault_rows()
+    rule_rows, cited, total = _rule_rows()
+    disputed = sum(1 for k in known if k["status"] == "disputed")
+    head = _head(
+        "How we know a spantruth check is right",
+        "Two controls, planted faults, a cited rule behind every check, fixtures checked with the "
+        "SDK types, offline runs, and the way to dispute a finding.",
+        "method.html",
+    )
+    return f"""{head}<h1>How we know a check is right</h1>
+<p>A red cell on the report is a claim about somebody's work. This page says why the claim holds,
+and how to show us that it does not. The controls and the fixture tests below run in CI on
+every pull request.</p>
+<p class="muted"><a href="index.html">the report</a> · <a href="bugs.html">the ten bug classes</a> ·
+<a href="fixes.html">fixed upstream</a> · <a href="{REPO}">source</a></p>
+<h2>Two controls run in every report</h2>
+<p>Both controls run spantruth's own reference instrumentation,
+<a href="{REPO}/blob/main/src/spantruth/reference.py">reference.py</a>, through every scenario,
+beside the libraries. <code>control-honest</code> runs it as written and has to pass every check.
+<code>control-faulty</code> runs it with the faults below switched on and has to fail exactly the
+checks in its <a href="{REPO}/blob/main/subjects/control-faulty/expected.toml">expectation file</a>
+({size}), and pass every other one. If either control moves, a check or the harness is wrong, not
+a library. The expectation file is never edited to make a test pass.</p>
+<p><strong>In this run:</strong> {escape(_control_verdicts(doc))}</p>
+<div class="wrap stack"><table><thead><tr><th scope="col">Planted fault</th><th scope="col">What it
+does wrong</th><th scope="col">Must fail</th></tr></thead><tbody>{faults}</tbody></table></div>
+<p>The planted faults make {planted} of the {total} checks fail on purpose. A new check gets a
+planted fault in the same pull request.</p>
+<h2>Every check cites a rule</h2>
+<p>A finding names its check and links the rule it applies. {cited} of the {total} checks apply a
+sentence of a specification, most of them linked at a fixed commit or version, so
+the link shows the sentence we read. The others are spantruth's own rules, for what no
+specification states, such as that a call produces a span at all. They are written out here, so
+you can disagree with them.</p>
+<div class="wrap stack"><table><thead><tr><th scope="col">Check</th><th scope="col">Rule</th>
+<th scope="col">Source</th></tr></thead><tbody>{rule_rows}</tbody></table></div>
+<h2>The fixtures are the provider's wire format</h2>
+<p>Each of the {len(SCENARIOS)} scenarios replays a recorded provider response. A test parses
+every fixture with the provider's own SDK types (the <code>openai</code> and
+<code>anthropic</code> packages) and fails on any field the types do not declare. A fixture value
+is never changed to make a library pass. The token counts in one fixture are all different from
+each other, so a library that reads the wrong field cannot pass by chance.</p>
+<h2>Runs are offline and repeatable</h2>
+<p>The provider is a local server that replays fixed responses: no API key, no model and no
+sampling. Each library runs at the versions pinned in its <code>subject.toml</code>, in its own
+environment. Its process gets a proxy address that goes nowhere, so a client that honors the proxy
+variables fails fast instead of calling out. A client that opens raw sockets is not stopped by
+this, so we check each new subject for outbound calls.</p>
+<h2>Each library runs with its documented setup</h2>
+<p>Each library is set up the way its documentation shows, in
+<code>subjects/&lt;name&gt;/instrument.py</code>. If that is not the setup you document, the result
+is not fair, and we want to know.</p>
+<h2>How to dispute a finding</h2>
+<p>Open an issue with the <a href="{REPO}/issues/new?template=dispute.yml">Dispute a finding</a>
+form. Every dispute is decided in public, in that issue, on one question: does the cited rule say
+what the check claims? If it does not, we fix the check, and the cell changes for every library.
+If the specification is unclear, the cell is marked disputed in
+<a href="{REPO}/blob/main/known_issues.toml">known_issues.toml</a>, and we ask the specification's
+owners.</p>
+<p>Cells marked disputed today: {disputed}.</p>
+<p>The project publishes no ranking and no total score, only each finding with its evidence. See
+<a href="{REPO}/blob/main/GOVERNANCE.md">GOVERNANCE.md</a>.</p>
+</main></body></html>
+"""
 
 
 def render(doc: dict) -> str:
@@ -644,7 +810,8 @@ green on the latest-releases page first.</p>
 <p class="muted">The controls run the suite's own reference instrumentation.
 <code>control-honest</code> has to pass every check, and <code>control-faulty</code> has to fail
 exactly its planted faults. If either moves, the suite is wrong, not a library. CI checks both,
-so their cells are not in the findings below.</p>
+so their cells are not in the findings below. <a href="method.html">How we know a check is
+right</a>.</p>
 <h2>Bug classes in this run</h2>
 {_class_table(every)}
 <h2>Findings</h2>

@@ -1,10 +1,11 @@
 """The site's pages beside the report: upstream fixes, one page per bug class, the sitemap."""
 
 import json
+import re
 
 from test_report import doc
 
-from spantruth import bugclasses, cli, report, site
+from spantruth import bugclasses, cli, expectations, report, rules, site, subjects
 
 HOSTILE = "<script>alert(1)</script>"
 
@@ -132,5 +133,79 @@ def test_the_bug_page_links_each_class_page():
 def test_the_sitemap_lists_every_page_by_its_full_address():
     xml = site.sitemap()
     assert xml.startswith('<?xml version="1.0" encoding="UTF-8"?>')
-    for path in ("index.html", "bugs.html", "fixes.html", "bugs/false-ok.html"):
+    for path in ("index.html", "bugs.html", "fixes.html", "method.html", "bugs/false-ok.html"):
         assert f"<loc>https://plexito-de.github.io/spantruth/{path}</loc>" in xml
+
+
+def test_the_method_page_explains_every_planted_fault():
+    source = (subjects.SUBJECTS / "control-faulty" / "instrument.py").read_text()
+    faults = re.findall(r'^\s+"([a-z-]+)",$', source, re.M)
+    assert len(faults) >= 5
+    assert set(faults) == set(site.FAULTS)
+    expected = expectations.load(subjects.SUBJECTS / "control-faulty" / "expected.toml")
+    planted = {c for found in expected.values() for c in found}
+    assert planted == {c for _, checks in site.FAULTS.values() for c in checks}
+    page = site.render_method(doc(), [])
+    assert f"make {len(planted)} of the {len(rules.RULES)} checks fail on purpose" in page
+    for fault in faults:
+        assert f"<code>{fault}</code>" in page
+
+
+def test_the_method_page_shows_the_rule_behind_every_check():
+    page = site.render_method(doc(), [])
+    for check, (_, url) in rules.RULES.items():
+        assert f"<code>{check}</code>" in page
+        if url:
+            assert f'href="{url}"' in page
+
+
+def test_the_method_page_counts_the_planted_faults_from_the_expectation_file():
+    expected = expectations.load(subjects.SUBJECTS / "control-faulty" / "expected.toml")
+    checks = sum(len(v) for v in expected.values())
+    page = site.render_method(doc(), [])
+    assert f"{checks} failing checks in {len(expected)} scenarios" in page
+
+
+def _controls(honest_fails: bool = False, faulty: str = "exact") -> dict:
+    d = doc()
+    expected = expectations.load(subjects.SUBJECTS / "control-faulty" / "expected.toml")
+    cells = {}
+    for sid, checks in expected.items():
+        cells[sid] = {
+            "verdict": "wrong",
+            "checks": [{"id": c, "verdict": v} for c, v in checks.items()],
+        }
+    if faulty == "moved":
+        cells[next(iter(cells))] = {"verdict": "pass", "checks": []}
+    d["subjects"]["control-faulty"] = {**d["subjects"]["control-honest"], "cells": cells}
+    if honest_fails:
+        d["subjects"]["control-honest"]["cells"]["anthropic/stream"] = {
+            "verdict": "wrong",
+            "checks": [{"id": "output_tokens", "verdict": "wrong"}],
+        }
+    return d
+
+
+def test_the_method_page_reports_what_the_controls_did_in_this_run():
+    page = site.render_method(_controls(), [])
+    assert "control-honest passed every check in 1 scenario" in page
+    assert "control-faulty failed exactly its planted faults" in page
+    assert "moved" not in site.render_method(_controls(), [])
+    assert "control-honest moved" in site.render_method(_controls(honest_fails=True), [])
+    assert "control-faulty moved" in site.render_method(_controls(faulty="moved"), [])
+
+
+def test_the_method_page_counts_disputed_cells():
+    disputed = {**fixed(), "status": "disputed"}
+    assert "Cells marked disputed today: 1." in site.render_method(doc(), [disputed, fixed()])
+    assert "Cells marked disputed today: 0." in site.render_method(doc(), [])
+
+
+def test_the_method_page_is_linked_and_written_beside_the_bug_page():
+    assert 'href="method.html"' in report.html(doc())
+    assert 'href="method.html"' in report.bugs_html(doc())
+    page = report.bug_pages(doc())["method.html"]
+    assert (
+        '<link rel="canonical" href="https://plexito-de.github.io/spantruth/method.html">' in page
+    )
+    assert "<script" not in page and "src=" not in page

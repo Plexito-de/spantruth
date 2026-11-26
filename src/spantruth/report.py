@@ -318,11 +318,12 @@ def bugs_html(doc: dict, findings_page: str = "index.html") -> str:
 
 def bug_pages(doc: dict) -> dict[str, str]:
     """The pages that `--bugs` writes beside the bug page, by path from its directory."""
-    from .site import render_class, render_fixes, sitemap
+    from .site import render_class, render_fixes, render_method, sitemap
 
     known = known_issues()
     return {
         "fixes.html": render_fixes(known),
+        "method.html": render_method(doc, known),
         **{
             f"bugs/{bugclasses.slug(c)}.html": render_class(doc, c, known)
             for c in bugclasses.CLASSES
