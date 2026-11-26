@@ -130,6 +130,7 @@ scenarios = ["openai/async-stream-helper"]
 check = "response_model"
 status = "reported"
 url = "https://github.com/Arize-ai/openinference/issues/1134"
+reported_by = "SiyuanQi"
 reported_on = "2024-11-23"
 note = "The span of an async with_streaming_response stream gets no model, finish reason or token counts. The issue reports the likely cause: on the async path the wrapper calls AsyncAPIResponse.parse() without awaiting it."
 
@@ -139,6 +140,7 @@ scenarios = ["openai/async-stream-helper"]
 check = "finish_reasons"
 status = "reported"
 url = "https://github.com/Arize-ai/openinference/issues/1134"
+reported_by = "SiyuanQi"
 reported_on = "2024-11-23"
 note = "The span of an async with_streaming_response stream gets no model, finish reason or token counts. The issue reports the likely cause: on the async path the wrapper calls AsyncAPIResponse.parse() without awaiting it."
 
@@ -148,6 +150,7 @@ scenarios = ["openai/async-stream-helper"]
 check = "input_tokens"
 status = "reported"
 url = "https://github.com/Arize-ai/openinference/issues/1134"
+reported_by = "SiyuanQi"
 reported_on = "2024-11-23"
 note = "The span of an async with_streaming_response stream gets no model, finish reason or token counts. The issue reports the likely cause: on the async path the wrapper calls AsyncAPIResponse.parse() without awaiting it."
 
@@ -157,5 +160,6 @@ scenarios = ["openai/async-stream-helper"]
 check = "output_tokens"
 status = "reported"
 url = "https://github.com/Arize-ai/openinference/issues/1134"
+reported_by = "SiyuanQi"
 reported_on = "2024-11-23"
 note = "The span of an async with_streaming_response stream gets no model, finish reason or token counts. The issue reports the likely cause: on the async path the wrapper calls AsyncAPIResponse.parse() without awaiting it."
