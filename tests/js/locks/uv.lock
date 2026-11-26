@@ -1,0 +1,41 @@
+version = 1
+revision = 3
+requires-python = ">=3.12"
+
+[[package]]
+name = "anthropic"
+version = "2.4.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "httpx" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/anthropic-2.4.0-py3-none-any.whl", hash = "sha256:00", size = 1, upload-time = "2026-11-01T00:00:00Z" },
+]
+
+[package.optional-dependencies]
+vertex = [
+    { name = "google-auth" },
+]
+
+[[package]]
+name = "OpenInference_Instrumentation.Anthropic"
+version = "3.2.0"
+source = { registry = "https://pypi.org/simple" }
+
+[[package]]
+name = "opentelemetry-sdk"
+version = "1.45.2"
+source = { registry = "https://pypi.org/simple" }
+
+[[package]]
+name = "my-app"
+version = "0.1.0"
+source = { editable = "." }
+
+[package.metadata]
+requires-dist = [{ name = "anthropic", specifier = ">=2" }]
+
+[[package]]
+name = "local-thing"
+source = { directory = "vendor/local-thing" }

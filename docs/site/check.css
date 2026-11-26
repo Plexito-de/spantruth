@@ -1,0 +1,53 @@
+/* The lock-file checker. The tokens are the report's (src/spantruth/site.py), and a test keeps
+   them equal. */
+:root{--bg:#fbfbf9;--fg:#1b1d21;--muted:#545b66;--line:#e2e4e8;--card:#fff;
+--pass:#1a6b37;--pass-bg:#e5f4ea;--missing:#6b4f00;--missing-bg:#fdf3d6;--wrong:#9a1f27;
+--wrong-bg:#fbe5e6;--lost:#55267d;--lost-bg:#efe6f8;--broken:#7f3600;--broken-bg:#fdeadd;
+--inc:#3f4853;--inc-bg:#eceef1;--link:#1a56b0}
+@media (prefers-color-scheme:dark){:root{--bg:#121417;--fg:#e8eaed;--muted:#a7aeb8;
+--line:#2a2e35;--card:#181b20;--pass:#7fd49b;--pass-bg:#173322;--missing:#f1cf6b;
+--missing-bg:#3a3014;--wrong:#ff9aa0;--wrong-bg:#3d1a1d;--lost:#cfaaf5;--lost-bg:#2c1e3d;
+--broken:#ffb27c;--broken-bg:#3d2414;--inc:#c3c9d1;--inc-bg:#272b31;--link:#8ab4ff}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:860px;margin:0 auto;padding:32px 16px 64px}
+h1{font-size:28px;margin:0 0 4px}h2{font-size:19px;margin:0 0 8px}
+p{margin:8px 0;max-width:72ch}a{color:var(--link)}.muted{color:var(--muted)}code{font-size:13px}
+.private{border-left:4px solid var(--pass);background:var(--pass-bg);color:var(--fg);
+padding:10px 14px;border-radius:6px;margin:16px 0;max-width:none}
+form{margin:16px 0 8px}
+label{display:block;font-weight:600;margin:0 0 6px}
+textarea{display:block;width:100%;min-height:200px;padding:10px 12px;resize:vertical;
+font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--fg);
+background:var(--card);border:1px dashed var(--muted);border-radius:10px}
+textarea.drop{border-style:solid;border-color:var(--link);outline:2px solid var(--link)}
+textarea:focus-visible,button:focus-visible,input:focus-visible,#result:focus-visible{
+outline:2px solid var(--link);outline-offset:2px}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:12px 0 0}
+button{font:inherit;font-weight:600;min-height:44px;padding:8px 20px;border-radius:8px;
+border:1px solid var(--link);background:var(--link);color:var(--bg);cursor:pointer}
+.file{display:inline-flex;align-items:center;gap:8px;min-height:44px;font-weight:400;margin:0}
+.file input{font:inherit;color:var(--muted)}
+#status{color:var(--wrong);font-weight:600;min-height:1.55em}
+#result:empty{display:none}
+#result{margin:8px 0 0}
+.result{border-top:1px solid var(--line);padding:18px 0 6px}
+.pkg{margin:0 0 14px}
+.wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+table{border-collapse:collapse;width:100%}th,td{padding:8px 10px;
+border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+thead th{font-size:13px;color:var(--muted);font-weight:600}
+tr:last-child td{border-bottom:0}td code{overflow-wrap:anywhere}
+.v{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;font-weight:600}
+.pass{color:var(--pass);background:var(--pass-bg)}
+.wrong{color:var(--wrong);background:var(--wrong-bg)}
+.inconclusive{color:var(--inc);background:var(--inc-bg)}
+pre{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 14px;
+overflow-x:auto;font-size:13px;margin:8px 0}
+.more{margin-top:40px}
+.classes{margin:6px 0 10px;padding-left:20px}.classes li{margin:4px 0}
+.fix{color:var(--pass);font-weight:600}
+details{margin:6px 0}summary{cursor:pointer;padding:10px 0}
+details .wrap table{min-width:520px}
+.file{flex-wrap:wrap}
