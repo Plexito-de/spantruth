@@ -363,7 +363,7 @@ def test_json_keeps_upstream_as_urls_with_status_and_note_beside_it(known):
     ghost, double = subject["classes"]
     assert ghost["upstream"] == [FIXED["url"]]
     assert ghost["upstream_issues"] == [
-        {"url": FIXED["url"], "status": "fixed-upstream", "note": FIXED["note"]}
+        {"url": FIXED["url"], "status": "fixed-upstream", "note": FIXED["note"], "fixed_in": []}
     ]
     assert double["upstream"] == [REPORTED["url"]]
     assert double["upstream_issues"][0]["status"] == "reported"
@@ -375,6 +375,93 @@ def test_a_fixed_upstream_note_stays_on_one_line(monkeypatch):
     text = doctor.render_text(doctor.Found("uv.lock", {}), doctor.summarize(result_doc()), "x")
     assert "Fixed upstream: a Fake line" in text
     assert "\nFake line" not in text
+
+
+KNOWN_WITH_FIX = """
+[[issue]]
+subject = "openinference"
+scenarios = ["anthropic/stream"]
+check = "span.ended"
+status = "fixed-upstream"
+url = "https://example.com/issues/1"
+note = "Fixed in openinference-instrumentation-anthropic 3.1.0."
+fixed_in = ["openinference-instrumentation-anthropic>=3.1.0"]
+
+[[issue]]
+subject = "openinference"
+scenarios = ["anthropic/basic"]
+check = "tokens.single-report"
+status = "reported"
+url = "https://example.com/issues/2"
+"""
+
+
+@pytest.fixture
+def known_fix(monkeypatch, tmp_path):
+    path = tmp_path / "known_issues.toml"
+    path.write_text(KNOWN_WITH_FIX)
+    rows = report.known_issues(path)
+    monkeypatch.setattr(report, "known_issues", lambda: rows)
+
+
+@pytest.mark.parametrize(
+    ("source", "command"),
+    [
+        ("uv.lock", "uv add 'openinference-instrumentation-anthropic>=3.1.0'"),
+        ("poetry.lock", "poetry add 'openinference-instrumentation-anthropic>=3.1.0'"),
+        ("pdm.lock", "pdm add 'openinference-instrumentation-anthropic>=3.1.0'"),
+        ("Pipfile.lock", "pipenv install 'openinference-instrumentation-anthropic>=3.1.0'"),
+        ("requirements.txt", "pip install 'openinference-instrumentation-anthropic>=3.1.0'"),
+        (".venv", "pip install 'openinference-instrumentation-anthropic>=3.1.0'"),
+    ],
+)
+def test_a_fixed_finding_prints_the_upgrade_for_the_package_manager(known_fix, source, command):
+    found = doctor.Found(source, {})
+    text = doctor.render_text(found, doctor.summarize(result_doc(), source), "x")
+    assert f"    Fix first: {command}\n" in text
+    # Before the explanation of the class, and the workaround stays.
+    ghost = text.index("ST01 Ghost span")
+    assert ghost < text.index("Fix first:") < text.index("The app made the call")
+    assert "Today:" in text[ghost:]
+
+
+def test_a_finding_with_no_fixed_in_prints_no_upgrade(known):
+    text = doctor.render_text(
+        doctor.Found("uv.lock", {}), doctor.summarize(result_doc(), "uv.lock"), "x"
+    )
+    assert "Fix first" not in text
+
+
+def test_json_carries_the_upgrade_command_and_fixed_in(known_fix):
+    (subject,) = doctor.summarize(result_doc(), "poetry.lock")
+    by_id = {c["id"]: c for c in subject["classes"]}
+    assert by_id["ST01"]["upgrade"] == (
+        "poetry add 'openinference-instrumentation-anthropic>=3.1.0'"
+    )
+    assert by_id["ST01"]["upstream_issues"][0]["fixed_in"] == [
+        "openinference-instrumentation-anthropic>=3.1.0"
+    ]
+    assert by_id["ST02"]["upgrade"] is None
+    assert by_id["ST02"]["upstream_issues"][0]["fixed_in"] == []
+
+
+def test_findings_come_largest_cost_first():
+    doc = result_doc()
+    cells = doc["subjects"]["openinference"]["cells"]
+    # The double span doubles the cost. A phantom count of 10,000 output tokens for 10 costs more.
+    phantom = {
+        "id": "output_tokens",
+        "verdict": "wrong",
+        "expected": 10,
+        "got": 10_000,
+        "where": None,
+        "detail": "",
+    }
+    cells["anthropic/basic"]["checks"].append(phantom)
+    del cells["anthropic/stream"]
+    classes = doctor.summarize(doc)[0]["classes"]
+    assert [c["id"] for c in classes] == ["ST04", "ST02"]
+    assert classes[0]["largest_cost_error"] > classes[1]["largest_cost_error"] == 100
 
 
 def test_doctor_with_no_known_library_exits_2(tmp_path, capsys):

@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import shlex
 import sys
 import tomllib
 from collections.abc import Mapping
@@ -265,8 +266,35 @@ def _example(f: dict[str, Any]) -> str:
     return f"{f['scenario']}: {text[:160]}" if text else f["scenario"]
 
 
-def summarize(doc: dict) -> list[dict[str, Any]]:
-    """Per subject: its versions, and its findings grouped by bug class, in class order."""
+# The command that installs a requirement, per file that doctor reads the versions from.
+INSTALL = {
+    "uv.lock": "uv add",
+    "poetry.lock": "poetry add",
+    "pdm.lock": "pdm add",
+    "Pipfile.lock": "pipenv install",
+}
+
+
+def upgrade_command(source: str | None, specs: list[str]) -> str | None:
+    """The command that moves the project to the fixed versions, with the project's own tool.
+
+    A requirements file, a .venv or a bare pyproject.toml names no tool, so pip it is.
+    """
+    if not specs:
+        return None
+    return " ".join([INSTALL.get(source or "", "pip install"), *map(shlex.quote, specs)])
+
+
+def _cost_order(c: dict[str, Any]) -> float:
+    """Largest cost error first, either sign. A class with no figure comes after, in class order."""
+    return -abs(c["largest_cost_error"]) if c["largest_cost_error"] is not None else 0.0
+
+
+def summarize(doc: dict, source: str | None = None) -> list[dict[str, Any]]:
+    """Per subject: its versions, and its findings grouped by bug class, largest cost first.
+
+    `source` is the file the versions came from, which picks the upgrade command.
+    """
     out = []
     all_found = report.findings(doc)
     for name, result in doc["subjects"].items():
@@ -281,6 +309,11 @@ def summarize(doc: dict) -> list[dict[str, Any]]:
             ]
             issues = {f["issue"]["url"]: f["issue"] for f in mine if f["issue"]}
             links = sorted(issues)
+            # `fixed_in` is optional in known_issues.toml, and only a fixed issue has a fix to get.
+            fixed_in = {u: list(issues[u].get("fixed_in", ())) for u in links}
+            specs = [
+                s for u in links if issues[u].get("status") == "fixed-upstream" for s in fixed_in[u]
+            ]
             classes.append(
                 {
                     "id": c.id,
@@ -297,11 +330,14 @@ def summarize(doc: dict) -> list[dict[str, Any]]:
                             "url": u,
                             "status": issues[u].get("status", "reported"),
                             "note": issues[u].get("note", ""),
+                            "fixed_in": fixed_in[u],
                         }
                         for u in links
                     ],
+                    "upgrade": upgrade_command(source, list(dict.fromkeys(specs))),
                 }
             )
+        classes.sort(key=_cost_order)
         out.append(
             {
                 "name": name,
@@ -338,6 +374,9 @@ def render_text(found: Found, summary: list[dict[str, Any]], results: str) -> st
             lines.append(f"  No problem in {s['scenarios']} scenarios.")
         for c in s["classes"]:
             lines.append(f"  {c['id']} {c['name']}: {c['scenarios']} of {s['scenarios']} scenarios")
+            if c["upgrade"]:
+                # A released fix beats every workaround, so it comes before the explanation.
+                lines.append(f"    Fix first: {_line(c['upgrade'])}")
             lines.append(f"    {c['summary']}")
             if c["largest_cost_error"] is not None:
                 note = " in a backend that sums across spans" if c["id"] == "ST02" else ""
@@ -453,7 +492,7 @@ def run(
     )
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(doc, indent=1, sort_keys=True) + "\n")
-    summary = summarize(doc)
+    summary = summarize(doc, found.source)
     if as_json:
         print(json.dumps(json_doc(found, summary, str(out), exit_code(doc, summary)), indent=1))
     else:
