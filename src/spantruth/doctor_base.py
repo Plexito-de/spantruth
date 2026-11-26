@@ -126,15 +126,14 @@ def render(
     elif not found:
         lines.append("No finding changed.")
     for c in found if not incomplete else ():
-        if c["change"] == "fixed":
-            lines.append(
-                f"Fixed in {c['subject']}: {c['class']} {c['name']} "
-                f"({c['base_scenarios']} scenarios before)"
-            )
-        else:
-            lines.append(
-                f"New in {c['subject']}: {c['class']} {c['name']} ({c['head_scenarios']} scenarios)"
-            )
+        fixed = c["change"] == "fixed"
+        n = c["base_scenarios"] if fixed else c["head_scenarios"]
+        where = f"{n} scenario{'s' * (n != 1)}"
+        lines.append(
+            f"Fixed in {c['subject']}: {c['class']} {c['name']} (was in {where})"
+            if fixed
+            else f"New in {c['subject']}: {c['class']} {c['name']} (in {where})"
+        )
     return "\n".join(lines)
 
 
