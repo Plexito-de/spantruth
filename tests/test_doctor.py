@@ -5,7 +5,7 @@ from dataclasses import replace
 
 import pytest
 
-from spantruth import cli, doctor, report, subjects
+from spantruth import cli, doctor, doctor_base, report, subjects
 
 UV_LOCK = """
 version = 1
@@ -801,3 +801,159 @@ def test_json_with_nothing_to_check_still_prints_the_uncovered_libraries(tmp_pat
     assert doc["exit_code"] == 2
     assert doc["subjects"] == []
     assert [u["title"] for u in doc["uncovered"]] == ["Cohere"]
+
+
+# `doctor --base`: two commits with different lock files.
+
+OLD_PIN = "openinference-instrumentation-anthropic==3.0.0"
+
+
+def fake_run(calls):
+    """A runner that loses the stream span at the old pin and passes at any other, and counts."""
+
+    def run(selected, ids, cache, latest=False, jobs=4, overrides=()):
+        calls.append(overrides)
+        doc = result_doc()
+        subject = doc["subjects"]["openinference"]
+        subject["versions"] = dict(spec.split("==") for spec in overrides)
+        if OLD_PIN not in overrides:
+            subject["cells"] = {sid: {"verdict": "pass", "checks": []} for sid in subject["cells"]}
+        else:
+            subject["cells"]["anthropic/basic"] = {"verdict": "pass", "checks": []}
+        return doc
+
+    return run
+
+
+def git(repo, *args):
+    import subprocess
+
+    subprocess.run(["git", *args], cwd=repo, check=True, capture_output=True)
+
+
+def two_commits(repo, old, new, name="requirements.txt"):
+    repo.mkdir(parents=True, exist_ok=True)
+    git(repo, "init", "-q", "-b", "main")
+    for text, message in ((old, "old"), (new, "new")):
+        (repo / name).write_text(text)
+        git(repo, "add", name)
+        git(repo, "-c", "user.name=t", "-c", "user.email=t@example.com", "commit", "-qm", message)
+    return repo
+
+
+def pins(version):
+    return f"anthropic==2.5.0\nopeninference-instrumentation-anthropic=={version}\n"
+
+
+@pytest.fixture
+def runs(monkeypatch):
+    calls = []
+    monkeypatch.setattr(doctor.runner, "run", fake_run(calls))
+    monkeypatch.setattr(report, "known_issues", lambda: [])
+    return calls
+
+
+def test_base_names_a_finding_that_the_bump_fixes(tmp_path, capsys, runs):
+    repo = two_commits(tmp_path / "app", pins("3.0.0"), pins("3.1.0"))
+    out, body = tmp_path / "r.json", tmp_path / "comment.md"
+    code = cli.main(
+        ["doctor", str(repo), "--base", "HEAD~1", "--out", str(out), "--comment", str(body)]
+    )
+    text = capsys.readouterr().out
+    assert code == 0
+    assert "Compared with HEAD~1" in text
+    assert "openinference-instrumentation-anthropic 3.0.0 -> 3.1.0" in text
+    assert "Fixed in openinference: ST01 Ghost span" in text
+    assert len(runs) == 2
+    assert (tmp_path / "r-base.json").is_file()
+    comment = body.read_text()
+    assert comment.startswith(report.comment_marker("doctor"))
+    assert "1 finding fixed, 0 new" in comment
+    assert "| `openinference` | [ST01 Ghost span]" in comment
+
+
+def test_base_fails_on_a_finding_that_the_change_adds(tmp_path, capsys, runs):
+    repo = two_commits(tmp_path / "app", pins("3.1.0"), pins("3.0.0"))
+    code = cli.main(["doctor", str(repo), "--base", "HEAD~1", "--out", str(tmp_path / "r.json")])
+    assert code == 1
+    assert "New in openinference: ST01 Ghost span" in capsys.readouterr().out
+
+
+def test_base_runs_once_when_the_versions_doctor_uses_did_not_change(tmp_path, capsys, runs):
+    old = pins("3.1.0") + "rich==13.0\n"
+    repo = two_commits(tmp_path / "app", old, pins("3.1.0") + "rich==14.0\n")
+    assert (
+        cli.main(["doctor", str(repo), "--base", "HEAD~1", "--out", str(tmp_path / "r.json")]) == 0
+    )
+    assert len(runs) == 1
+    assert "No finding changed" in capsys.readouterr().out
+
+
+def test_base_reads_a_subproject_and_its_lock_file(tmp_path, capsys, runs):
+    repo = tmp_path / "mono"
+    sub = repo / "services" / "api"
+    sub.mkdir(parents=True)
+    git(repo, "init", "-q", "-b", "main")
+    for version in ("3.0.0", "3.1.0"):
+        (sub / "requirements.txt").write_text(pins(version))
+        git(repo, "add", ".")
+        git(repo, "-c", "user.name=t", "-c", "user.email=t@example.com", "commit", "-qm", version)
+    args = ["doctor", str(sub), "--base", "HEAD~1", "--out", str(tmp_path / "r.json"), "--json"]
+    assert cli.main(args) == 0
+    doc = json.loads(capsys.readouterr().out)
+    assert doc["base"]["ref"] == "HEAD~1"
+    assert doc["changes"] == [
+        {
+            "subject": "openinference",
+            "class": "ST01",
+            "name": "Ghost span",
+            "change": "fixed",
+            "base_scenarios": 1,
+            "head_scenarios": 0,
+        }
+    ]
+
+
+def test_base_with_an_unknown_ref_says_how_to_fetch_it(tmp_path, capsys, runs):
+    repo = two_commits(tmp_path / "app", pins("3.0.0"), pins("3.1.0"))
+    assert cli.main(["doctor", str(repo), "--base", "nope"]) == 2
+    assert "git fetch" in capsys.readouterr().err
+
+
+def test_base_with_no_dependency_file_at_the_ref_counts_every_finding_as_new(
+    tmp_path, capsys, runs
+):
+    repo = two_commits(tmp_path / "app", "", pins("3.0.0"))
+    git(repo, "rm", "-q", "--cached", "requirements.txt")
+    (repo / "README").write_text("x")
+    git(repo, "add", "README")
+    git(repo, "-c", "user.name=t", "-c", "user.email=t@example.com", "commit", "-qm", "x")
+    git(repo, "add", "requirements.txt")
+    git(repo, "-c", "user.name=t", "-c", "user.email=t@example.com", "commit", "-qm", "y")
+    args = ["doctor", str(repo), "--base", "HEAD~1", "--out", str(tmp_path / "r.json")]
+    assert cli.main(args) == 1
+    assert "New in openinference: ST01 Ghost span" in capsys.readouterr().out
+
+
+def test_an_incomplete_run_is_not_compared(tmp_path, capsys, monkeypatch, runs):
+    real = doctor.runner.run
+
+    def broken(*args, **kwargs):
+        doc = real(*args, **kwargs)
+        doc["subjects"]["openinference"]["error"] = "environment build failed"
+        return doc
+
+    monkeypatch.setattr(doctor.runner, "run", broken)
+    repo = two_commits(tmp_path / "app", pins("3.0.0"), pins("3.1.0"))
+    body = tmp_path / "c.md"
+    args = ["doctor", str(repo), "--base", "HEAD~1", "--out", str(tmp_path / "r.json")]
+    assert cli.main([*args, "--comment", str(body)]) == 3
+    assert "not compared" in capsys.readouterr().out
+    assert "could not run every library" in body.read_text()
+
+
+def test_the_comment_keeps_values_from_the_lock_file_in_code_spans():
+    versions = [("pkg", "1.0", "2.0`<script>")]
+    body = doctor_base.comment([], "main", versions, [], False, "")
+    assert "`` 2.0`<script> ``" in body
+    assert body.count("<!--") == 1

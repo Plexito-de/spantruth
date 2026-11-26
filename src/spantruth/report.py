@@ -181,9 +181,13 @@ def _fence(text: str) -> str:
     return f"{fence}\n{text}\n{fence}"
 
 
-def _bug(finding: dict[str, Any]) -> str:
-    bug = finding["bug_class"]
+def bug_link(bug: bugclasses.BugClass | None) -> str:
+    """A Markdown link to the class on the page of bug classes, or a dash for no class."""
     return f"[{bug.id} {bug.name}]({BUGS_URL}#{bug.id})" if bug else "—"
+
+
+def _bug(finding: dict[str, Any]) -> str:
+    return bug_link(finding["bug_class"])
 
 
 def _fmt(value: Any) -> str:
@@ -239,7 +243,7 @@ def _difference_rows(result: dict, differences: list) -> list[str]:
         cell = result["cells"].get(d.scenario, {})
         record = next((c for c in cell.get("checks", ()) if c["id"] == d.check), None)
         bug = bugclasses.classify(record or {"id": d.check})
-        name = f"[{bug.id} {bug.name}]({BUGS_URL}#{bug.id})" if bug else "—"
+        name = bug_link(bug)
         if d.expected is None:
             change = f"newly failing: {d.got}"
         elif d.got is None:
@@ -279,15 +283,19 @@ def comment(doc: dict, subject: str, differences: list | None = None, link: str 
     found = [f for f in findings(doc) if f["subject"] == subject and f["bug_class"]]
     seen = sorted({f["bug_class"].id for f in found})
     if seen and not differences:
-        names = ", ".join(f"[{i} {bugclasses.BY_ID[i].name}]({BUGS_URL}#{i})" for i in seen)
+        names = ", ".join(bug_link(bugclasses.BY_ID[i]) for i in seen)
         lines += ["", f"Bug classes in this run: {names}."]
-    details = f"[Details]({link}). " if link.startswith(("https://", "http://")) else ""
-    lines += [
-        "",
-        f"{details}Checked by [spantruth](https://github.com/Plexito-de/spantruth), which compares "
-        "what a library reports with what the provider sent.",
-    ]
+    lines += ["", comment_footer(link)]
     return "\n".join(lines) + "\n"
+
+
+def comment_footer(link: str) -> str:
+    """The last line of every pull request comment. Only a web address becomes a link."""
+    details = f"[Details]({link}). " if link.startswith(("https://", "http://")) else ""
+    return (
+        f"{details}Checked by [spantruth](https://github.com/Plexito-de/spantruth), which compares "
+        "what a library reports with what the provider sent."
+    )
 
 
 def html(doc: dict) -> str:

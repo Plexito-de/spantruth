@@ -8,7 +8,18 @@ import sys
 import traceback
 from pathlib import Path
 
-from . import __version__, doctor, expectations, paths, report, runner, scenarios, subjects, watch
+from . import (
+    __version__,
+    doctor,
+    doctor_base,
+    expectations,
+    paths,
+    report,
+    runner,
+    scenarios,
+    subjects,
+    watch,
+)
 
 # GitHub caps a step summary at 1 MiB. Stay below it, and say where the rest is.
 SUMMARY_LIMIT = 1_000_000
@@ -127,6 +138,19 @@ def _run(args: argparse.Namespace) -> int:
 
 def _doctor(args: argparse.Namespace) -> int:
     try:
+        if args.base or args.comment or args.summary:
+            return doctor_base.run(
+                Path(args.path),
+                Path(args.out),
+                Path(args.cache),
+                args.base,
+                jobs=args.jobs,
+                scenario=args.scenario,
+                as_json=args.json,
+                comment_file=Path(args.comment) if args.comment else None,
+                summary_file=Path(args.summary) if args.summary else None,
+                link=args.comment_link or "",
+            )
         return doctor.run(
             Path(args.path),
             Path(args.out),
@@ -257,6 +281,21 @@ def parser() -> argparse.ArgumentParser:
         help="where to keep the subject environments (default: %(default)s)",
     )
     doc.add_argument("--jobs", type=int, default=4)
+    doc.add_argument(
+        "--base",
+        metavar="REF",
+        help="compare with the project's dependency files at this git ref, such as origin/main; "
+        "exit 1 only when the change adds a finding",
+    )
+    doc.add_argument(
+        "--comment", metavar="FILE", help="write a short pull request comment to this file"
+    )
+    doc.add_argument("--comment-link", metavar="URL", help="the page the comment links to")
+    doc.add_argument(
+        "--summary",
+        metavar="FILE",
+        help="append the comment to this file, such as $GITHUB_STEP_SUMMARY",
+    )
     doc.set_defaults(func=_doctor)
     wat = sub.add_parser(
         "watch",

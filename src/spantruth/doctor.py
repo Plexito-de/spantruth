@@ -632,6 +632,53 @@ def json_doc(
     }
 
 
+def nothing_to_check(found: Found, as_json: bool) -> None:
+    """Raise the exit-2 error for a project with no library to run, after its JSON document."""
+    if as_json:
+        print(json.dumps(json_doc(found, [], None, 2), indent=1))
+    if extra := _uncovered_lines(found.versions):
+        raise DoctorError(
+            f"no library in {found.source} that spantruth covers yet.\n" + "\n".join(extra)
+        )
+    raise DoctorError(
+        f"no instrumentation library in {found.source}. spantruth recognizes "
+        f"{_known_packages()}. For a wrapper of your own, see {GUIDE}"
+    )
+
+
+def checked_ids(ids: list[str]) -> list[str]:
+    for sid in ids:
+        if sid not in scenarios.SCENARIOS:
+            raise DoctorError(f"unknown scenario {sid}; run `spantruth list`")
+    return ids
+
+
+def plan(found: Found, selected: list[subjects.Subject]) -> tuple:
+    """What a run depends on. Two plans that are equal give the same results document."""
+    ran = [as_the_app_runs(s, found.versions) for s in selected]
+    return (ran, overrides(selected, found.versions))
+
+
+def grade(
+    found: Found, selected: list[subjects.Subject], ids: list[str], cache: Path, jobs: int
+) -> dict:
+    """Run the selected libraries at the project's versions. Nothing selected: an empty run."""
+    if not selected:
+        return {"scenarios": {}, "subjects": {}}
+    if shutil.which("uv") is None:
+        raise CannotRun(
+            f"doctor needs uv to build an environment per library, and uv is not on PATH. "
+            f"Install it: {UV_INSTALL}"
+        )
+    print(
+        f"Read {found.source}. Running {', '.join(s.name for s in selected)}. The first run "
+        "builds an environment per library, which takes about a minute.",
+        file=sys.stderr,
+    )
+    ran, pins = plan(found, selected)
+    return runner.run(ran, scenarios.with_dependencies(ids), cache, jobs=jobs, overrides=pins)
+
+
 def run(
     directory: Path,
     out: Path,
@@ -643,37 +690,9 @@ def run(
     found = read_versions(directory)
     selected = match(found.versions)
     if not selected:
-        if as_json:
-            print(json.dumps(json_doc(found, [], None, 2), indent=1))
-        if extra := _uncovered_lines(found.versions):
-            raise DoctorError(
-                f"no library in {found.source} that spantruth covers yet.\n" + "\n".join(extra)
-            )
-        raise DoctorError(
-            f"no instrumentation library in {found.source}. spantruth recognizes "
-            f"{_known_packages()}. For a wrapper of your own, see {GUIDE}"
-        )
-    ids = scenario or scenario_ids(found.versions)
-    for sid in ids:
-        if sid not in scenarios.SCENARIOS:
-            raise DoctorError(f"unknown scenario {sid}; run `spantruth list`")
-    if shutil.which("uv") is None:
-        raise CannotRun(
-            f"doctor needs uv to build an environment per library, and uv is not on PATH. "
-            f"Install it: {UV_INSTALL}"
-        )
-    print(
-        f"Read {found.source}. Running {', '.join(s.name for s in selected)}. The first run "
-        "builds an environment per library, which takes about a minute.",
-        file=sys.stderr,
-    )
-    doc = runner.run(
-        [as_the_app_runs(s, found.versions) for s in selected],
-        scenarios.with_dependencies(ids),
-        cache,
-        jobs=jobs,
-        overrides=overrides(selected, found.versions),
-    )
+        nothing_to_check(found, as_json)
+    ids = checked_ids(scenario or scenario_ids(found.versions))
+    doc = grade(found, selected, ids, cache, jobs)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(doc, indent=1, sort_keys=True) + "\n")
     summary = summarize(doc, found.source)

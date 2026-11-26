@@ -19,7 +19,10 @@ def step(step_id: str) -> dict:
 def test_inputs_reach_the_script_only_through_the_environment():
     script = step("run")["run"]
     assert "${{" not in script
-    assert set(step("run")["env"]) >= {"SUBJECT", "WITH", "SCENARIO", "EXPECT", "LATEST", "COMMENT"}
+    assert set(step("run")["env"]) >= {
+        *("COMMAND", "SUBJECT", "PROJECT", "BASE", "BASE_SHA"),
+        *("WITH", "SCENARIO", "EXPECT", "LATEST", "COMMENT"),
+    }
 
 
 def test_every_action_the_action_uses_is_pinned_to_a_commit():
@@ -50,7 +53,10 @@ def run_action(tmp_path: Path, runner_temp: Path, **inputs: str) -> tuple[int, d
         "GITHUB_STEP_SUMMARY": str(summary),
         **{k.upper(): v for k, v in inputs.items()},
     }
-    for name in ("SUBJECT", "WITH", "SCENARIO", "EXPECT", "LATEST", "ARTIFACT_NAME", "COMMENT"):
+    for name in (
+        *("COMMAND", "SUBJECT", "PROJECT", "BASE", "BASE_SHA", "WITH", "SCENARIO", "EXPECT"),
+        *("LATEST", "ARTIFACT_NAME", "COMMENT"),
+    ):
         env.setdefault(name, "")
     proc = subprocess.run(["bash", str(script)], env=env, cwd=REPO, capture_output=True, text=True)
     assert proc.returncode == 0, proc.stdout + proc.stderr
@@ -170,3 +176,57 @@ def test_a_failed_install_still_reports_exit_code_3(tmp_path):
     proc = subprocess.run(["bash", str(script)], env=env, cwd=REPO, capture_output=True, text=True)
     assert proc.returncode != 0
     assert "exit-code=3" in output.read_text()
+
+
+@pytest.mark.slow
+@pytest.mark.timeout(300)
+@pytest.mark.parametrize("inputs", [{"command": "nope"}, {"command": "run"}])
+def test_an_unknown_command_or_run_without_a_subject_is_a_usage_error(tmp_path, inputs):
+    code, _, _ = run_action(tmp_path, tmp_path / "runner", **inputs)
+    assert code == 2
+
+
+def commit(repo: Path, text: str, message: str) -> str:
+    """Commit the requirements file with this text, and return the commit."""
+    (repo / "requirements.txt").write_text(text)
+    for args in (
+        ["add", "requirements.txt"],
+        ["-c", "user.name=t", "-c", "user.email=t@example.com", "commit", "-qm", message],
+    ):
+        subprocess.run(["git", *args], cwd=repo, check=True, capture_output=True)
+    return subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=repo, check=True, capture_output=True, text=True
+    ).stdout.strip()
+
+
+@pytest.mark.slow
+@pytest.mark.timeout(600)
+def test_doctor_in_an_application_repository_fails_on_a_finding_the_change_adds(tmp_path):
+    """Two commits: the pull request swaps OpenInference for a library that doubles each span."""
+    repo = tmp_path / "app"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q", "-b", "main"], cwd=repo, check=True)
+    base = commit(
+        repo,
+        "anthropic==2.5.0\nopeninference-instrumentation-anthropic==3.3.1\n"
+        "opentelemetry-sdk==1.45.2\n",
+        "base",
+    )
+    commit(repo, "anthropic==2.4.0\nopentelemetry-instrumentation-genai-anthropic==1.3b0\n", "pr")
+    code, outputs, summary = run_action(
+        tmp_path / "a",
+        tmp_path / "runner",
+        command="doctor",
+        project=str(repo),
+        base_sha=base,
+        scenario="anthropic/basic",
+        comment="true",
+    )
+    assert code == 1, summary
+    assert outputs["artifact-name"] == "spantruth-doctor"
+    assert "1 new" in summary and "ST02 Double span" in summary
+    assert outputs["comment-marker"] == "<!-- spantruth:doctor -->"
+    body = Path(outputs["comment-file"]).read_text()
+    assert body.startswith(outputs["comment-marker"])
+    assert "| `otel-official` | [ST02 Double span]" in body
+    assert Path(outputs["results"]).with_name("results-base.json").is_file()
