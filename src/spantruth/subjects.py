@@ -47,6 +47,16 @@ class Subject:
     detect_with: tuple[str, ...] = ()
     # How the subject was named: a built-in name, or the path that was given.
     ref: str = ""
+    # A framework subject brings an `app.py` that makes each call through the framework, and lists
+    # the scenarios it can express. Every other scenario is not run, so it has no cell.
+    app: bool = False
+    scenarios: tuple[str, ...] = ()
+
+    def supports(self, scenario_id: str) -> bool:
+        """True when this subject runs the scenario: its provider, and its list if it has one."""
+        if scenarios.get(scenario_id).provider not in self.providers:
+            return False
+        return not self.app or scenario_id in self.scenarios
 
 
 def base() -> dict:
@@ -82,6 +92,8 @@ def load(ref: str) -> Subject:
         raise SubjectError(f"{directory}: no instrument.py")
     if not str(data["homepage"]).startswith(("https://", "http://")):
         raise SubjectError(f"{config}: homepage must be an http or https address")
+    app = (directory / "app.py").is_file()
+    supported = _supported(config, data, app)
     kind = data.get("kind", "library")
     if kind == "control" and directory.parent != SUBJECTS:
         raise SubjectError(f'{config}: kind = "control" is reserved for the built-in controls')
@@ -99,7 +111,31 @@ def load(ref: str) -> Subject:
         detect=tuple(data.get("detect", data.get("track", ()))),
         detect_with=tuple(data.get("detect_with", ())),
         ref=ref if is_path(ref) else directory.name,
+        app=app,
+        scenarios=supported,
     )
+
+
+def _supported(config: Path, data: dict, app: bool) -> tuple[str, ...]:
+    """The scenarios a subject with an `app.py` supports. Only such a subject may list them.
+
+    A library that instruments the SDK meets every call pattern the SDK has, so it may not leave a
+    scenario out: that would hide a red cell. A framework decides which calls it can make.
+    """
+    listed = data.get("scenarios")
+    if listed is None:
+        if app:
+            raise SubjectError(f"{config}: a subject with an app.py must list its scenarios")
+        return ()
+    if not app:
+        raise SubjectError(f"{config}: scenarios is only for a subject with an app.py")
+    unknown = [sid for sid in listed if sid not in scenarios.SCENARIOS]
+    if unknown:
+        raise SubjectError(f"{config}: unknown scenario {', '.join(unknown)}")
+    off = [sid for sid in listed if scenarios.get(sid).provider not in data["providers"]]
+    if off:
+        raise SubjectError(f"{config}: scenario {', '.join(off)} is for a provider not listed")
+    return tuple(listed)
 
 
 def all_names() -> list[str]:

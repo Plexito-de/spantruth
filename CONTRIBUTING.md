@@ -61,6 +61,27 @@ uv run ruff check . && uv run ruff format --check .
    library. Find the line of code that causes it, or tell us in the pull request that you could
    not.
 
+## Add a framework
+
+A framework such as LiteLLM or Pydantic AI makes the provider call itself, so the app calls the
+framework and not the SDK. Such a subject also brings an `app.py` with one function:
+
+```python
+def run(scenario, base_url, seen):
+    # Make the scenario's call through the framework, pointed at base_url.
+    # Record what the app saw on `seen` (a `spantruth.calls.Seen`), as calls.py does.
+    ...
+```
+
+The driver calls it in the baseline run and in the instrumented run, so `app.unchanged` still
+compares the two. Keep the instrumentation in `instrument.py`, not in `app.py`: the baseline run
+must not trace. Exceptions propagate, as in `calls.py`.
+
+List the scenarios that the framework can make in `subject.toml`, such as
+`scenarios = ["openai/basic", "openai/stream"]`. The other scenarios are not run and have no cell.
+Only a subject with an `app.py` can list scenarios: a library that instruments the SDK meets every
+call that the SDK makes.
+
 ## Add a scenario
 
 1. Build the response in `src/spantruth/scenarios.py` with the builders in `wire_openai.py` or
