@@ -273,3 +273,22 @@ def test_the_wrapper_example_loads_as_a_subject():
     assert subject.name == "spantruth"
     assert "acme-llm==0.1.0" in subject.packages
     assert subjects.resolve_override(str(example)).startswith("acme-llm @ file://")
+
+
+def test_openai_agents_is_a_framework_subject():
+    lib = subjects.load("openai-agents")
+    assert lib.app
+    assert lib.providers == ("openai",)
+    reqs = subjects.requirements(lib, latest=False)
+    assert {"openai-agents==0.26.0", "openinference-instrumentation-openai-agents==2.8.7"} <= set(
+        reqs
+    )
+    assert "openai-agents" in subjects.requirements(lib, latest=True)
+    assert lib.supports("openai/basic") and lib.supports("openai/async-stream")
+    assert lib.supports("openai/responses-stream-missing-finish-abort")
+    # The agent loop cannot end on a tool call that the fake provider repeats.
+    assert not lib.supports("openai/tool-call")
+    # The SDK reads the model stream in a background task, whatever the app reads.
+    assert not lib.supports("openai/stream-early-exit")
+    # The SDK sends its own traces only with OPENAI_API_KEY set, which no subject process has.
+    assert "OPENAI_API_KEY" not in lib.env
