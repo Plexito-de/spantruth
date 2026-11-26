@@ -41,11 +41,11 @@ them, and give the issue link. It is in every document that `--json` prints. Wit
 be no document, such as for a lock file that cannot be read: then read the message on stderr.
 
 The classes come largest cost error first. When a class has an `upgrade`, the library has released the
-fix: suggest that command first. It uses the project's own tool, such as `uv add`.
-
-When `remedy` has a value, the project can act today. When an upstream issue has the status
-`fixed-upstream`, the library has fixed it: suggest the upgrade that its `note` names. Otherwise check for
-a newer release of the library in the `upstream` link. Ask before you change a version.
+fix: suggest it first. It is a command for the project's own tool, such as `uv add`, or for a
+requirements file or a `pyproject.toml` the edit of the file. When an upstream issue has the status
+`fixed-upstream` and the class has no `upgrade`, suggest the upgrade that its `note` names. When
+`remedy` has a value, the project can act today. Otherwise check for a newer release of the library in
+the `upstream` link. Ask before you change a version.
 
 ## A wrapper or instrumentation that the project wrote itself
 

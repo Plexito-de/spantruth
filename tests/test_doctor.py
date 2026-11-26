@@ -411,7 +411,20 @@ def known_fix(monkeypatch, tmp_path):
         ("poetry.lock", "poetry add 'openinference-instrumentation-anthropic>=3.1.0'"),
         ("pdm.lock", "pdm add 'openinference-instrumentation-anthropic>=3.1.0'"),
         ("Pipfile.lock", "pipenv install 'openinference-instrumentation-anthropic>=3.1.0'"),
-        ("requirements.txt", "pip install 'openinference-instrumentation-anthropic>=3.1.0'"),
+        # doctor reads the pin from the file, so the file is what must change. A `pip install`
+        # would be undone by the next `pip install -r`, and the next doctor run.
+        (
+            "requirements.txt",
+            "require 'openinference-instrumentation-anthropic>=3.1.0' in requirements.txt",
+        ),
+        (
+            "requirements*.txt",
+            "require 'openinference-instrumentation-anthropic>=3.1.0' in your requirements files",
+        ),
+        (
+            "pyproject.toml",
+            "require 'openinference-instrumentation-anthropic>=3.1.0' in pyproject.toml",
+        ),
         (".venv", "pip install 'openinference-instrumentation-anthropic>=3.1.0'"),
     ],
 )
@@ -430,6 +443,19 @@ def test_a_finding_with_no_fixed_in_prints_no_upgrade(known):
         doctor.Found("uv.lock", {}), doctor.summarize(result_doc(), "uv.lock"), "x"
     )
     assert "Fix first" not in text
+
+
+def test_a_reported_entry_with_fixed_in_gives_no_upgrade(monkeypatch):
+    entry = {**REPORTED, "fixed_in": ["openinference-instrumentation-anthropic>=9"]}
+    monkeypatch.setattr(report, "known_issues", lambda: [entry])
+    (subject,) = doctor.summarize(result_doc(), "uv.lock")
+    assert all(c["upgrade"] is None for c in subject["classes"])
+
+
+def test_upgrade_keeps_the_highest_bound_and_skips_what_is_installed():
+    specs = ["a>=1.2.0", "a>=1.10.0", "b>=2.0", "c<3"]
+    assert doctor.upgrade_command("uv.lock", specs, {"b": "2.1.0"}) == "uv add 'a>=1.10.0' 'c<3'"
+    assert doctor.upgrade_command("uv.lock", ["b>=2.0"], {"B": "2.0"}) is None
 
 
 def test_json_carries_the_upgrade_command_and_fixed_in(known_fix):

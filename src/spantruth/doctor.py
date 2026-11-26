@@ -275,19 +275,59 @@ INSTALL = {
 }
 
 
-def upgrade_command(source: str | None, specs: list[str]) -> str | None:
-    """The command that moves the project to the fixed versions, with the project's own tool.
+# doctor reads the pins from these files, so the fix is an edit of the file. An install alone
+# would be undone by the next `pip install -r`, and the next doctor run would read the old pin.
+EDIT = {
+    "requirements*.txt": "your requirements files",
+    "pyproject.toml": "pyproject.toml",
+}
 
-    A requirements file, a .venv or a bare pyproject.toml names no tool, so pip it is.
+
+def _release(version: str) -> tuple[int, ...]:
+    return tuple(int(n) for n in re.findall(r"\d+", version.split("+")[0])[:4])
+
+
+def _needed(specs: list[str], installed: Mapping[str, str]) -> list[str]:
+    """One spec per package: the highest lower bound, and none that the installed version meets."""
+    have = {subjects.package_name(k): v for k, v in installed.items()}
+    # In the order of first appearance: a package's lower bound, or a spec of another form as is.
+    bounds: dict[str, str | None] = {}
+    for spec in specs:
+        m = re.fullmatch(r"\s*([A-Za-z0-9._-]+)\s*>=\s*([0-9][^\s,;]*)\s*", spec)
+        if not m:
+            bounds.setdefault(spec, None)
+            continue
+        name, low = subjects.package_name(m[1]), m[2]
+        if not bounds.get(name) or _release(low) > _release(bounds[name] or ""):
+            bounds[name] = low
+    return [
+        key if low is None else f"{key}>={low}"
+        for key, low in bounds.items()
+        if low is None or key not in have or _release(have[key]) < _release(low)
+    ]
+
+
+def upgrade_command(
+    source: str | None, specs: list[str], installed: Mapping[str, str] | None = None
+) -> str | None:
+    """What moves the project to the fixed versions, with the project's own tool or file.
+
+    A lock file has its tool. A requirements file or a bare pyproject.toml holds the pin itself,
+    so the fix is an edit of that file. A .venv names no tool, so pip it is.
     """
+    specs = _needed(specs, installed or {})
     if not specs:
         return None
-    return " ".join([INSTALL.get(source or "", "pip install"), *map(shlex.quote, specs)])
+    quoted = " ".join(map(shlex.quote, specs))
+    if source in EDIT or (source or "").endswith(".txt"):
+        return f"require {quoted} in {EDIT.get(source or '', source)}"
+    return f"{INSTALL.get(source or '', 'pip install')} {quoted}"
 
 
-def _cost_order(c: dict[str, Any]) -> float:
+def _cost_order(c: dict[str, Any]) -> tuple[bool, float]:
     """Largest cost error first, either sign. A class with no figure comes after, in class order."""
-    return -abs(c["largest_cost_error"]) if c["largest_cost_error"] is not None else 0.0
+    cost = c["largest_cost_error"]
+    return (cost is None, -abs(cost or 0))
 
 
 def summarize(doc: dict, source: str | None = None) -> list[dict[str, Any]]:
@@ -334,7 +374,7 @@ def summarize(doc: dict, source: str | None = None) -> list[dict[str, Any]]:
                         }
                         for u in links
                     ],
-                    "upgrade": upgrade_command(source, list(dict.fromkeys(specs))),
+                    "upgrade": upgrade_command(source, specs, result.get("versions", {})),
                 }
             )
         classes.sort(key=_cost_order)
