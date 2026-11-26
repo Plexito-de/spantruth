@@ -17,6 +17,7 @@ from . import (
     report,
     runner,
     scenarios,
+    snapshots,
     subjects,
     watch,
 )
@@ -285,6 +286,15 @@ def parser() -> argparse.ArgumentParser:
     )
     history.arguments(his)
     his.set_defaults(func=history.main)
+    snap = sub.add_parser(
+        "snapshot",
+        help="keep a dated copy of the rendered report",
+        description="Copy the rendered report into SITE/snapshots/<date>/, or forward the date to "
+        "the last copy when the results did not change, and write the index. --state holds the "
+        "published snapshots/ with the copies to keep.",
+    )
+    snapshots.arguments(snap)
+    snap.set_defaults(func=snapshots.main)
     rep = sub.add_parser("report", help="render a results document")
     rep.add_argument("results")
     rep.add_argument("--html", help="write a static HTML report to this path")

@@ -79,6 +79,31 @@ jobs:
           uv run spantruth report site/pinned.json --html site/index.html --bugs site/bugs.html
           uv run spantruth report site/latest.json --html site/latest.html --badges site/badges
           cp -R docs/site/. site/
+      # Dated copies of the report, so a link to a finding still shows it after the fix lands.
+      # Pages keeps nothing between deployments, so the kept copies come back from the live site.
+      # A missing index (404) is the first run. Any other failure stops the job: publishing
+      # without the copies would delete them. At most 60 copies of about 3.4 MB each.
+      - name: Fetch the kept snapshots
+        run: |
+          mkdir -p snapshots-state
+          base="https://plexito-de.github.io/spantruth/snapshots"
+          code=$(curl -sS -L -o snapshots-state/index.json -w '%{http_code}' "$base/index.json")
+          case "$code" in
+            200) ;;
+            404) rm -f snapshots-state/index.json; exit 0 ;;
+            *) echo "::error::snapshots/index.json answered $code"; exit 1 ;;
+          esac
+          for copy in $(jq -r '[.snapshots[].copy] | unique | .[]' snapshots-state/index.json); do
+            if ! [[ "$copy" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+              echo "::error::snapshots/index.json names $copy, which is not a date"; exit 1
+            fi
+            mkdir -p "snapshots-state/$copy"
+            for page in index.html latest.html bugs.html changes.html; do
+              curl -fsS -L -o "snapshots-state/$copy/$page" "$base/$copy/$page"
+            done
+          done
+      - name: Keep a dated copy
+        run: uv run spantruth snapshot --site site --state snapshots-state
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: site
