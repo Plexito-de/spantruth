@@ -74,14 +74,17 @@ RULES: dict[str, tuple[str, str]] = {
     "input_tokens": (
         "Input tokens SHOULD include all types of input tokens, including cached tokens. For "
         "Anthropic, whose `input_tokens` excludes them, cache reads and cache writes MUST be "
-        "added. OpenInference states the same rule for `llm.token_count.prompt`.",
+        "added. Gemini's `promptTokenCount` is the total effective prompt size, cached content "
+        "included (ai.google.dev/api/generate-content#UsageMetadata). "
+        "OpenInference states the same rule for `llm.token_count.prompt`.",
         f"{GENAI}/model/gen-ai/spans.yaml#L842-L866",
     ),
     "output_tokens": (
         "Output tokens, with reasoning tokens included. For Anthropic, whose `output_tokens` "
         "includes thinking tokens, reasoning tokens are part of, not in addition to, output "
-        "tokens. OpenInference states the same rule for `llm.token_count.completion`.",
-        f"{GENAI}/model/gen-ai/registry.yaml#L336",
+        "tokens. For Gemini, whose `candidatesTokenCount` excludes `thoughtsTokenCount`, the two "
+        "are added. OpenInference states the same rule for `llm.token_count.completion`.",
+        f"{GENAI}/model/gen-ai/registry.yaml#L336-L350",
     ),
     "cache_read_tokens": (
         "Input tokens read from the provider cache.",

@@ -104,11 +104,21 @@ def test_the_call_plan_keys_do_not_change():
     assert all(list(plan) == list(PLAN_KEYS) for plan in plans.values())
 
 
+def _route(entry: dict) -> str:
+    """The path after the scenario prefix that the provider's SDK calls."""
+    if entry["provider"] == "gemini":
+        method = "streamGenerateContent?alt=sse" if entry["stream"] else "generateContent"
+        return f"/v1beta/models/{entry['request_model']}:{method}"
+    if entry["provider"] == "azure":
+        return f"/openai/deployments/{entry['request_model']}/chat/completions?api-version=1"
+    return "/x"
+
+
 def _served(url: str, path: str, request: bytes = b"{}") -> tuple[int, bytes]:
     """What the mock server sends, up to where it closes the connection."""
     host, port = url.removeprefix("http://").split(":")
     conn = http.client.HTTPConnection(host, int(port), timeout=5)
-    conn.request("POST", path + "/x", body=request)
+    conn.request("POST", path, body=request)
     reply = conn.getresponse()
     try:
         body = reply.read()
@@ -134,7 +144,7 @@ def test_the_mock_server_sends_what_the_pack_says():
             mock.reset()
             # A scenario with several calls answers by the request, so its calls are sent below.
             for response in [] if entry["calls"] else entry["responses"]:
-                status, body = _served(mock.url, entry["path"])
+                status, body = _served(mock.url, entry["path"] + _route(entry))
                 assert (status, body) == (response["status"], _wire(response)), entry["id"]
             seen: dict[str, int] = {}
             for call in entry["calls"]:
@@ -145,7 +155,7 @@ def test_the_mock_server_sends_what_the_pack_says():
                 request = json.dumps(
                     {"model": call["request_model"], "messages": [{"role": "assistant"}] * answered}
                 ).encode()
-                status, body = _served(mock.url, entry["path"], request)
+                status, body = _served(mock.url, entry["path"] + _route(entry), request)
                 response = call["response"]
                 assert (status, body) == (response["status"], _wire(response)), entry["id"]
 

@@ -4,6 +4,7 @@ The proof is the controls again: the reference instrumentation passes every scen
 with its faults on it fails exactly the checks in control-faulty's expected.toml.
 """
 
+import ast
 import os
 import subprocess
 import sys
@@ -11,6 +12,7 @@ from pathlib import Path
 
 import anthropic
 import anthropic.resources.messages as am
+import google.genai.models as gm
 import openai
 import openai.resources.chat.completions as oc
 import openai.resources.responses as orr
@@ -40,6 +42,9 @@ def attach(monkeypatch, spantruth):
     def attach_reference(faults=frozenset()):
         for cls in PATCHED:
             monkeypatch.setattr(cls, "create", cls.create)
+        for cls in (gm.Models, gm.AsyncModels):
+            for name in ("generate_content", "generate_content_stream"):
+                monkeypatch.setattr(cls, name, getattr(cls, name))
         reference.instrument(spantruth.tracer_provider, faults=faults)
 
     return attach_reference
@@ -113,7 +118,8 @@ def test_scenario_ids_filter_by_provider_and_api():
     assert scenario_ids("openai", api="responses") == [
         "openai/responses-stream-missing-finish-abort"
     ]
-    assert scenario_ids() == list(scenarios.SCENARIOS)
+    assert scenario_ids() == IN_PROCESS
+    assert "openai/content-on" not in openai_ids and "openai/agent-loop" not in openai_ids
 
 
 @pytest.mark.slow
@@ -130,9 +136,15 @@ def test_the_documented_example_runs(tmp_path):
         timeout=120,
     )
     assert proc.returncode == 0, proc.stdout + proc.stderr
-    # Three scenarios pass, and the explicit cache-hit test. Every other OpenAI scenario is a bug.
-    xfailed = len(scenario_ids("openai")) - 3
-    assert f"4 passed, {xfailed} xfailed" in proc.stdout, proc.stdout
+    # The PASSING scenarios pass, and the explicit cache-hit test. Every other one is a bug.
+    tree = ast.parse((EXAMPLE / "tests" / "test_spans.py").read_text())
+    (passing,) = [
+        ast.literal_eval(node.value)
+        for node in tree.body
+        if isinstance(node, ast.Assign) and getattr(node.targets[0], "id", "") == "PASSING"
+    ]
+    xfailed = len(scenario_ids("openai")) - len(passing)
+    assert f"{len(passing) + 1} passed, {xfailed} xfailed" in proc.stdout, proc.stdout
 
 
 def test_the_documentation_shows_the_example_as_it_runs():

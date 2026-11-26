@@ -25,4 +25,5 @@ def instrument(tracer_provider, otlp_endpoint):
     )
     logfire.instrument_openai()
     logfire.instrument_anthropic()
+    logfire.instrument_google_genai()
     return [trace.get_tracer_provider()]

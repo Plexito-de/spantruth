@@ -1,11 +1,16 @@
 title = "OpenInference"
 homepage = "https://github.com/Arize-ai/openinference"
-providers = ["openai", "anthropic"]
+providers = ["openai", "anthropic", "gemini", "azure"]
 packages = [
   "openinference-instrumentation-openai==0.1.69",
   "openinference-instrumentation-anthropic==3.3.0",
+  "openinference-instrumentation-google-genai==1.6.7",
 ]
-track = ["openinference-instrumentation-openai", "openinference-instrumentation-anthropic"]
+track = [
+  "openinference-instrumentation-openai",
+  "openinference-instrumentation-anthropic",
+  "openinference-instrumentation-google-genai",
+]
 
 # Hidden inputs and outputs become "__REDACTED__" or are dropped, so no text remains.
 [content]

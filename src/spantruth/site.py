@@ -638,6 +638,10 @@ FAULTS = {
         "Records prompt and completion text with the library's switch set to off.",
         ("content.off_respected",),
     ),
+    "gemini-candidates-output": (
+        "Reports Gemini's candidatesTokenCount alone as the output, without the thinking tokens.",
+        ("output_tokens",),
+    ),
     "errors-as-success": (
         "Ends the span of a failed call without status ERROR and without error.type.",
         ("error.status", "error.type"),

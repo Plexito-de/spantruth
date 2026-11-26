@@ -1,6 +1,6 @@
 title = "MLflow Tracing"
 homepage = "https://github.com/mlflow/mlflow"
-providers = ["openai", "anthropic"]
+providers = ["openai", "anthropic", "gemini", "azure"]
 packages = ["mlflow-skinny==3.18.0"]
 track = ["mlflow-skinny"]
 detect = ["mlflow", "mlflow-skinny"]

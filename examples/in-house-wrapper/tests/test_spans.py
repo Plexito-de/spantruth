@@ -12,7 +12,14 @@ from spantruth.pytest_plugin import scenario_ids
 
 # The scenarios the wrapper gets right today. Every other one shows a known bug, and is marked
 # xfail(strict=True): when a fix makes one pass, the run fails until you move it here.
-PASSING = {"openai/basic", "openai/tool-call", "openai/retry-429"}
+PASSING = {
+    "openai/basic",
+    "openai/tool-call",
+    "openai/retry-429",
+    "openai/compat-no-details",
+    "openai/compat-null-details",
+    "openai/compat-extra-timing-fields",
+}
 
 
 @pytest.fixture(autouse=True)

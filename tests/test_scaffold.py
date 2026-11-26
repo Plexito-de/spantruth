@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from spantruth import cli, subjects
+from spantruth import cli, scenarios, subjects
 
 
 def test_a_new_built_in_subject_is_listed(tmp_path, monkeypatch, capsys):
@@ -14,7 +14,8 @@ def test_a_new_built_in_subject_is_listed(tmp_path, monkeypatch, capsys):
     assert "spantruth run --subject my-library" in capsys.readouterr().out
     assert cli.main(["list"]) == 0
     listed = capsys.readouterr().out
-    assert "my-library" in listed and "(anthropic, openai)" in listed
+    providers = ", ".join(sorted({sc.provider for sc in scenarios.SCENARIOS.values()}))
+    assert "my-library" in listed and f"({providers})" in listed
     s = subjects.load("my-library")
     assert (s.title, s.packages, s.kind) == ("my-library", (), "library")
 
@@ -23,7 +24,8 @@ def test_a_new_subject_elsewhere_loads_by_its_path(tmp_path, capsys):
     assert cli.main(["new", "subject", "spantruth", "--dir", str(tmp_path)]) == 0
     directory = tmp_path / "spantruth"
     assert f"--subject {directory}" in capsys.readouterr().out
-    assert subjects.load(str(directory)).providers == ("anthropic", "openai")
+    known = tuple(sorted({sc.provider for sc in scenarios.SCENARIOS.values()}))
+    assert subjects.load(str(directory)).providers == known
     namespace: dict = {}
     exec((directory / "instrument.py").read_text(), namespace)
     assert namespace["instrument"](tracer_provider=None, otlp_endpoint="http://127.0.0.1:9") is None

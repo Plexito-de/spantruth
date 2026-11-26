@@ -1,6 +1,6 @@
 title = "Datadog ddtrace LLM Observability"
 homepage = "https://github.com/DataDog/dd-trace-py"
-providers = ["openai", "anthropic"]
+providers = ["openai", "anthropic", "gemini", "azure"]
 packages = ["ddtrace==4.16.3"]
 track = ["ddtrace"]
 # Many projects use ddtrace for APM only, so `spantruth doctor` needs a provider SDK as well.

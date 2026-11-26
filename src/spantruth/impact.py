@@ -53,7 +53,25 @@ PRICED: dict[str, frozenset[str]] = {
             "output_tokens_details.reasoning_tokens",  # inside output_tokens
         }
     ),
+    "gemini": frozenset(
+        {
+            "promptTokenCount",  # holds cachedContentTokenCount
+            "candidatesTokenCount",
+            "thoughtsTokenCount",  # outside candidatesTokenCount, at the output rate
+            "totalTokenCount",
+            "cachedContentTokenCount",
+            # The per-modality parts of the counts above. Text bills at the counts' rates; audio
+            # has its own input rate on some models, so it stays unpriced.
+            "promptTokensDetails.TEXT",
+            "cacheTokensDetails.TEXT",
+            "candidatesTokensDetails.TEXT",
+        }
+    ),
 }
+# Azure OpenAI bills the Chat Completions usage fields, at the deployment's rates.
+PRICED["azure"] = PRICED["openai"]
+# The key of the object that holds the counts, where it is not `usage`.
+USAGE_KEY = {"gemini": "usageMetadata"}
 # Fields that multiply every rate of a call, and the values that leave the standard rates in force.
 STANDARD: dict[str, dict[str, frozenset[str]]] = {
     "anthropic": {
@@ -64,6 +82,12 @@ STANDARD: dict[str, dict[str, frozenset[str]]] = {
     "openai": {
         "service_tier": frozenset({"default"}),  # `flex`, `priority` and `scale` have other rates
     },
+    "azure": {
+        "service_tier": frozenset({"default"}),
+    },
+    "gemini": {
+        "serviceTier": frozenset({"standard"}),  # `flex` and `priority` have other rates
+    },
 }
 
 
@@ -71,6 +95,14 @@ def _leaves(value: Any, prefix: str = "") -> Iterable[tuple[str, Any]]:
     if isinstance(value, Mapping):
         for key, inner in value.items():
             yield from _leaves(inner, f"{prefix}.{key}" if prefix else str(key))
+    elif (
+        isinstance(value, list)
+        and value
+        and all(isinstance(v, Mapping) and "modality" in v for v in value)
+    ):
+        # Gemini's breakdown: one leaf per modality, such as `promptTokensDetails.TEXT`.
+        for entry in value:
+            yield f"{prefix}.{entry['modality']}", entry.get("tokenCount")
     else:
         yield prefix, value
 
@@ -102,7 +134,7 @@ def unpriced(provider: str, response: Mapping[str, Any]) -> list[str]:
         raise ValueError(
             f"no price rules for provider {provider!r}: add it to impact.PRICED and impact.STANDARD"
         )
-    usage = response.get("usage")
+    usage = usage_of(provider, response)
     if not isinstance(usage, Mapping):
         return []  # Nothing is billed here, so a tier on this object says nothing yet.
     standard = STANDARD[provider]
@@ -114,6 +146,11 @@ def unpriced(provider: str, response: Mapping[str, Any]) -> list[str]:
         if path not in PRICED[provider]
         and not _bills_nothing(value, standard.get(path, frozenset()))
     )
+
+
+def usage_of(provider: str, response: Mapping[str, Any]) -> Any:
+    """The counts of one response: `usage`, or Gemini's `usageMetadata`."""
+    return response.get(USAGE_KEY.get(provider, "usage"))
 
 
 @dataclass(frozen=True)

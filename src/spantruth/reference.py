@@ -1,4 +1,4 @@
-"""A small, deliberately plain instrumentation of the OpenAI and Anthropic SDKs.
+"""A small, deliberately plain instrumentation of the OpenAI, Anthropic and google-genai SDKs.
 
 It exists to test the suite, not to be used. `control-honest` runs it as written and has to
 pass every check. `control-faulty` runs it with known faults switched on and has to fail
@@ -15,6 +15,7 @@ Faults:
     content-ignores-off   prompt and completion text are recorded with the switch off
     errors-as-success     exceptions are not recorded on the span
     estimate-tokens       a stream without usage gets an estimate from the text length
+    gemini-candidates-output  report Gemini's `candidatesTokenCount` as output, without thoughts
     retry-as-error        a retried operation that succeeds still sets Error status
 """
 
@@ -39,13 +40,19 @@ class _Call:
     """The span of one call and the facts gathered for it."""
 
     def __init__(
-        self, tracer: Tracer, provider: str, model: str, faults: set[str], prompt: Any = None
+        self,
+        tracer: Tracer,
+        provider: str,
+        model: str,
+        faults: set[str],
+        prompt: Any = None,
+        operation: str = "chat",
     ) -> None:
         self.span = tracer.start_span(
-            f"chat {model}",
+            f"{operation} {model}",
             kind=SpanKind.CLIENT,
             attributes={
-                "gen_ai.operation.name": "chat",
+                "gen_ai.operation.name": operation,
                 "gen_ai.provider.name": provider,
                 "gen_ai.request.model": model,
             },
@@ -209,6 +216,139 @@ def _anthropic_event(call: _Call, e: Any) -> None:
         call.add_text(e.delta.text)
 
 
+def _gemini_usage(call: _Call, u: Any) -> None:
+    """`promptTokenCount` holds the cached tokens, `candidatesTokenCount` leaves out thoughts."""
+    if u is None or u.prompt_token_count is None:
+        return
+    # Every stream chunk carries the counts so far, so each one replaces the last.
+    thoughts = u.thoughts_token_count or 0
+    out = u.candidates_token_count or 0
+    if "gemini-candidates-output" not in call.faults:
+        out += thoughts
+    cached = u.cached_content_token_count or 0
+    call.usage(u.prompt_token_count, out, read=cached, reasoning=thoughts)
+
+
+def _gemini_response(call: _Call, r: Any) -> None:
+    call.set("gen_ai.response.model", r.model_version)
+    call.set("gen_ai.response.id", r.response_id)
+    finish = [c.finish_reason.value for c in r.candidates or () if c.finish_reason]
+    if finish:
+        call.finish = finish
+    _gemini_usage(call, r.usage_metadata)
+    call.text += r.text or ""
+
+
+class _GeminiStream:
+    """A google-genai stream is a plain generator, so the wrapper is one too."""
+
+    def __init__(self, inner: Any, call: _Call) -> None:
+        self._inner, self._call = inner, call
+
+    def _closed(self) -> None:
+        if "close-leaks-span" not in self._call.faults:
+            self._call.end()
+
+    def __iter__(self):
+        try:
+            for chunk in self._inner:
+                _gemini_response(self._call, chunk)
+                yield chunk
+        except GeneratorExit:
+            self._inner.close()
+            self._closed()
+            raise
+        except Exception as exc:
+            self._call.fail(exc)
+            raise
+        self._call.end()
+
+    async def __aiter__(self):
+        try:
+            async for chunk in self._inner:
+                _gemini_response(self._call, chunk)
+                yield chunk
+        except GeneratorExit:
+            await self._inner.aclose()
+            self._closed()
+            raise
+        except Exception as exc:
+            self._call.fail(exc)
+            raise
+        self._call.end()
+
+
+def _instrument_gemini(tracer: Tracer, faults: set[str]) -> None:
+    """Wrap `Models` and `AsyncModels` of google-genai, for the Gemini API.
+
+    The conventions name the provider `gcp.gemini` for the generativelanguage.googleapis.com
+    endpoint (`gcp.vertex_ai` is Vertex AI), and the operation `generate_content`:
+    model/gen-ai/registry.yaml#L22-L28 and #L650-L653 at the pinned commit.
+    """
+    import google.genai.models as gm
+
+    def begin(kwargs: dict) -> _Call:
+        return _Call(
+            tracer, "gcp.gemini", kwargs.get("model", ""), faults, operation="generate_content"
+        )
+
+    def plain(create):
+        @functools.wraps(create)
+        def wrapper(self, *args, **kwargs):
+            call = begin(kwargs)
+            try:
+                result = create(self, *args, **kwargs)
+            except Exception as exc:
+                call.fail(exc)
+                raise
+            _gemini_response(call, result)
+            call.end()
+            return result
+
+        return wrapper
+
+    def aplain(create):
+        @functools.wraps(create)
+        async def wrapper(self, *args, **kwargs):
+            call = begin(kwargs)
+            try:
+                result = await create(self, *args, **kwargs)
+            except Exception as exc:
+                call.fail(exc)
+                raise
+            _gemini_response(call, result)
+            call.end()
+            return result
+
+        return wrapper
+
+    def stream(create):
+        @functools.wraps(create)
+        def wrapper(self, *args, **kwargs):
+            # The SDK sends the request on the first `next()`, so errors surface while iterating.
+            return iter(_GeminiStream(create(self, *args, **kwargs), begin(kwargs)))
+
+        return wrapper
+
+    def astream(create):
+        @functools.wraps(create)
+        async def wrapper(self, *args, **kwargs):
+            call = begin(kwargs)
+            try:
+                inner = await create(self, *args, **kwargs)
+            except Exception as exc:
+                call.fail(exc)
+                raise
+            return _GeminiStream(inner, call).__aiter__()
+
+        return wrapper
+
+    gm.Models.generate_content = plain(gm.Models.generate_content)
+    gm.Models.generate_content_stream = stream(gm.Models.generate_content_stream)
+    gm.AsyncModels.generate_content = aplain(gm.AsyncModels.generate_content)
+    gm.AsyncModels.generate_content_stream = astream(gm.AsyncModels.generate_content_stream)
+
+
 class _Stream:
     def __init__(self, inner: Any, call: _Call, on_event) -> None:
         self._inner, self._call, self._on_event = inner, call, on_event
@@ -284,17 +424,29 @@ class _Stream:
         self._closed()
 
 
+def _provider(resource: Any, provider: str) -> str:
+    """`azure.ai.openai` for a call made through an Azure client: registry.yaml#L41-L44.
+
+    The provider name follows the instrumentation's best knowledge of the endpoint
+    (registry.yaml#L84-L87), and an AzureOpenAI client knows it calls Azure.
+    """
+    from openai.lib.azure import BaseAzureClient
+
+    return "azure.ai.openai" if isinstance(resource._client, BaseAzureClient) else provider
+
+
 def _wrap(tracer: Tracer, provider: str, faults: set[str], on_result, on_event, create, is_async):
-    def begin(kwargs: dict) -> _Call:
+    def begin(resource: Any, kwargs: dict) -> _Call:
+        name = _provider(resource, provider) if provider == "openai" else provider
         prompt = kwargs.get("messages", kwargs.get("input"))
-        return _Call(tracer, provider, kwargs.get("model", ""), faults, prompt)
+        return _Call(tracer, name, kwargs.get("model", ""), faults, prompt)
 
     # Decided by class, not by inspection: the SDKs wrap async methods in sync decorators.
     if is_async:
 
         @functools.wraps(create)
         async def acall(self, *args, **kwargs):
-            call = begin(kwargs)
+            call = begin(self, kwargs)
             try:
                 result = await create(self, *args, **kwargs)
             except Exception as exc:
@@ -306,7 +458,7 @@ def _wrap(tracer: Tracer, provider: str, faults: set[str], on_result, on_event, 
 
     @functools.wraps(create)
     def scall(self, *args, **kwargs):
-        call = begin(kwargs)
+        call = begin(self, kwargs)
         try:
             result = create(self, *args, **kwargs)
         except Exception as exc:
@@ -327,6 +479,7 @@ def _finish(call: _Call, result: Any, kwargs: dict, on_result, on_event) -> Any:
 
 def instrument(tracer_provider, faults: set[str] = frozenset()) -> None:
     tracer = tracer_provider.get_tracer("spantruth.reference")
+    _instrument_gemini(tracer, set(faults))
     import anthropic.resources.messages as am
     import openai.resources.chat.completions as oc
     import openai.resources.responses as orr

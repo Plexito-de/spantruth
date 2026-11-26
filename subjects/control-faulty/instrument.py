@@ -9,6 +9,7 @@ FAULTS = {
     "content-ignores-off",
     "errors-as-success",
     "estimate-tokens",
+    "gemini-candidates-output",
     "retry-as-error",
 }
 

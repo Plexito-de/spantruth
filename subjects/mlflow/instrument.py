@@ -1,4 +1,4 @@
-"""The documented setup: mlflow.openai.autolog() and mlflow.anthropic.autolog(), exporting OTLP.
+"""The documented setup: mlflow.<provider>.autolog() for each provider, exporting OTLP.
 
 MLflow exports OTLP/HTTP itself when OTEL_EXPORTER_OTLP_ENDPOINT is set, which the harness does.
 `MLFLOW_USE_DEFAULT_TRACER_PROVIDER=false` joins the app's OpenTelemetry trace, and
@@ -20,3 +20,4 @@ def instrument(tracer_provider, otlp_endpoint):
     mlflow.tracing.enable()
     mlflow.openai.autolog()
     mlflow.anthropic.autolog()
+    mlflow.gemini.autolog()  # the google-genai SDK

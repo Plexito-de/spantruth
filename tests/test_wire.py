@@ -1,8 +1,10 @@
 """Fixtures are valid wire data, and the truth derived from them is what the spec says."""
 
 import json
+import re
 
 import anthropic.types
+import google.genai.types
 import openai.resources.chat.completions as oc
 import openai.types.chat
 import openai.types.responses
@@ -11,6 +13,7 @@ import pytest
 
 from spantruth import calls, impact, recorded, scenarios
 from spantruth import wire_anthropic as an
+from spantruth import wire_azure as az
 from spantruth import wire_openai as oa
 from spantruth.mockserver import MockServer
 from spantruth.model import Event, Response
@@ -53,10 +56,22 @@ def test_fixtures_parse_with_sdk_types(sc):
             for e in r.events or ():
                 parsed.append(RESPONSES_EVENT.validate_python(json.loads(e.data)))
                 assert parsed[-1].type == e.event
-        elif sc.provider == "openai":
+        elif sc.provider == "gemini":
+            # extra="forbid" on the SDK's types: an undeclared field raises here. The API sends
+            # `usageMetadata.serviceTier`, which the SDK's usage type lacks and its parser drops.
+            for data in [r.body] if r.body is not None else [e.data for e in r.events or ()]:
+                usage = {k: v for k, v in data["usageMetadata"].items() if k != "serviceTier"}
+                typed = data | {"usageMetadata": usage}
+                parsed.append(google.genai.types.GenerateContentResponse.model_validate(typed))
+        elif sc.provider in ("openai", "azure"):
             if r.body is not None:
                 parsed.append(openai.types.chat.ChatCompletion.model_validate(r.body, strict=False))
             for e in r.events or ():
+                if sc.provider == "azure" and isinstance(e.data, dict) and e.data["id"] == "":
+                    # Azure's prompt filter chunk: `object` is empty, which the chunk type
+                    # rejects. The SDK does not validate, so the app receives it as sent.
+                    assert e.data["choices"] == [] and e.data["prompt_filter_results"]
+                    continue
                 if isinstance(e.data, dict):
                     parsed.append(openai.types.chat.ChatCompletionChunk.model_validate(e.data))
                 else:
@@ -72,7 +87,11 @@ def test_fixtures_parse_with_sdk_types(sc):
                 parsed.append(ANTHROPIC_EVENT.validate_python(e.data))
                 assert parsed[-1].type == e.event
     if sc.id not in RECORDED:
-        assert _undeclared(parsed) == [], f"{sc.id} sends fields the SDK types do not declare"
+        allowed = az.AZURE_ONLY if sc.provider == "azure" else frozenset()
+        undeclared = [
+            p for p in _undeclared(parsed) if re.sub(r"(^|\.)\d+\.", r"\1", p) not in allowed
+        ]
+        assert undeclared == [], f"{sc.id} sends fields the SDK types do not declare"
 
 
 def test_the_fixture_check_sees_a_field_the_sdk_type_does_not_declare():
@@ -142,8 +161,10 @@ def test_fixture_truth_values_are_distinct(sc):
         # The two parts of a cache write. A library can report one of them alone.
         values += [long_write, t.cache_write_tokens - long_write]
     assert len(values) == len(set(values)), f"{sc.id} repeats a token value: {values}"
-    if t.response_model is not None and sc.id not in RECORDED:
+    if t.response_model is not None and sc.id not in RECORDED and sc.provider != "gemini":
         # A real server can echo the requested name, so only built fixtures keep the two apart.
+        # Gemini is exempt: its API returns `modelVersion` equal to the requested model id, and an
+        # invented version would fail libraries that copy the request model, as the API allows.
         assert t.response_model != t.request_model
 
 
@@ -344,7 +365,12 @@ def _billed(response):
 
 @pytest.mark.parametrize("sc", ALL, ids=lambda s: s.id)
 def test_no_fixture_sends_a_field_the_cost_figure_does_not_price(sc):
-    holders = [h for r in sc.responses for h in _billed(r) if isinstance(h.get("usage"), dict)]
+    holders = [
+        h
+        for r in sc.responses
+        for h in _billed(r)
+        if isinstance(impact.usage_of(sc.provider, h), dict)
+    ]
     if scenarios.truth(sc).input_tokens is not None:
         assert holders, f"{sc.id} has token counts, but this test found no usage to read"
     if sc.id in RECORDED and sc.request_model not in impact.load_prices():
@@ -533,3 +559,92 @@ def test_the_mock_refuses_a_request_that_no_planned_call_fits():
         client = openai.OpenAI(base_url=mock.base_url(sc), api_key="t", max_retries=0)
         with pytest.raises(openai.NotFoundError):
             client.chat.completions.create(model="gpt-5-nano", messages=calls.PROMPT)
+
+
+@pytest.mark.parametrize(
+    ("sid", "tokens"),
+    [
+        ("gemini/thinking", (1609, 241 + 1877, 1877)),
+        ("gemini/stream-thinking", (2083, 317 + 1999, 1999)),
+    ],
+)
+def test_gemini_output_tokens_add_the_thoughts_to_the_candidates(sid, tokens):
+    # candidatesTokenCount leaves out thoughtsTokenCount; totalTokenCount is their sum with input.
+    t = scenarios.truth(scenarios.get(sid))
+    assert (t.input_tokens, t.output_tokens, t.reasoning_tokens) == tokens
+    usage = scenarios.get(sid).response
+    last = usage.body if usage.body is not None else usage.events[-1].data
+    meta = last["usageMetadata"]
+    assert meta["totalTokenCount"] == t.input_tokens + t.output_tokens
+
+
+@pytest.mark.parametrize(
+    ("sid", "tokens"),
+    [("gemini/cache-hit", (5417, 4099)), ("gemini/stream-cache-hit", (7229, 6151))],
+)
+def test_gemini_prompt_tokens_already_include_the_cached_tokens(sid, tokens):
+    t = scenarios.truth(scenarios.get(sid))
+    assert (t.input_tokens, t.cache_read_tokens) == tokens
+
+
+def test_gemini_early_exit_grades_the_prompt_but_not_a_running_output_count():
+    sc = scenarios.get("gemini/stream-early-exit")
+    seen = sc.response.events[1].data["usageMetadata"]
+    assert (seen["promptTokenCount"], seen["candidatesTokenCount"]) == (1949, 239)
+    t = scenarios.truth(sc)
+    assert (t.input_tokens, t.output_tokens, t.finish_reasons) == (1949, None, None)
+    assert t.unread_counts == (359,)
+
+
+def test_a_gemini_stream_carries_running_usage_on_every_chunk():
+    # As recorded from the live API: the prompt on every chunk, candidates counted so far.
+    chunks = scenarios.get("gemini/stream-thinking").response.events
+    usage = [e.data["usageMetadata"] for e in chunks]
+    assert [u["promptTokenCount"] for u in usage] == [2083] * 3
+    assert [u["candidatesTokenCount"] for u in usage] == [105, 211, 317]
+    assert [u["thoughtsTokenCount"] for u in usage] == [1999] * 3
+    assert all(
+        u["totalTokenCount"] == u["promptTokenCount"] + u["candidatesTokenCount"] + 1999
+        for u in usage
+    )
+
+
+def test_a_gemini_response_names_the_requested_model():
+    t = scenarios.truth(scenarios.get("gemini/basic"))
+    assert t.response_model == t.request_model == "gemini-3.5-flash-lite"
+
+
+@pytest.mark.parametrize("sid", ["gemini/stream-dropped", "gemini/async-stream-dropped"])
+def test_gemini_dropped_stream_is_an_error(sid):
+    assert scenarios.truth(scenarios.get(sid)).error == "connection dropped"
+
+
+def test_gemini_has_no_with_block_variant():
+    # The google-genai stream is a plain generator, not a context manager.
+    assert "gemini/stream-early-exit-with" not in scenarios.SCENARIOS
+    assert scenarios.get("gemini/async-stream-early-exit").asynchronous
+
+
+@pytest.mark.parametrize("sid", ["azure/basic", "azure/async-basic"])
+def test_an_azure_request_names_the_deployment_and_the_response_the_model(sid):
+    t = scenarios.truth(scenarios.get(sid))
+    assert t.request_model == "wt-chat-deployment"
+    assert (t.response_model, t.response_id) == ("gpt-5-mini-2026-08-07", "chatcmpl-wt-azbasic")
+    assert (t.input_tokens, t.output_tokens, t.finish_reasons) == (1213, 277, ("stop",))
+
+
+def test_an_azure_stream_takes_its_id_and_model_after_the_prompt_filter_chunk():
+    sc = scenarios.get("azure/stream")
+    first = sc.response.events[0].data
+    assert (first["id"], first["model"], first["choices"]) == ("", "", [])
+    t = scenarios.truth(sc)
+    assert (t.response_model, t.response_id) == ("gpt-5-mini-2026-08-07", "chatcmpl-wt-azstream")
+    assert (t.input_tokens, t.output_tokens) == (2341, 433)
+
+
+def test_only_the_azure_filter_fields_are_accepted_beyond_the_sdk_types():
+    parsed = openai.types.chat.ChatCompletion.model_validate(
+        scenarios.get("azure/basic").response.body
+    )
+    found = {re.sub(r"(^|\.)\d+\.", r"\1", p) for p in _undeclared(parsed)}
+    assert found == az.AZURE_ONLY

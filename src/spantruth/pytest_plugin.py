@@ -22,13 +22,19 @@ if TYPE_CHECKING:
 
 
 def scenario_ids(provider: str | None = None, api: str | None = None) -> list[str]:
-    """The scenario IDs, for `pytest.mark.parametrize`. Filter by provider and by OpenAI API."""
+    """The scenario IDs, for `pytest.mark.parametrize`. Filter by provider and by OpenAI API.
+
+    Content scenarios and scenarios with several calls are left out: the plugin refuses them,
+    because they need a subject's switch or the driver's call windows. `spantruth run` grades them.
+    """
     from . import scenarios
 
     return [
         sid
         for sid, sc in scenarios.SCENARIOS.items()
-        if provider in (None, sc.provider) and api in (None, sc.api)
+        if provider in (None, sc.provider)
+        and api in (None, sc.api)
+        and not (sc.content or sc.calls)
     ]
 
 
