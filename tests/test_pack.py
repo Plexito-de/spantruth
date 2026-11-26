@@ -1,5 +1,6 @@
 """The scenario pack is complete (each scenario rebuilds from it) and stable (the same bytes)."""
 
+import dataclasses
 import http.client
 import json
 
@@ -59,7 +60,8 @@ def scenario_from(entry: dict) -> Scenario:
 
 
 def truth_from(data: dict) -> Truth:
-    lists = {"finish_reasons", "unread_counts"}
+    """JSON has lists only, so every field that `Truth` declares as a tuple becomes one again."""
+    lists = {f.name for f in dataclasses.fields(Truth) if str(f.type).startswith("tuple")}
     return Truth(**{k: tuple(v) if k in lists and v is not None else v for k, v in data.items()})
 
 
