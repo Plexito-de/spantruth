@@ -123,9 +123,10 @@ RULES: dict[str, tuple[str, str]] = {
         "match the token count returned by the provider, cached tokens included. Read from "
         "`gen_ai.client.inference.operation.input_tokens`, `gen_ai.client.inference.usage."
         "input_tokens`, or the deprecated `gen_ai.client.token.usage` with `gen_ai.token.type` "
-        "`input`. One call is one recording. Graded only for a library that documents token "
-        "metrics (`[metrics]` in subject.toml); a documented library that emits none is missing.",
-        f"{GENAI}/model/gen-ai/token-metrics.yaml#L10-L26",
+        "`input`. The histograms count tokens per inference operation, so one call is one "
+        "recording. Graded only for a library that documents token metrics (`[metrics]` in "
+        "subject.toml); a documented library that emits none is missing.",
+        f"{GENAI}/model/gen-ai/token-metrics.yaml#L100-L121",
     ),
     "metric.output_tokens": (
         "The output token metric counts the output tokens of the call, reasoning tokens "

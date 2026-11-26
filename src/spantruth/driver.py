@@ -170,8 +170,9 @@ def instrumented(scenario_id: str, mock: str, otlp: str, subject: str, out: str)
     logs = _content_logs(otlp) if scenarios.get(scenario_id).content else None
     meters = _meters(otlp)
     try:
-        # The subject owns the global provider: some libraries set it themselves, and the
-        # OpenTelemetry API refuses a second set without an error.
+        # The subject owns the global tracer provider: some libraries set it themselves, and the
+        # OpenTelemetry API refuses a second set without an error. The driver owns the global meter
+        # provider. A library that makes its own exports it at exit, to the same receiver.
         extra = _call_instrument(
             _load_subject(subject),
             tracer_provider=provider,

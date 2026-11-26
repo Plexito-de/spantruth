@@ -254,6 +254,11 @@ def _latest(points: list[MetricPoint]) -> list[MetricPoint]:
     return list(streams.values())
 
 
+def _whole(value: float) -> int | float:
+    """A histogram's OTLP sum is a double, so 1187 arrives as 1187.0. A whole count is an int."""
+    return int(value) if isinstance(value, float) and value.is_integer() else value
+
+
 def _metric(fact: str, t: Truth, points: list[MetricPoint], documented: bool) -> Check:
     """The token count one call recorded on the usage metrics, against the wire.
 
@@ -271,7 +276,7 @@ def _metric(fact: str, t: Truth, points: list[MetricPoint], documented: bool) ->
             and (token_type is None or p.attributes.get("gen_ai.token.type") == token_type)
         ]
         if mine:
-            found.append((None, name, sum(p.value for p in mine)))
+            found.append((None, name, _whole(sum(p.value for p in mine))))
             if all(p.count is not None for p in mine):
                 recordings[name] = sum(p.count for p in mine)
     if not found:

@@ -53,6 +53,8 @@ def honest(sid):
 
 def point(name, value, count=1, temporality=2, time_ns=5, **attrs):
     kind = "histogram" if count is not None else "sum"
+    # The exporter sends a histogram's sum as a double.
+    value = float(value) if kind == "histogram" else value
     return MetricPoint(name, kind, "{token}", attrs, value, count, temporality, 1, time_ns, "lib")
 
 
