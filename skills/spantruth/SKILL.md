@@ -39,6 +39,9 @@ application.
 `title`, its `packages` and the `issue` where the user can ask for it. Say that spantruth did not check
 them, and give the issue link. It is there for every exit code.
 
+The classes come largest cost error first. When a class has an `upgrade`, the library has released the
+fix: suggest that command first. It uses the project's own tool, such as `uv add`.
+
 When `remedy` has a value, the project can act today. When an upstream issue has the status
 `fixed-upstream`, the library has fixed it: suggest the upgrade that its `note` names. Otherwise check for
 a newer release of the library in the `upstream` link. Ask before you change a version.
