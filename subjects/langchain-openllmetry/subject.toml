@@ -1,0 +1,67 @@
+title = "LangChain with OpenLLMetry"
+homepage = "https://github.com/traceloop/openllmetry/tree/main/packages/opentelemetry-instrumentation-langchain"
+providers = ["openai", "anthropic"]
+packages = [
+  "langchain-core==1.8.5",
+  "langchain-openai==1.8.5",
+  "langchain-anthropic==1.7.13",
+  "opentelemetry-instrumentation-langchain==0.63.1",
+]
+track = [
+  "langchain-core",
+  "langchain-openai",
+  "langchain-anthropic",
+  "opentelemetry-instrumentation-langchain",
+]
+detect = ["langchain-core"]
+detect_with = ["opentelemetry-instrumentation-langchain", "traceloop-sdk"]
+notes = "A framework: the app calls a LangChain chat model (ChatOpenAI or ChatAnthropic), and LangChain calls the provider SDK. The LangChain v1 docs show init_chat_model first, which builds this same ChatOpenAI or ChatAnthropic object (langchain/chat_models/base.py in langchain 1.5.2). The documented setup, OpenLLMetry's LangchainInstrumentor().instrument(tracer_provider=...). LangChain's spans are graded, so the provider SDKs are not instrumented. Not run: the OpenAI SDK's with_streaming_response helper, which LangChain does not call, and the two stream-early-exit-with scenarios, because a LangChain stream is a generator with no with block. LangSmith tracing is off."
+scenarios = [
+  "openai/basic",
+  "openai/stream",
+  "openai/stream-early-exit",
+  "openai/cache-hit",
+  "openai/stream-cache-hit",
+  "openai/cache-write",
+  "openai/stream-cache-write",
+  "openai/stream-no-usage",
+  "openai/tool-call",
+  "openai/stream-tool-call",
+  "openai/rate-limited",
+  "openai/retry-429",
+  "openai/stream-dropped",
+  "openai/reasoning",
+  "openai/stream-reasoning",
+  "openai/async-basic",
+  "openai/async-stream",
+  "openai/async-stream-early-exit",
+  "openai/async-stream-dropped",
+  "openai/responses-stream-missing-finish-abort",
+  "anthropic/basic",
+  "anthropic/stream",
+  "anthropic/stream-early-exit",
+  "anthropic/cache-hit",
+  "anthropic/stream-cache-hit",
+  "anthropic/stream-cache-cumulative",
+  "anthropic/cache-1h",
+  "anthropic/stream-cache-1h",
+  "anthropic/stream-error-event",
+  "anthropic/tool-call",
+  "anthropic/stream-tool-call",
+  "anthropic/rate-limited",
+  "anthropic/retry-429",
+  "anthropic/stream-dropped",
+  "anthropic/thinking",
+  "anthropic/stream-thinking",
+  "anthropic/async-basic",
+  "anthropic/async-stream",
+  "anthropic/async-stream-early-exit",
+  "anthropic/async-stream-error-event",
+  "anthropic/async-stream-dropped",
+]
+
+[env]
+# LangChain sends traces to LangSmith when one of these is true. The harness passes neither, and
+# these keep it so.
+LANGSMITH_TRACING = "false"
+LANGCHAIN_TRACING_V2 = "false"
