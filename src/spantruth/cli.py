@@ -8,7 +8,18 @@ import sys
 import traceback
 from pathlib import Path
 
-from . import __version__, doctor, expectations, paths, report, runner, scenarios, subjects, watch
+from . import (
+    __version__,
+    doctor,
+    expectations,
+    paths,
+    report,
+    runner,
+    scaffold,
+    scenarios,
+    subjects,
+    watch,
+)
 
 # GitHub caps a step summary at 1 MiB. Stay below it, and say where the rest is.
 SUMMARY_LIMIT = 1_000_000
@@ -273,7 +284,38 @@ def parser() -> argparse.ArgumentParser:
     rep.add_argument("--bugs", help="write the page of bug classes to this path")
     rep.add_argument("--markdown", action="store_true", help="print the Markdown matrix")
     rep.set_defaults(func=_report)
+    new = sub.add_parser("new", help="start a new subject from a template")
+    kinds = new.add_subparsers(dest="kind", required=True)
+    new_subject = kinds.add_parser(
+        "subject",
+        help="write subject.toml and instrument.py for a new subject",
+        description="Write <dir>/<name>/subject.toml and instrument.py. The template loads as it "
+        "is. Its instrument() attaches nothing, so every cell is missing a span until you add the "
+        "library's setup.",
+    )
+    new_subject.add_argument("name", help="the subject name: lowercase letters, digits, dashes")
+    new_subject.add_argument(
+        "--dir",
+        default=str(subjects.SUBJECTS),
+        help="the directory to create the subject in (default: the built-in subjects, %(default)s)",
+    )
+    new_subject.set_defaults(func=_new_subject)
     return parser
+
+
+def _new_subject(args: argparse.Namespace) -> int:
+    try:
+        directory = scaffold.new_subject(args.name, Path(args.dir))
+    except scaffold.ScaffoldError as exc:
+        return _usage(exc)
+    print(f"wrote {directory / 'subject.toml'}")
+    print(f"wrote {directory / 'instrument.py'}")
+    builtin = directory.parent.resolve() == subjects.SUBJECTS.resolve()
+    ref = directory.name if builtin else str(directory)
+    if not builtin and not subjects.is_path(ref):
+        ref = f"./{ref}"
+    print(f"next: fill in both files, then run: spantruth run --subject {ref}")
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
