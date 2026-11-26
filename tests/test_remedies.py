@@ -2,7 +2,8 @@
 
 The page promises that each recipe was tested on a named Collector version. So the test reads the
 recipes from the page itself, runs each one in otelcol-contrib, and checks what the file exporter
-writes. The input spans are the ones spantruth recorded, never spans made up for the test.
+writes. The input spans come from what spantruth recorded: span records as a library exported
+them, or a span built from the attribute values that a results document records for each check.
 
 The Collector tests are marked `collector` and skipped when the binary is absent. The `remedies`
 job in CI downloads it with docs/remedies/fetch-otelcol.sh, which checks its sha256, and sets
@@ -75,12 +76,21 @@ def recorded(*projects: str) -> list[dict]:
 
 
 def from_results(scenario: str, *subjects: str) -> list[dict]:
-    """One span per subject, with the attribute that each check of the cell read and its value."""
+    """One span per subject, built from what the checks of one cell of a results document read.
+
+    Each check with an attribute name (`where`) gives that attribute its value (`got`). The
+    `error.status` check gives the status, and the `error.type` check the value of `error.type`.
+    """
     doc = json.loads(PINNED.read_text())
     out = []
     for subject in subjects:
-        checks = doc["subjects"][subject]["cells"][scenario]["checks"]
-        attributes = {c["where"]: c["got"] for c in checks if c["where"] and c["got"] is not None}
+        checks = {c["id"]: c for c in doc["subjects"][subject]["cells"][scenario]["checks"]}
+        attributes = {
+            c["where"]: c["got"] for c in checks.values() if c["where"] and c["got"] is not None
+        }
+        if checks.get("error.type", {}).get("got"):
+            attributes["error.type"] = checks["error.type"]["got"]
+        status = (checks.get("error.status", {}).get("got") or ["UNSET"])[0]
         out.append(
             {
                 "project": subject,
@@ -89,11 +99,20 @@ def from_results(scenario: str, *subjects: str) -> list[dict]:
                 "trace_id": f"{len(out) + 1:032x}",
                 "span_id": f"{len(out) + 1:016x}",
                 "parent": None,
-                "status": "UNSET",
+                "status": status,
                 "attributes": attributes,
             }
         )
     return out
+
+
+def derived(span: dict, project: str, attributes: dict) -> dict:
+    """A recorded span with some attributes set, to test what a recipe does when they are set.
+
+    The test uses it only for that: it is a recorded span plus the named values, and the
+    project name says that it was derived.
+    """
+    return {**span, "project": project, "attributes": {**span["attributes"], **attributes}}
 
 
 def any_value(v) -> common_pb2.AnyValue:
@@ -162,10 +181,14 @@ def _hex_ids_to_base64(node):
     return node
 
 
-def run_collector(binary: Path, recipe: str, spans: list[dict], tmp: Path) -> list[SpanRecord]:
-    """Send the spans through a Collector that runs only this recipe, and read what it wrote."""
+def run_collector(
+    binary: Path, pipeline: list[str], spans: list[dict], tmp: Path
+) -> list[SpanRecord]:
+    """Send the spans through a Collector that runs these recipes in order, and read the output."""
     port, out = free_port(), tmp / "out.jsonl"
-    processors = yaml.safe_load(recipe)["processors"]
+    processors = {}
+    for recipe in pipeline:
+        processors.update(yaml.safe_load(recipe)["processors"])
     config = {
         "receivers": {"otlp": {"protocols": {"http": {"endpoint": f"127.0.0.1:{port}"}}}},
         "processors": processors,
@@ -260,12 +283,28 @@ def check_st02_strip(out: list[SpanRecord]) -> None:
     assert input_total(by_service(out, "x2-base-C-sdk")) == 0
 
 
+def check_st07(out: list[SpanRecord]) -> None:
+    (library,) = by_service(out, "openllmetry")  # ERROR, and no error.type
+    assert library.attributes["error.type"] == "_OTHER"
+    (honest,) = by_service(out, "control-honest")  # ERROR, with its own error.type
+    assert honest.attributes["error.type"] == "RemoteProtocolError"
+    (faulty,) = by_service(out, "control-faulty")  # UNSET: a false OK cannot be flagged
+    assert "error.type" not in faulty.attributes
+
+
+def genai(span: SpanRecord) -> dict:
+    return {k: v for k, v in span.attributes.items() if k.startswith("gen_ai.usage.")}
+
+
 def check_st03(out: list[SpanRecord]) -> None:
     flagged = {s.resource["service.name"] for s in out if "spantruth.bug_class" in s.attributes}
     assert flagged == {"control-faulty"}
     (faulty,) = by_service(out, "control-faulty")
     assert faulty.attributes["spantruth.bug_class"] == "ST03"
     assert faulty.attributes["gen_ai.usage.input_tokens"] == 1187  # flagged, not corrected
+    # Equal counts are not the clear case: `>`, not `>=`.
+    (equal,) = by_service(out, "derived-faulty-input-equals-cache-read")
+    assert "spantruth.bug_class" not in equal.attributes
 
 
 def check_st09(out: list[SpanRecord]) -> None:
@@ -273,11 +312,21 @@ def check_st09(out: list[SpanRecord]) -> None:
     assert sdk.attributes["gen_ai.response.finish_reasons"] == ["end_turn"]
     (library,) = by_service(out, "x2-base-B-ll")
     assert library.attributes["gen_ai.response.finish_reasons"] == ["stop"]
+    (already,) = by_service(out, "derived-C-sdk-with-finish-reasons")
+    assert already.attributes["gen_ai.response.finish_reasons"] == ["max_tokens"]
+
+
+OI_PRESET = {
+    "gen_ai.usage.input_tokens": 1,
+    "gen_ai.usage.output_tokens": 2,
+    "gen_ai.usage.cache_read.input_tokens": 3,
+    "gen_ai.usage.cache_write.input_tokens": 4,
+}
 
 
 def check_alias_openinference(out: list[SpanRecord]) -> None:
     (oi,) = by_service(out, "x2-cache-B-oi")
-    assert {k: v for k, v in oi.attributes.items() if k.startswith("gen_ai.usage.")} == {
+    assert genai(oi) == {
         "gen_ai.usage.input_tokens": 5800,
         "gen_ai.usage.output_tokens": 200,
         "gen_ai.usage.cache_read.input_tokens": 4000,
@@ -286,8 +335,25 @@ def check_alias_openinference(out: list[SpanRecord]) -> None:
     assert oi.attributes["llm.token_count.prompt"] == 5800
     (reasoning,) = by_service(out, "openinference")
     assert reasoning.attributes["gen_ai.usage.reasoning.output_tokens"] == 1792
-    (genai,) = by_service(out, "x2-cache-B-otel")
-    assert genai.attributes == recorded("x2-cache-B-otel")[0]["attributes"]
+    (genai_span,) = by_service(out, "x2-cache-B-otel")
+    assert genai_span.attributes == recorded("x2-cache-B-otel")[0]["attributes"]
+    # Each guard: a GenAI name that is already set keeps its value.
+    (preset,) = by_service(out, "derived-B-oi-with-genai-names")
+    assert genai(preset) == OI_PRESET
+    (preset_reasoning,) = by_service(out, "derived-oi-reasoning-with-genai-name")
+    assert preset_reasoning.attributes["gen_ai.usage.reasoning.output_tokens"] == 5
+
+
+def check_alias_openinference_doubles_with_sdk_tracing(out: list[SpanRecord]) -> None:
+    # The warning on the page: OpenInference 3.1.0 with SDK tracing on. Both spans now carry
+    # GenAI counts, and a backend that sums them counts the call twice.
+    assert sum(genai(s).get("gen_ai.usage.input_tokens", 0) for s in out) == 2 * 5800
+
+
+def check_alias_openinference_after_st02(out: list[SpanRecord]) -> None:
+    assert sum(genai(s).get("gen_ai.usage.input_tokens", 0) for s in out) == 5800
+    (sdk,) = [s for s in out if s.scope == SDK_SCOPE]
+    assert genai(sdk) == {}
 
 
 def check_alias_cache_write(out: list[SpanRecord]) -> None:
@@ -296,12 +362,33 @@ def check_alias_cache_write(out: list[SpanRecord]) -> None:
         assert span.attributes["gen_ai.usage.cache_creation.input_tokens"] == 800
     (ll,) = by_service(out, "x2-cache-B-ll")
     assert ll.attributes == recorded("x2-cache-B-ll")[0]["attributes"]
+    (preset,) = by_service(out, "derived-C-sdk-with-cache-creation")
+    assert preset.attributes["gen_ai.usage.cache_creation.input_tokens"] == 1
 
 
-CASES: dict[str, tuple[Callable[[], list[dict]], Callable[[list[SpanRecord]], None]]] = {
-    "st02-drop-sdk-span": (lambda: recorded(*DOUBLED, "x2-base-C-sdk"), check_st02_drop),
-    "st02-strip-sdk-usage": (lambda: recorded(*DOUBLED, "x2-base-C-sdk"), check_st02_strip),
+Case = tuple[tuple[str, ...], Callable[[], list[dict]], Callable[[list[SpanRecord]], None]]
+
+# Each case: the recipes of the pipeline in order, the spans it gets, and what must come out.
+CASES: dict[str, Case] = {
+    "st02-drop-sdk-span": (
+        ("st02-drop-sdk-span",),
+        lambda: recorded(*DOUBLED, "x2-base-C-sdk"),
+        check_st02_drop,
+    ),
+    "st02-strip-sdk-usage": (
+        ("st02-strip-sdk-usage",),
+        lambda: recorded(*DOUBLED, "x2-base-C-sdk"),
+        check_st02_strip,
+    ),
+    "st07-flag-missing-error-type": (
+        ("st07-flag-missing-error-type",),
+        lambda: from_results(
+            "anthropic/async-stream-dropped", "openllmetry", "control-honest", "control-faulty"
+        ),
+        check_st07,
+    ),
     "st03-flag-cache-above-input": (
+        ("st03-flag-cache-above-input",),
         lambda: (
             from_results(
                 "anthropic/cache-hit",
@@ -313,32 +400,77 @@ CASES: dict[str, tuple[Callable[[], list[dict]], Callable[[list[SpanRecord]], No
                 "otel-official",
             )
             + recorded("x2-cache-C-sdk", "x2-cache-B-ll", "x2-cache-B-otel", "x2-cache-B-oi")
+            + [
+                derived(
+                    from_results("anthropic/cache-hit", "control-faulty")[0],
+                    "derived-faulty-input-equals-cache-read",
+                    {"gen_ai.usage.input_tokens": 4096},
+                )
+            ]
         ),
         check_st03,
     ),
     "st09-copy-sdk-stop-reason": (
-        lambda: recorded("x2-base-C-sdk", "x2-base-B-ll"),
+        ("st09-copy-sdk-stop-reason",),
+        lambda: (
+            [
+                *recorded("x2-base-C-sdk", "x2-base-B-ll"),
+                derived(
+                    recorded("x2-base-C-sdk")[0],
+                    "derived-C-sdk-with-finish-reasons",
+                    {"gen_ai.response.finish_reasons": ["max_tokens"]},
+                ),
+            ]
+        ),
         check_st09,
     ),
     "alias-openinference-to-genai": (
+        ("alias-openinference-to-genai",),
         lambda: (
             recorded("x2-cache-B-oi", "x2-cache-B-otel")
             + from_results("openai/reasoning", "openinference")
+            + [
+                derived(recorded("x2-cache-B-oi")[0], "derived-B-oi-with-genai-names", OI_PRESET),
+                derived(
+                    from_results("openai/reasoning", "openinference")[0],
+                    "derived-oi-reasoning-with-genai-name",
+                    {"gen_ai.usage.reasoning.output_tokens": 5},
+                ),
+            ]
         ),
         check_alias_openinference,
     ),
+    "alias-openinference-doubles-with-sdk-tracing": (
+        ("alias-openinference-to-genai",),
+        lambda: recorded("x2-cache-A-oi310"),
+        check_alias_openinference_doubles_with_sdk_tracing,
+    ),
+    "alias-openinference-after-st02": (
+        ("st02-strip-sdk-usage", "alias-openinference-to-genai"),
+        lambda: recorded("x2-cache-A-oi310"),
+        check_alias_openinference_after_st02,
+    ),
     "alias-cache-write-for-phoenix-opik": (
-        lambda: recorded("x2-cache-C-sdk", "x2-cache-B-otel", "x2-cache-B-ll"),
+        ("alias-cache-write-for-phoenix-opik",),
+        lambda: (
+            [
+                *recorded("x2-cache-C-sdk", "x2-cache-B-otel", "x2-cache-B-ll"),
+                derived(
+                    recorded("x2-cache-C-sdk")[0],
+                    "derived-C-sdk-with-cache-creation",
+                    {"gen_ai.usage.cache_creation.input_tokens": 1},
+                ),
+            ]
+        ),
         check_alias_cache_write,
     ),
 }
-
 
 # --- Tests -------------------------------------------------------------------------------------
 
 
 def test_every_recipe_on_the_page_has_a_case_and_every_case_a_recipe():
-    assert set(recipes()) == set(CASES)
+    assert set(recipes()) == {name for pipeline, _, _ in CASES.values() for name in pipeline}
 
 
 def test_every_recipe_is_a_processors_block():
@@ -363,9 +495,9 @@ def test_recipe_in_the_collector(name, tmp_path):
         [str(binary), "--version"], capture_output=True, text=True, check=True
     ).stdout
     assert version.split()[-1] == pinned_version()
-    spans, check = CASES[name]
+    pipeline, spans, check = CASES[name]
     sent = spans()
-    out = run_collector(binary, recipes()[name], sent, tmp_path)
-    if name != "st02-drop-sdk-span":
+    out = run_collector(binary, [recipes()[r] for r in pipeline], sent, tmp_path)
+    if "st02-drop-sdk-span" not in pipeline:
         assert len(out) == len(sent)
     check(out)

@@ -24,10 +24,10 @@ Collector the spans that spantruth recorded, and it checks what the file exporte
 | ST04 Phantom tokens | No. The Collector does not know the true count. | Upgrade the library. |
 | ST05 Vanishing tokens | No. A count that was never recorded cannot be restored. | Upgrade the library. |
 | ST06 Hidden reasoning | No, for the same reason. | Upgrade the library. |
-| ST07 False OK | No. A span that does not say it failed looks like a good span. | Upgrade the library. |
+| ST07 False OK | Partly. It can flag an error span that has no `error.type`, but the real type is lost. A span that does not say it failed looks like a good span. | [Flag a missing error type](#st07-flag-an-error-span-without-an-error-type), then upgrade. |
 | ST08 False alarm | No. A recovered retry and a real failure look the same on the span. | Upgrade the library. |
 | ST09 Silent stop | Yes, for the Anthropic SDK's own span. | [Copy the SDK's stop reason](#st09-copy-the-anthropic-sdks-stop-reason). |
-| ST10 Observer effect | No. The bug is in the application, not in the span. | Upgrade the library. |
+| ST10 Observer effect | No. The library changes what the application receives. A Collector sees only the span, after the fact. | Upgrade the library. |
 
 Two more recipes do not fix a bug class. They copy a count to the name that your backend reads:
 [OpenInference names to GenAI names](#alias-openinference-token-counts-to-genai-names) and
@@ -47,8 +47,9 @@ service:
       exporters: [otlphttp]
 ```
 
-`error_mode: ignore` makes a statement skip a span that it cannot evaluate, such as a span without
-the attribute. The span itself passes on unchanged.
+`error_mode: ignore` makes a statement skip a span that it cannot evaluate, such as a comparison
+of a string with a number. The span itself passes on unchanged. A missing attribute is not an
+error: it reads as `nil`.
 
 ## ST02: drop the SDK's span
 
@@ -74,6 +75,7 @@ processors:
 alone then has no span at all. The test proves this: the SDK-only call disappears. The Collector
 cannot see whether another span reports the same call, because the two spans are not always in
 one trace. OpenLLMetry's two spans are in two traces when the app has no span of its own.
+A span whose parent is the dropped span loses its parent in the trace view.
 
 The better fix is at the source. Set `ANTHROPIC_OPEN_TELEMETRY=false`, or pass
 `open_telemetry=False` to the client. OpenInference handles the SDK's span itself since
@@ -118,6 +120,28 @@ It flags only the clear case. It does not flag a cache read that is smaller than
 input, or a call that only writes the cache. It reads the GenAI names only. The recipe does not
 correct the count, because the Collector cannot tell which part is missing. Upgrade the library.
 
+## ST07: flag an error span without an error type
+
+The GenAI conventions require `error.type` when a call ends in an error. Some libraries set the
+span status to `ERROR` and leave `error.type` out. OpenLLMetry does so for a dropped Anthropic
+stream (`anthropic/async-stream-dropped` in the
+[results of 2026-11-03](../../results/2026-11-03-pinned.json)). A panel that groups errors by
+`error.type` then does not show the call.
+
+This recipe sets `error.type` to `_OTHER`, the value the conventions give when no other value
+fits. The real type is lost, so the recipe flags the call and does not restore its cause:
+
+```yaml
+# recipe: st07-flag-missing-error-type
+processors:
+  transform/st07_flag_missing_error_type:
+    error_mode: ignore
+    trace_statements:
+      - set(span.attributes["error.type"], "_OTHER") where span.status.code == STATUS_CODE_ERROR and span.attributes["error.type"] == nil
+```
+
+It never replaces an `error.type` that a span already has. It cannot help a span whose status
+does not say that the call failed: that span looks like a good one.
 ## ST09: copy the Anthropic SDK's stop reason
 
 The Anthropic SDK records the stop reason as `anthropic.message.stop_reason`, and not as
@@ -155,8 +179,20 @@ processors:
       - set(span.attributes["gen_ai.usage.reasoning.output_tokens"], span.attributes["llm.token_count.completion_details.reasoning"]) where span.attributes["llm.token_count.completion_details.reasoning"] != nil and span.attributes["gen_ai.usage.reasoning.output_tokens"] == nil
 ```
 
-Both conventions count cached tokens inside the input count, so no arithmetic is needed. Do not
-use this recipe for a backend that reads both names and sums them.
+Both conventions count cached tokens inside the input count, so no arithmetic is needed. A
+GenAI name that a span already has keeps its value. Do not use this recipe for a backend that
+reads both names and sums them.
+
+**This recipe can create a double span.** With openinference-instrumentation-anthropic before
+3.1.1 and the Anthropic SDK's tracing on, the SDK's span already has GenAI counts. After this
+recipe, the OpenInference span has them too, and a backend that sums them counts the call twice.
+The test shows it for the measured 3.1.0 call: 11,600 input tokens instead of 5,800. Use the
+recipe only when one of these is true:
+
+- The SDK's tracing is off (`ANTHROPIC_OPEN_TELEMETRY=false`).
+- openinference-instrumentation-anthropic is 3.1.1 or later.
+- An [ST02 recipe](#st02-keep-the-sdks-span-without-usage) runs before it in the same pipeline.
+  The test runs `transform/st02_strip_sdk_usage` first and gets 5,800.
 
 ## Alias: the cache write count for Phoenix and Opik
 
@@ -164,7 +200,8 @@ The GenAI conventions name the cache write count `gen_ai.usage.cache_write.input
 Anthropic SDK and the OpenTelemetry GenAI instrumentation use that name. On 2026-11-06, Phoenix
 21.0.0 and Opik 2.2.143 did not read it, and priced those tokens as plain input: $0.0096 instead
 of $0.0102 for the [measured call](../../results/2026-11-06-double-spans/README.md). Both priced
-OpenLLMetry's `gen_ai.usage.cache_creation.input_tokens` correctly. This recipe adds that name:
+OpenLLMetry's `gen_ai.usage.cache_creation.input_tokens` correctly. This recipe adds that name,
+and keeps a value that a span already has:
 
 ```yaml
 # recipe: alias-cache-write-for-phoenix-opik
@@ -176,7 +213,8 @@ processors:
 ```
 
 The test checks the attribute that the Collector writes. It did not send the result to Phoenix or
-Opik again.
+Opik again. Do not use this recipe for a backend that reads both cache write names and sums
+them: it would count the cache writes twice.
 
 ## How the recipes are tested
 
@@ -188,10 +226,15 @@ from two places:
 - The span records of the
   [double-span measurement](../../results/2026-11-06-double-spans/README.md), as each library
   exported them (`spans-x2-phoenix.jsonl`).
-- The attributes that a [results document](../../results/2026-11-03-pinned.json) records for
-  each check: the attribute name (`where`) and its value (`got`).
+- The attributes and the status that a [results document](../../results/2026-11-03-pinned.json)
+  records for each check: the attribute name (`where`) and its value (`got`). The test builds a
+  span from them.
 
-To run the test, download the Collector and check its sha256:
+To prove that a recipe keeps a value that is already set, the test also uses a few derived spans:
+a recorded span with that one attribute set. Their project names start with `derived-`.
+
+To run the test, download the Collector and check its sha256. The script downloads the linux
+amd64 build only:
 
 ```sh
 docs/remedies/fetch-otelcol.sh
