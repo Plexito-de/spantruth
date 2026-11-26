@@ -108,4 +108,13 @@ appears on [the changes page](https://plexito-de.github.io/spantruth/changes.htm
 ## Let a coding agent check it
 
 The [spantruth skill](../skills/spantruth/SKILL.md) tells a coding agent when to run `doctor` and how to
-read its JSON. Copy it into your agent's skills directory.
+read its JSON. This repository is a Claude Code plugin marketplace that ships it. In Claude Code, run:
+
+```text
+/plugin marketplace add Plexito-de/spantruth
+/plugin install spantruth@spantruth
+```
+
+The skill runs the spantruth version that the plugin names, so a new spantruth release cannot change
+what it runs until you update the plugin. For another agent, copy the skill directory into the agent's
+skills directory.
