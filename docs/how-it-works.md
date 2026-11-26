@@ -26,7 +26,8 @@ spantruth run
   `broken`.
 - **Spans that never end are found.** An in-process probe records every span start and end. A span
   that never ends is never exported, so the receiver alone could not tell.
-- **Offline and deterministic.** No API keys, and no network after install.
+- **Offline and deterministic.** No API keys. The first run downloads each library once, and after
+  that it needs no network.
 
 ## The controls
 

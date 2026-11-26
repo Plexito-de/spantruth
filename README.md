@@ -63,22 +63,23 @@ price. The run behind the table is committed as
 ## Where to go next
 
 - **You use an instrumentation library in an application.**
-  [For application engineers](docs/for-app-engineers.md): run `doctor`, what each bug class costs, and
+  [For application engineers](https://github.com/Plexito-de/spantruth/blob/main/docs/for-app-engineers.md): run `doctor`, what each bug class costs, and
   how to fix it.
-- **You maintain an instrumentation library.** [For maintainers](docs/for-maintainers.md): test a
+- **You maintain an instrumentation library.** [For maintainers](https://github.com/Plexito-de/spantruth/blob/main/docs/for-maintainers.md): test a
   checkout or a pull request with `--with`, gate CI with `--expect` and the GitHub Action, get a comment
   on each pull request, and show a badge.
 - **You wrote your own wrapper around the OpenAI or Anthropic SDK.**
-  [Test your wrapper in five minutes](docs/test-your-wrapper.md).
+  [Test your wrapper in five minutes](https://github.com/Plexito-de/spantruth/blob/main/docs/test-your-wrapper.md).
 
-[How it works](docs/how-it-works.md) explains the fake provider, the checks, the two controls that
-prove the suite, and the verdicts. It needs no API key, and no network after install.
+[How it works](https://github.com/Plexito-de/spantruth/blob/main/docs/how-it-works.md) explains the fake provider, the checks, the two controls that
+prove the suite, and the verdicts. It needs no API key. The first run downloads each library once,
+and after that it needs no network.
 
 ## Coverage
 
 OpenAI Chat Completions and Anthropic Messages, sync and async, and a first OpenAI Responses API
 scenario: 45 scenarios in all, such as streams the app leaves early, dropped connections, 429s and
-prompt-cache hits. [How it works](docs/how-it-works.md#coverage) lists them.
+prompt-cache hits. [How it works](https://github.com/Plexito-de/spantruth/blob/main/docs/how-it-works.md#coverage) lists them.
 
 The subjects are the [OpenTelemetry GenAI instrumentation](https://github.com/open-telemetry/opentelemetry-python-genai),
 [OpenLLMetry](https://github.com/traceloop/openllmetry),

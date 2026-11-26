@@ -42,7 +42,8 @@ OpenLLMetry  (anthropic 2.4.0, openai 3.42.1, opentelemetry-instrumentation-anth
 `doctor` reads `uv.lock`, `poetry.lock`, `pdm.lock`, `Pipfile.lock`, `requirements*.txt`, `.venv` or
 `pyproject.toml`, in that order. It runs the libraries it recognizes at your versions, and it leaves the
 Anthropic SDK's own tracing on, as your application does. It never runs your code, so it grades your
-versions, not your application. It needs no network after install.
+versions, not your application. The first run downloads the libraries at your versions. After that it
+needs no network.
 
 To check a project in another directory, give its path: `uvx spantruth doctor path/to/project`.
 
