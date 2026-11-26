@@ -133,6 +133,57 @@ def test_receiver_keeps_log_records_and_span_event_attributes():
     assert chat.event_attributes == ({"gen_ai.completion": "Paris"},)
 
 
+def test_receiver_keeps_metric_points_from_the_real_exporter():
+    from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
+    from opentelemetry.sdk.metrics import MeterProvider
+    from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+
+    with Receiver() as rx:
+        reader = PeriodicExportingMetricReader(
+            OTLPMetricExporter(f"{rx.url}/v1/metrics"), export_interval_millis=3_600_000
+        )
+        meter = MeterProvider(metric_readers=[reader]).get_meter("lib")
+        meter.create_histogram("gen_ai.client.token.usage").record(
+            1187, {"gen_ai.token.type": "input"}
+        )
+        meter.create_counter("gen_ai.client.inference.usage.output_tokens").add(263)
+        reader.force_flush()
+        points = {p.name: p for p in rx.metrics}
+    hist = points["gen_ai.client.token.usage"]
+    assert (hist.kind, hist.value, hist.count, hist.temporality) == ("histogram", 1187, 1, 2)
+    assert hist.attributes == {"gen_ai.token.type": "input"} and hist.scope == "lib"
+    counter = points["gen_ai.client.inference.usage.output_tokens"]
+    assert (counter.kind, counter.value, counter.count) == ("sum", 263, None)
+    assert rx.counts["metrics"] == 2
+
+
+def test_the_driver_passes_a_meter_provider_only_to_an_instrument_that_takes_one():
+    from types import SimpleNamespace
+
+    from spantruth.driver import _call_instrument
+
+    seen = {}
+
+    def old(tracer_provider, otlp_endpoint):
+        seen["old"] = (tracer_provider, otlp_endpoint)
+
+    def new(tracer_provider, otlp_endpoint, meter_provider=None):
+        seen["new"] = meter_provider
+
+    def anything(**kwargs):
+        seen["any"] = sorted(kwargs)
+
+    for fn in (old, new, anything):
+        _call_instrument(
+            SimpleNamespace(instrument=fn), tracer_provider=1, otlp_endpoint=2, meter_provider=3
+        )
+    assert seen == {
+        "old": (1, 2),
+        "new": 3,
+        "any": ["meter_provider", "otlp_endpoint", "tracer_provider"],
+    }
+
+
 def test_receiver_drops_other_paths():
     import urllib.request
 

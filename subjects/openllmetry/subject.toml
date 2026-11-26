@@ -18,3 +18,7 @@ docs = "https://github.com/traceloop/openllmetry/blob/be498301c40c55155e6d0678b6
 default = "on"
 off = { TRACELOOP_TRACE_CONTENT = "false" }
 on = { TRACELOOP_TRACE_CONTENT = "true" }
+
+# Documented only in the changelog: token usage metrics for OpenAI V1 (#369).
+[metrics]
+docs = "https://github.com/traceloop/openllmetry/blob/be498301c40c55155e6d0678b63943093cda14d1/CHANGELOG.md#L1692"

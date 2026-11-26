@@ -11,3 +11,7 @@ docs = "https://github.com/openlit/openlit/blob/fcebb5543846576a061d5aa75dc097e3
 default = "on"
 off = {}
 on = {}
+
+# The OpenAI integration page lists gen_ai.client.token.usage.
+[metrics]
+docs = "https://github.com/openlit/openlit/blob/fcebb5543846576a061d5aa75dc097e3c8c69646/docs/latest/sdk/integrations/openai.mdx#L218"

@@ -101,6 +101,8 @@ def run_subject(
     }
     if subject.content:
         out["content"] = {k: subject.content[k] for k in ("switch", "docs", "default")}
+    if subject.metrics_docs:
+        out["metrics"] = {"docs": subject.metrics_docs}
     if not ids:
         return out
     try:
@@ -162,10 +164,14 @@ def _cell(subject, sid, py, mock, tmp: Path, shim: Path, base: dict | None) -> d
             stderr = proc.stderr[-2000:]
         except subprocess.TimeoutExpired:
             stderr = "the cell timed out"
-        spans, logs = list(rx.spans), list(rx.logs)
+        spans, logs, metrics = list(rx.spans), list(rx.logs), list(rx.metrics)
     obs = _read(obs_file)
     switch = subject.content.get("switch") if content is not None else None
-    result = checks.grade(sc, scenarios.truth(sc), base, obs, spans, logs, switch)
+    t = scenarios.truth(sc)
+    documented = subject.metrics_docs or None
+    result = checks.grade(
+        sc, t, base, obs, spans, logs, switch, metrics=metrics, metrics_docs=documented
+    )
     return {
         "verdict": checks.cell_verdict(result),
         "checks": [c.as_dict() for c in result],
@@ -174,6 +180,7 @@ def _cell(subject, sid, py, mock, tmp: Path, shim: Path, base: dict | None) -> d
             for s in spans
         ],
         **({"logs": [asdict(rec) for rec in logs]} if logs else {}),
+        **({"metrics": [asdict(p) for p in metrics]} if metrics else {}),
         "stderr": stderr if (obs is None or "instrument_error" in (obs or {})) else "",
     }
 

@@ -4,24 +4,27 @@
 "anthropic/async-stream-dropped" = { "error.status" = "wrong", "error.type" = "missing" }
 "anthropic/async-stream-early-exit" = { "span.ended" = "lost" }
 "anthropic/async-stream-error-event" = { "error.status" = "wrong", "error.type" = "missing" }
-"anthropic/cache-1h" = { "input_tokens" = "wrong" }
-"anthropic/cache-hit" = { "input_tokens" = "wrong" }
+"anthropic/cache-1h" = { "input_tokens" = "wrong", "metric.input_tokens" = "wrong" }
+"anthropic/cache-hit" = { "input_tokens" = "wrong", "metric.input_tokens" = "wrong" }
 "anthropic/content-off" = { "content.off_respected" = "wrong" }
 "anthropic/rate-limited" = { "error.status" = "wrong", "error.type" = "missing" }
 "anthropic/retry-429" = { "status.unset" = "wrong" }
-"anthropic/stream-cache-1h" = { "input_tokens" = "wrong" }
-"anthropic/stream-cache-cumulative" = { "input_tokens" = "wrong" }
-"anthropic/stream-cache-hit" = { "input_tokens" = "wrong" }
+"anthropic/stream-cache-1h" = { "input_tokens" = "wrong", "metric.input_tokens" = "wrong" }
+"anthropic/stream-cache-cumulative" = { "input_tokens" = "wrong", "metric.input_tokens" = "wrong" }
+"anthropic/stream-cache-hit" = { "input_tokens" = "wrong", "metric.input_tokens" = "wrong" }
 "anthropic/stream-content-off" = { "content.off_respected" = "wrong" }
 "anthropic/stream-content-on" = { "content.output_matches" = "wrong" }
 "anthropic/stream-dropped" = { "error.status" = "wrong", "error.type" = "missing" }
 "anthropic/stream-early-exit" = { "span.ended" = "lost" }
 "anthropic/stream-early-exit-with" = { "span.ended" = "lost" }
 "anthropic/stream-error-event" = { "error.status" = "wrong", "error.type" = "missing" }
+"anthropic/stream-thinking" = { "metric.output_tokens" = "wrong" }
+"anthropic/thinking" = { "metric.output_tokens" = "wrong" }
 "openai/async-stream-dropped" = { "error.status" = "wrong", "error.type" = "missing" }
 "openai/async-stream-early-exit" = { "span.ended" = "lost" }
 "openai/content-off" = { "content.off_respected" = "wrong" }
 "openai/rate-limited" = { "error.status" = "wrong", "error.type" = "missing" }
+"openai/reasoning" = { "metric.output_tokens" = "wrong" }
 "openai/responses-stream-missing-finish-abort" = { "error.status" = "wrong", "error.type" = "missing" }
 "openai/retry-429" = { "status.unset" = "wrong" }
 "openai/stream-content-off" = { "content.off_respected" = "wrong" }
@@ -29,4 +32,5 @@
 "openai/stream-dropped" = { "error.status" = "wrong", "error.type" = "missing" }
 "openai/stream-early-exit" = { "span.ended" = "lost" }
 "openai/stream-early-exit-with" = { "span.ended" = "lost" }
-"openai/stream-no-usage" = { "output_tokens" = "wrong" }
+"openai/stream-no-usage" = { "metric.output_tokens" = "wrong", "output_tokens" = "wrong" }
+"openai/stream-reasoning" = { "metric.output_tokens" = "wrong" }

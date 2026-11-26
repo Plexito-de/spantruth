@@ -290,6 +290,17 @@ def test_a_bad_content_table_is_one_clear_error(tmp_path, table, error):
         subjects.load(str(directory))
 
 
+def test_only_a_subject_that_documents_token_metrics_has_them_graded(tmp_path):
+    assert subjects.load("otel-official").metrics_docs.startswith("https://")
+    for name in ("logfire", "mlflow", "sentry", "ddtrace", "anthropic-sdk", "openinference"):
+        assert subjects.load(name).metrics_docs == ""
+    directory = _copy_subject(tmp_path)
+    config = directory / "subject.toml"
+    config.write_text(config.read_text().split("[metrics]")[0] + '[metrics]\ndocs = "http://x"\n')
+    with pytest.raises(subjects.SubjectError, match=r"\[metrics\] needs docs"):
+        subjects.load(str(directory))
+
+
 def test_a_checkout_with_a_broken_pyproject_is_a_usage_error(tmp_path):
     directory = _checkout(tmp_path, "[project\nname = ")
     with pytest.raises(subjects.SubjectError, match=r"pyproject\.toml"):

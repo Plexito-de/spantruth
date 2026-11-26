@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import gc
 import importlib.util
+import inspect
 import json
 import os
 import sys
@@ -117,6 +118,36 @@ def _content_logs(otlp: str) -> Any:
     return provider
 
 
+def _meters(otlp: str) -> Any:
+    """A global meter provider that exports OTLP metrics to the receiver, once, at the flush."""
+    from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
+    from opentelemetry.metrics import set_meter_provider
+    from opentelemetry.sdk.metrics import MeterProvider
+    from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+    from opentelemetry.sdk.resources import Resource
+
+    reader = PeriodicExportingMetricReader(
+        OTLPMetricExporter(f"{otlp}/v1/metrics"), export_interval_millis=3_600_000
+    )
+    provider = MeterProvider(
+        metric_readers=[reader], resource=Resource.create({"service.name": "spantruth"})
+    )
+    set_meter_provider(provider)
+    return provider
+
+
+def _call_instrument(module: Any, **providers: Any) -> Any:
+    """Call the subject's instrument() with the providers it accepts.
+
+    An instrument() written for an older spantruth takes only (tracer_provider, otlp_endpoint).
+    It still runs, and its library finds the meter provider as the global one.
+    """
+    params = inspect.signature(module.instrument).parameters
+    takes_any = any(p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values())
+    kwargs = {k: v for k, v in providers.items() if takes_any or k in params}
+    return module.instrument(**kwargs)
+
+
 def _flush_all(providers: list[Any]) -> None:
     seen: set[int] = set()
     for p in providers:
@@ -137,10 +168,16 @@ def instrumented(scenario_id: str, mock: str, otlp: str, subject: str, out: str)
     provider.add_span_processor(SimpleSpanProcessor(OTLPSpanExporter(f"{otlp}/v1/traces")))
     result: dict[str, Any] = {"scenario": scenario_id, "hang": False}
     logs = _content_logs(otlp) if scenarios.get(scenario_id).content else None
+    meters = _meters(otlp)
     try:
         # The subject owns the global provider: some libraries set it themselves, and the
         # OpenTelemetry API refuses a second set without an error.
-        extra = _load_subject(subject).instrument(tracer_provider=provider, otlp_endpoint=otlp)
+        extra = _call_instrument(
+            _load_subject(subject),
+            tracer_provider=provider,
+            otlp_endpoint=otlp,
+            meter_provider=meters,
+        )
     except Exception:
         result["instrument_error"] = traceback.format_exc(limit=5)
         _write(out, result)
@@ -160,7 +197,7 @@ def instrumented(scenario_id: str, mock: str, otlp: str, subject: str, out: str)
     timer.cancel()
     gc.collect()
     result["probe"] = {sid: dict(rec) for sid, rec in probe.items()}
-    _flush_all([provider, current, logs, *(extra or [])])
+    _flush_all([provider, current, logs, meters, *(extra or [])])
     _write(out, result)
     return 0
 

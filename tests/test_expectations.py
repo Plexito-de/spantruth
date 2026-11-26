@@ -45,7 +45,8 @@ def test_an_expectation_file_round_trips(tmp_path):
 
 
 def test_the_faulty_control_file_is_an_expectation_file():
-    assert expectations.load(FAULTY)["openai/stream-no-usage"] == {"output_tokens": "wrong"}
+    estimated = {"output_tokens": "wrong", "metric.output_tokens": "wrong"}
+    assert expectations.load(FAULTY)["openai/stream-no-usage"] == estimated
 
 
 @pytest.mark.parametrize(
@@ -161,7 +162,8 @@ def test_the_exit_code_follows_the_expectation_file(tmp_path):
     base += ["--cache", cache, "--out", str(tmp_path / "results.json")]
     written, summary = tmp_path / "written.toml", tmp_path / "summary.md"
     assert cli.main([*base, "--expect", str(FAULTY), "--write-expect", str(written)]) == 0
-    assert expectations.load(written) == {"openai/stream-no-usage": {"output_tokens": "wrong"}}
+    estimated = {"output_tokens": "wrong", "metric.output_tokens": "wrong"}
+    assert expectations.load(written) == {"openai/stream-no-usage": estimated}
     assert cli.main([*base, "--expect", str(empty), "--summary", str(summary)]) == 1
     assert "new failure" in summary.read_text() and "openai/stream-no-usage" in summary.read_text()
 
