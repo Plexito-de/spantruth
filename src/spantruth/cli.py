@@ -157,6 +157,9 @@ def _report(args: argparse.Namespace) -> int:
         Path(args.bugs).parent.mkdir(parents=True, exist_ok=True)
         Path(args.bugs).write_text(report.bugs_html(doc))
         print(f"wrote {args.bugs}")
+        for name, page in report.bug_pages(doc).items():
+            (Path(args.bugs).parent / name).write_text(page)
+            print(f"wrote {Path(args.bugs).parent / name}")
     if args.badges:
         out = Path(args.badges)
         out.mkdir(parents=True, exist_ok=True)
@@ -270,7 +273,11 @@ def parser() -> argparse.ArgumentParser:
     rep.add_argument(
         "--badges", help="write a shields.io endpoint JSON per library to this directory"
     )
-    rep.add_argument("--bugs", help="write the page of bug classes to this path")
+    rep.add_argument(
+        "--bugs",
+        help="write the page of bug classes to this path, and the site pages that go with it, "
+        "such as fixes.html, to the same directory",
+    )
     rep.add_argument("--markdown", action="store_true", help="print the Markdown matrix")
     rep.set_defaults(func=_report)
     return parser

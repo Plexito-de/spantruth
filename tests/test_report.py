@@ -301,12 +301,13 @@ def test_comment_says_when_the_run_is_incomplete():
 
 def test_the_shipped_known_issues_carry_dates_and_fixed_versions():
     for issue in report.known_issues():
-        assert issue["reported_on"], issue["url"]
+        assert issue["reported_on"] and issue["reported_by"], issue["url"]
         tracked = {subjects.package_name(p) for p in subjects.load(issue["subject"]).track}
+        fix_keys = {"fixed_on", "fixed_in", "fix_url", "fixed_by"}
         if issue["status"] == "fixed-upstream":
-            assert issue["fixed_on"] and issue["fixed_in"], issue["url"]
+            assert fix_keys <= issue.keys(), issue["url"]
         else:
-            assert "fixed_on" not in issue and "fixed_in" not in issue, issue["url"]
+            assert not fix_keys & issue.keys(), issue["url"]
         for spec in issue.get("fixed_in", []):
             assert subjects.package_name(spec) in tracked, spec
 
@@ -339,6 +340,10 @@ def test_known_issues_read_the_optional_fix_keys(tmp_path):
         'reported_on = "20261001"',
         "reported_on = 2026-10-01",
         'reported_on = "2026-10-12"\nfixed_on = "2026-10-04"',
+        'reported_by = "a b"',
+        'fixed_by = "<img>"',
+        "fixed_by = 3",
+        'fix_url = "javascript:alert(1)"',
     ],
 )
 def test_known_issues_reject_a_malformed_fix_key(tmp_path, extra):

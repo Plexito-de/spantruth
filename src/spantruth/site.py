@@ -6,6 +6,8 @@ under test, so they are data, never markup. Colors are paired tokens, one value 
 
 from __future__ import annotations
 
+import re
+from datetime import date
 from html import escape
 from typing import Any
 
@@ -152,6 +154,34 @@ SOCIAL = (
     'main/docs/assets/social-preview.png">\n<meta name="twitter:card" '
     'content="summary_large_image">'
 )
+SITE = "https://plexito-de.github.io/spantruth/"
+ASSETS = "https://raw.githubusercontent.com/Plexito-de/spantruth/main/docs/assets/"
+
+
+def _head(title: str, description: str, path: str, image: str = "social-preview.png") -> str:
+    """Everything up to <main>: a title, a description, the canonical address and a link preview.
+
+    Every argument is spantruth's own text, and is escaped all the same.
+    """
+    title, description = escape(title), escape(description)
+    url = escape(SITE + path)
+    return f"""<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{title}</title>
+<meta name="description" content="{description}">
+<link rel="canonical" href="{url}">
+{ICON}
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="spantruth">
+<meta property="og:title" content="{title}">
+<meta property="og:description" content="{description}">
+<meta property="og:url" content="{url}">
+<meta property="og:image" content="{escape(ASSETS + image)}">
+<meta name="twitter:card" content="summary_large_image">
+<style>{CSS}</style></head>
+<body><main>
+"""
 
 
 def _money(value: float) -> str:
@@ -344,9 +374,79 @@ each one checked against what the provider actually sent.</p>
 <p>To see which of them your own versions have, run <code>uvx spantruth doctor</code> in your
 project.</p>
 <p class="muted">{meta} · <a href="{escape(findings_page)}">the full report</a> ·
+<a href="fixes.html">fixed upstream</a> ·
 <a href="https://github.com/Plexito-de/spantruth">source</a></p>
 {"".join(sections)}
 <p class="muted">{_cost_note()}</p>
+</main></body></html>
+"""
+
+
+def _thread(url: str) -> str:
+    """`repo#12` for a GitHub issue or pull request, the host for any other address."""
+    match = re.match(r"https://github\.com/[^/]+/([^/]+)/(?:issues|pull)/(\d+)", url)
+    return f"{match[1]}#{match[2]}" if match else url.split("/")[2]
+
+
+def _person(login: str) -> str:
+    return _link(f"@{escape(login)}", f"https://github.com/{login}")
+
+
+def _day(value: str) -> str:
+    d = date.fromisoformat(value)
+    return f"{d:%B} {d.day}, {d.year}"
+
+
+def _fix(issue: dict[str, Any]) -> str:
+    """One fix: the release that has it, the bug it removes, who reported it and who fixed it."""
+    releases = ", ".join(re.sub(r"\s*(>=|==|~=|>)\s*", " ", s) for s in issue["fixed_in"])
+    days = (date.fromisoformat(issue["fixed_on"]) - date.fromisoformat(issue["reported_on"])).days
+    bug = bugclasses.classify({"id": issue["check"]})
+    chip = (
+        f'<p><a href="bugs.html#{bug.id}">{bug.id} {escape(bug.name)}</a>: '
+        f"{escape(bug.summary)}</p>"
+        if bug
+        else ""
+    )
+    upgrade = " ".join(f'"{s}"' for s in issue["fixed_in"])
+    anchor = re.sub(r"[^A-Za-z0-9-]", "-", _thread(issue["url"]))
+    return (
+        f'<section id="{escape(anchor)}"><h2>{escape(releases)}</h2>{chip}<dl>'
+        f"<dt>Reported</dt><dd>{_link(escape(_thread(issue['url'])), issue['url'])} by "
+        f"{_person(issue['reported_by'])}, {_day(issue['reported_on'])}</dd>"
+        f"<dt>Fixed</dt><dd>{_link(escape(_thread(issue['fix_url'])), issue['fix_url'])} by "
+        f"{_person(issue['fixed_by'])}, merged {_day(issue['fixed_on'])}</dd>"
+        f"<dt>Report to merge</dt><dd>{days} day{'' if days == 1 else 's'}</dd>"
+        f"<dt>To get it</dt><dd><code>pip install {escape(upgrade)}</code></dd>"
+        "</dl></section>"
+    )
+
+
+def render_fixes(known: list[dict[str, Any]]) -> str:
+    """Every upstream fix of a known issue, newest first, with who reported it and who fixed it."""
+    done = [k for k in known if k["status"] == "fixed-upstream"]
+    done.sort(key=lambda k: (k["fixed_on"], k["url"]), reverse=True)
+    sections = "".join(_fix(k) for k in done) or "<p>No upstream fix yet.</p>"
+    count = f"{len(done)} fix{'' if len(done) == 1 else 'es'}"
+    head = _head(
+        "Telemetry bugs fixed upstream, with credit",
+        "LLM telemetry bugs that library maintainers and contributors fixed: who reported "
+        "each one, who wrote the fix, and the first release that has it.",
+        "fixes.html",
+    )
+    return f"""{head}<h1>Fixed upstream</h1>
+<p>Each bug below was fixed by the people who maintain and contribute to an instrumentation
+library. spantruth found or confirmed the bug. They did the work that removed it. Each entry names
+who reported the bug, who wrote the fix, and the first release that has it. Thank you to all of
+them.</p>
+<p>To get a fix, upgrade to the release it names. To see which bugs your own versions still have,
+run <code>uvx spantruth doctor</code> in your project.</p>
+<p class="muted">{count} · <a href="index.html">the report</a> ·
+<a href="bugs.html">the ten bug classes</a> ·
+<a href="https://github.com/Plexito-de/spantruth/blob/main/known_issues.toml">the data</a></p>
+{sections}
+<p class="muted">A fix that is missing here? Add it to known_issues.toml in a pull request, with
+the issue, the fix and the release.</p>
 </main></body></html>
 """
 
@@ -389,7 +489,8 @@ against the wire.</p>
 <p class="muted">{meta} · <a href="https://github.com/Plexito-de/spantruth">source</a></p>
 <p>Pages: <a href="index.html">pinned versions</a> · <a href="latest.html">latest releases</a> ·
 <a href="bugs.html">the ten bug classes</a> ·
-<a href="changes.html">what new releases changed</a>. A fix that ships upstream turns its cell
+<a href="changes.html">what new releases changed</a> ·
+<a href="fixes.html">fixed upstream, with credit</a>. A fix that ships upstream turns its cell
 green on the latest-releases page first.</p>
 <div class="legend">{legend}</div>
 {_matrix(doc, names, first)}
