@@ -83,12 +83,19 @@ export function detect(text, filename = "") {
   if (/requirements.*\.txt$/.test(base)) return "requirements.txt";
   const start = text.trimStart();
   if (start.startsWith("{")) return "Pipfile.lock";
-  if (/^\[\[package\]\]\s*$/m.test(text)) {
-    if (/^\s*\[metadata\][\s\S]*content-hash/m.test(text)) return "poetry.lock";
-    if (/^\s*\[metadata\][\s\S]*lock_version/m.test(text)) return "pdm.lock";
-    return "uv.lock";
+  // One pass over the lines, so the time grows with the size of the file and no more.
+  let packages = false;
+  let metadata = false;
+  let kind = "uv.lock";
+  for (const raw of text.split("\n")) {
+    const line = raw.trim();
+    if (line.startsWith("[")) {
+      if (line === "[[package]]") packages = true;
+      metadata = line === "[metadata]";
+    } else if (metadata && line.startsWith("content-hash")) kind = "poetry.lock";
+    else if (metadata && line.startsWith("lock_version")) kind = "pdm.lock";
   }
-  return "requirements.txt";
+  return packages ? kind : "requirements.txt";
 }
 
 export class LockError extends Error {}
@@ -175,12 +182,16 @@ export function lookup(table, subject, packageNameValue, version) {
   if (!p) return { ...result, state: "missing" };
   if (version === undefined) return { ...result, state: "missing" };
   if (version === null) return { ...result, state: "unpinned" };
+  if (!versionKey(version)) return { ...result, state: "unparsed" };
   const ran = (p.versions || []).filter(Boolean);
   const hit = ran.find((v) => compareVersions(v.version, version) === 0 && versionKey(version));
   // A fix counts for this version when it shipped after it.
   const fixes = (p.first_fixed || []).filter((f) => compareVersions(f.version, version) > 0);
   if (hit) {
-    const failing = Object.entries(hit.failing || {}).flatMap(([scenario, checks]) =>
+    const setup = setupFailed(hit);
+    const failing = Object.entries(hit.failing || {})
+      .filter(([scenario]) => !setup.has(scenario))
+      .flatMap(([scenario, checks]) =>
       Object.entries(checks).map(([check, bug]) => ({
         scenario,
         check,
@@ -188,11 +199,14 @@ export function lookup(table, subject, packageNameValue, version) {
         fixedIn: fixes.find((f) => f.scenario === scenario && f.check === check)?.version ?? "",
       })),
     );
+    const unknown = (hit.unknown || []).length;
     return {
       ...result,
-      state: hit.error ? "error" : "measured",
+      state: hit.error ? "error" : unknown ? "incomplete" : "measured",
       entry: hit,
       failing,
+      unknown,
+      setupFailed: setup.size,
       newest: ran.length ? ran[ran.length - 1].version : "",
       scenarios: (p.scenarios || []).length,
     };
@@ -204,6 +218,46 @@ export function lookup(table, subject, packageNameValue, version) {
   else if (compareVersions(version, oldest) < 0) state = "older";
   else if (compareVersions(version, newest) > 0) state = "newer";
   return { ...result, state, oldest: oldest ?? "", newest: newest ?? "", fixes };
+}
+
+/**
+ * The scenarios whose setup raised: spantruth's setup does not run on that version. A table from
+ * before `setup_failed` lists them as failing `subject.instrument`, so those count too.
+ */
+export function setupFailed(hit) {
+  const old = Object.entries(hit.failing || {})
+    .filter(([, checks]) => "subject.instrument" in checks)
+    .map(([scenario]) => scenario);
+  return new Set([...(hit.setup_failed || []), ...old]);
+}
+
+/** The project's SDK versions that differ from the ones the table ran these subjects with. */
+export function sdkDifferences(table, subjects, versions) {
+  const out = [];
+  for (const name of subjects) {
+    const s = table.subjects[name];
+    for (const [sdk, pin] of Object.entries(s.sdks || {})) {
+      const mine = versions.get(sdk);
+      if ((s.providers || []).includes(sdk) && mine && compareVersions(mine, pin) !== 0) {
+        out.push({ subject: name, title: s.title, sdk, pin, mine });
+      }
+    }
+  }
+  return out;
+}
+
+/** The differences with the same SDK and pin in one line: "A, B and C". */
+export function groupDifferences(differences) {
+  const groups = new Map();
+  for (const d of differences) {
+    const key = `${d.sdk} ${d.pin} ${d.mine}`;
+    if (!groups.has(key)) groups.set(key, { ...d, names: [] });
+    groups.get(key).names.push(d.title);
+  }
+  return [...groups.values()].map((g) => ({
+    ...g,
+    titles: g.names.length > 1 ? `${g.names.slice(0, -1).join(", ")} and ${g.names.at(-1)}` : g.names[0],
+  }));
 }
 
 /** The failing checks grouped by bug class: scenarios, and the release that fixes them. */
@@ -249,7 +303,8 @@ export function check(table, parsed) {
   const sdks = ["openai", "anthropic"]
     .filter((p) => parsed.versions.has(p))
     .map((p) => ({ name: p, version: parsed.versions.get(p) }));
-  return { source: parsed.source, count: parsed.versions.size, subjects: rows, sdks };
+  const differences = sdkDifferences(table, subjects, parsed.versions);
+  return { source: parsed.source, count: parsed.versions.size, subjects: rows, sdks, differences };
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -294,7 +349,12 @@ function packageBlock(row, table) {
     block.append(el("p", {}, `The nightly run could not install or run this version: ${row.entry.error}`));
     return block;
   }
-  if (row.state !== "measured") {
+  if (row.state === "unparsed") {
+    head.append(el("span", { class: "v inconclusive" }, "not a release version"));
+    block.append(el("p", {}, "This is not a release version, such as a git reference or a local build, so the table cannot answer. Run doctor."));
+    return block;
+  }
+  if (row.state !== "measured" && row.state !== "incomplete") {
     head.append(el("span", { class: "v inconclusive" }, "not in the table"));
     const where = {
       older: `It is older than the releases the table covers (${row.oldest} to ${row.newest}).`,
@@ -304,6 +364,23 @@ function packageBlock(row, table) {
     block.append(el("p", {}, `${where} Run doctor to check it on your machine.`));
     return block;
   }
+  const notes = [];
+  if (row.setupFailed) {
+    notes.push(
+      el("p", {}, `spantruth's setup does not run on this version: ${row.setupFailed} of ${row.scenarios} scenarios have no answer.`),
+    );
+  }
+  if (row.unknown) {
+    notes.push(
+      el("p", {}, `The nightly run could not run ${row.unknown} scenario${row.unknown === 1 ? "" : "s"} of this version. Run doctor to check them.`),
+    );
+  }
+  if (!row.failing.length && (row.setupFailed || row.unknown)) {
+    head.append(el("span", { class: "v inconclusive" }, row.unknown ? "incomplete" : "no answer"));
+    block.append(...notes);
+    return block;
+  }
+  block.append(...notes);
   if (!row.failing.length) {
     head.append(el("span", { class: "v pass" }, "pass"));
     block.append(el("p", {}, `Every check passed in ${row.scenarios} scenarios, run on ${row.entry.run}.`));
@@ -372,6 +449,9 @@ function render(out, table, result) {
         { class: "result" },
         el("h2", {}, "Provider SDKs"),
         el("ul", {}, ...items),
+        ...groupDifferences(result.differences).map((d) =>
+          el("p", {}, `The table ran ${d.titles} with ${d.sdk} ${d.pin}, and your file has ${d.sdk} ${d.mine}.`),
+        ),
         el(
           "p",
           { class: "muted" },

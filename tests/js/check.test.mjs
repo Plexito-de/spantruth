@@ -12,9 +12,12 @@ import {
   compareVersions,
   detect,
   findingId,
+  groupDifferences,
   lookup,
   match,
   parseLock,
+  sdkDifferences,
+  setupFailed,
   versionKey,
 } from "../../docs/site/check.js";
 
@@ -181,4 +184,60 @@ test("the failing checks group by bug class, with the release that fixes all or 
     byScenario(failing).map((s) => [s.scenario, s.checks.length]),
     [["a/x", 1], ["a/y", 2], ["a/z", 2]],
   );
+});
+
+test("detecting the kind of a large file takes time in line with its size", () => {
+  // 80,000 [metadata] lines (880 KB) took 127 s with the regular expressions this replaced.
+  const text = "[metadata]\n".repeat(80_000) + '[[package]]\nname = "a"\nversion = "1"\n';
+  const start = performance.now();
+  assert.equal(detect(text), "uv.lock");
+  assert.ok(performance.now() - start < 1000, `took ${performance.now() - start} ms`);
+  const line = `a==${"1".repeat(4_000_000)},`; // a near-5 MB line that matches no pin
+  const t = performance.now();
+  parseLock(line, "requirements.txt");
+  assert.ok(performance.now() - t < 1000, `requirements took ${performance.now() - t} ms`);
+});
+
+test("a version with scenarios the nightly run could not run is incomplete", () => {
+  const table = structuredClone(TABLE);
+  const v = table.subjects.openinference.packages["openinference-instrumentation-anthropic"].versions[1];
+  v.unknown = ["anthropic/basic"];
+  const row = lookup(table, "openinference", "openinference-instrumentation-anthropic", "3.2.0");
+  assert.equal(row.state, "incomplete");
+  assert.equal(row.unknown, 1);
+  assert.equal(row.failing.length, 1);
+});
+
+test("a version that is not a release says so, not that it is older than the table", () => {
+  const at = (v) => lookup(TABLE, "openinference", "openinference-instrumentation-anthropic", v).state;
+  assert.equal(at("main"), "unparsed");
+  assert.equal(at("3.2.0+local.1"), "unparsed");
+});
+
+test("a scenario whose setup raised is no failing check, in a new table or an old one", () => {
+  assert.deepEqual([...setupFailed({ failing: {}, setup_failed: ["a/x"] })], ["a/x"]);
+  const old = { failing: { "a/x": { "subject.instrument": "" }, "a/y": { "span.ended": "ST01" } } };
+  assert.deepEqual([...setupFailed(old)], ["a/x"]);
+  const table = structuredClone(TABLE);
+  const v = table.subjects.openinference.packages["openinference-instrumentation-anthropic"].versions[1];
+  v.failing["anthropic/basic"] = { "subject.instrument": "" };
+  const row = lookup(table, "openinference", "openinference-instrumentation-anthropic", "3.2.0");
+  assert.equal(row.setupFailed, 1);
+  assert.deepEqual(row.failing.map((f) => f.scenario), ["anthropic/stream-early-exit"]);
+});
+
+test("the project's SDK versions that differ from the table's are named", () => {
+  const table = structuredClone(TABLE);
+  table.subjects.openinference.sdks = { openai: "3.42.1", anthropic: "2.4.0" };
+  const versions = new Map([["anthropic", "2.12.0"], ["openai", "3.42.1"]]);
+  assert.deepEqual(sdkDifferences(table, ["openinference"], versions), [
+    { subject: "openinference", title: "OpenInference", sdk: "anthropic", pin: "2.4.0", mine: "2.12.0" },
+  ]);
+  assert.deepEqual(sdkDifferences(TABLE, ["openinference"], versions), []); // an older table
+});
+
+test("SDK differences with the same pin read as one line", () => {
+  const d = (title) => ({ title, sdk: "anthropic", pin: "2.4.0", mine: "2.12.0" });
+  const [one] = groupDifferences([d("A"), d("B"), d("C")]);
+  assert.equal(one.titles, "A, B and C");
 });
