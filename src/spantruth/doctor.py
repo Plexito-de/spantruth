@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import shlex
 import sys
 import tomllib
 from collections.abc import Mapping
@@ -22,6 +23,7 @@ from . import bugclasses, report, runner, scenarios, subjects
 SELF_TRACING = "ANTHROPIC_OPEN_TELEMETRY"
 EXPORTER = "opentelemetry-exporter-otlp-proto-http"
 GUIDE = "https://github.com/Plexito-de/spantruth/blob/main/docs/test-your-wrapper.md"
+UNCOVERED = Path(__file__).with_name("uncovered.toml")
 
 
 class DoctorError(ValueError):
@@ -169,6 +171,42 @@ def match(versions: Mapping[str, str | None]) -> list[subjects.Subject]:
     return found
 
 
+def uncovered_table() -> dict[str, dict[str, str]]:
+    """Package name to the title of the library and the issue where a user can ask for it."""
+    return tomllib.loads(UNCOVERED.read_text())
+
+
+def uncovered(versions: Mapping[str, str | None]) -> list[dict[str, Any]]:
+    """The LLM libraries in this project that no subject covers yet, one row per library.
+
+    A package that a library subject detects is covered, so a new subject needs no edit here.
+    """
+    covered = {
+        subjects.package_name(p)
+        for s in map(subjects.load, subjects.all_names())
+        if s.kind == "library"
+        for p in s.detect
+    }
+    rows: dict[str, dict[str, Any]] = {}
+    for name, row in sorted(uncovered_table().items()):
+        if name in versions and name not in covered:
+            entry = rows.setdefault(
+                row["issue"], {"title": row["title"], "packages": [], "issue": row["issue"]}
+            )
+            entry["packages"].append(name)
+    return sorted(rows.values(), key=lambda r: r["title"])
+
+
+def _uncovered_lines(versions: Mapping[str, str | None]) -> list[str]:
+    rows = uncovered(versions)
+    lines = [
+        f"Not covered yet: {_line(r['title'])} ({', '.join(r['packages'])}). "
+        f"Ask for it at {r['issue']}"
+        for r in rows
+    ]
+    return [*lines, f"For a wrapper of your own, see {GUIDE}"] if lines else []
+
+
 def overrides(
     selected: list[subjects.Subject], versions: Mapping[str, str | None]
 ) -> tuple[str, ...]:
@@ -228,8 +266,75 @@ def _example(f: dict[str, Any]) -> str:
     return f"{f['scenario']}: {text[:160]}" if text else f["scenario"]
 
 
-def summarize(doc: dict) -> list[dict[str, Any]]:
-    """Per subject: its versions, and its findings grouped by bug class, in class order."""
+# The command that installs a requirement, per file that doctor reads the versions from.
+INSTALL = {
+    "uv.lock": "uv add",
+    "poetry.lock": "poetry add",
+    "pdm.lock": "pdm add",
+    "Pipfile.lock": "pipenv install",
+}
+
+
+# doctor reads the pins from these files, so the fix is an edit of the file. An install alone
+# would be undone by the next `pip install -r`, and the next doctor run would read the old pin.
+EDIT = {
+    "requirements*.txt": "your requirements files",
+    "pyproject.toml": "pyproject.toml",
+}
+
+
+def _release(version: str) -> tuple[int, ...]:
+    return tuple(int(n) for n in re.findall(r"\d+", version.split("+")[0])[:4])
+
+
+def _needed(specs: list[str], installed: Mapping[str, str]) -> list[str]:
+    """One spec per package: the highest lower bound, and none that the installed version meets."""
+    have = {subjects.package_name(k): v for k, v in installed.items()}
+    # In the order of first appearance: a package's lower bound, or a spec of another form as is.
+    bounds: dict[str, str | None] = {}
+    for spec in specs:
+        m = re.fullmatch(r"\s*([A-Za-z0-9._-]+)\s*>=\s*([0-9][^\s,;]*)\s*", spec)
+        if not m:
+            bounds.setdefault(spec, None)
+            continue
+        name, low = subjects.package_name(m[1]), m[2]
+        if not bounds.get(name) or _release(low) > _release(bounds[name] or ""):
+            bounds[name] = low
+    return [
+        key if low is None else f"{key}>={low}"
+        for key, low in bounds.items()
+        if low is None or key not in have or _release(have[key]) < _release(low)
+    ]
+
+
+def upgrade_command(
+    source: str | None, specs: list[str], installed: Mapping[str, str] | None = None
+) -> str | None:
+    """What moves the project to the fixed versions, with the project's own tool or file.
+
+    A lock file has its tool. A requirements file or a bare pyproject.toml holds the pin itself,
+    so the fix is an edit of that file. A .venv names no tool, so pip it is.
+    """
+    specs = _needed(specs, installed or {})
+    if not specs:
+        return None
+    quoted = " ".join(map(shlex.quote, specs))
+    if source in EDIT or (source or "").endswith(".txt"):
+        return f"require {quoted} in {EDIT.get(source or '', source)}"
+    return f"{INSTALL.get(source or '', 'pip install')} {quoted}"
+
+
+def _cost_order(c: dict[str, Any]) -> tuple[bool, float]:
+    """Largest cost error first, either sign. A class with no figure comes after, in class order."""
+    cost = c["largest_cost_error"]
+    return (cost is None, -abs(cost or 0))
+
+
+def summarize(doc: dict, source: str | None = None) -> list[dict[str, Any]]:
+    """Per subject: its versions, and its findings grouped by bug class, largest cost first.
+
+    `source` is the file the versions came from, which picks the upgrade command.
+    """
     out = []
     all_found = report.findings(doc)
     for name, result in doc["subjects"].items():
@@ -244,6 +349,11 @@ def summarize(doc: dict) -> list[dict[str, Any]]:
             ]
             issues = {f["issue"]["url"]: f["issue"] for f in mine if f["issue"]}
             links = sorted(issues)
+            # `fixed_in` is optional in known_issues.toml, and only a fixed issue has a fix to get.
+            fixed_in = {u: list(issues[u].get("fixed_in", ())) for u in links}
+            specs = [
+                s for u in links if issues[u].get("status") == "fixed-upstream" for s in fixed_in[u]
+            ]
             classes.append(
                 {
                     "id": c.id,
@@ -260,11 +370,14 @@ def summarize(doc: dict) -> list[dict[str, Any]]:
                             "url": u,
                             "status": issues[u].get("status", "reported"),
                             "note": issues[u].get("note", ""),
+                            "fixed_in": fixed_in[u],
                         }
                         for u in links
                     ],
+                    "upgrade": upgrade_command(source, specs, result.get("versions", {})),
                 }
             )
+        classes.sort(key=_cost_order)
         out.append(
             {
                 "name": name,
@@ -301,6 +414,9 @@ def render_text(found: Found, summary: list[dict[str, Any]], results: str) -> st
             lines.append(f"  No problem in {s['scenarios']} scenarios.")
         for c in s["classes"]:
             lines.append(f"  {c['id']} {c['name']}: {c['scenarios']} of {s['scenarios']} scenarios")
+            if c["upgrade"]:
+                # A released fix beats every workaround, so it comes before the explanation.
+                lines.append(f"    Fix first: {_line(c['upgrade'])}")
             lines.append(f"    {c['summary']}")
             if c["largest_cost_error"] is not None:
                 note = " in a backend that sums across spans" if c["id"] == "ST02" else ""
@@ -316,6 +432,8 @@ def render_text(found: Found, summary: list[dict[str, Any]], results: str) -> st
         if s["other"]:
             lines.append(f"  Other failing checks: {_line(', '.join(s['other']))}")
         lines.append("")
+    if extra := _uncovered_lines(found.versions):
+        lines += [*extra, ""]
     if len(summary) > 1:
         lines += [
             "Each library was checked alone. If two of them trace the same calls in one app, "
@@ -362,6 +480,19 @@ def _known_packages() -> str:
     return ", ".join(sorted(p for s in names if s.kind == "library" for p in s.detect))
 
 
+def json_doc(
+    found: Found, summary: list[dict[str, Any]], results: str | None, code: int
+) -> dict[str, Any]:
+    """What `--json` prints. `results` is None when nothing ran."""
+    return {
+        "source": found.source,
+        "results": results,
+        "exit_code": code,
+        "subjects": summary,
+        "uncovered": uncovered(found.versions),
+    }
+
+
 def run(
     directory: Path,
     out: Path,
@@ -373,6 +504,12 @@ def run(
     found = read_versions(directory)
     selected = match(found.versions)
     if not selected:
+        if as_json:
+            print(json.dumps(json_doc(found, [], None, 2), indent=1))
+        if extra := _uncovered_lines(found.versions):
+            raise DoctorError(
+                f"no library in {found.source} that spantruth covers yet.\n" + "\n".join(extra)
+            )
         raise DoctorError(
             f"no instrumentation library in {found.source}. spantruth recognizes "
             f"{_known_packages()}. For a wrapper of your own, see {GUIDE}"
@@ -395,19 +532,9 @@ def run(
     )
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(doc, indent=1, sort_keys=True) + "\n")
-    summary = summarize(doc)
+    summary = summarize(doc, found.source)
     if as_json:
-        print(
-            json.dumps(
-                {
-                    "source": found.source,
-                    "results": str(out),
-                    "exit_code": exit_code(doc, summary),
-                    "subjects": summary,
-                },
-                indent=1,
-            )
-        )
+        print(json.dumps(json_doc(found, summary, str(out), exit_code(doc, summary)), indent=1))
     else:
         print(render_text(found, summary, str(out)))
     return exit_code(doc, summary)

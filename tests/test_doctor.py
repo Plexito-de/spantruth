@@ -363,7 +363,7 @@ def test_json_keeps_upstream_as_urls_with_status_and_note_beside_it(known):
     ghost, double = subject["classes"]
     assert ghost["upstream"] == [FIXED["url"]]
     assert ghost["upstream_issues"] == [
-        {"url": FIXED["url"], "status": "fixed-upstream", "note": FIXED["note"]}
+        {"url": FIXED["url"], "status": "fixed-upstream", "note": FIXED["note"], "fixed_in": []}
     ]
     assert double["upstream"] == [REPORTED["url"]]
     assert double["upstream_issues"][0]["status"] == "reported"
@@ -375,6 +375,119 @@ def test_a_fixed_upstream_note_stays_on_one_line(monkeypatch):
     text = doctor.render_text(doctor.Found("uv.lock", {}), doctor.summarize(result_doc()), "x")
     assert "Fixed upstream: a Fake line" in text
     assert "\nFake line" not in text
+
+
+KNOWN_WITH_FIX = """
+[[issue]]
+subject = "openinference"
+scenarios = ["anthropic/stream"]
+check = "span.ended"
+status = "fixed-upstream"
+url = "https://example.com/issues/1"
+note = "Fixed in openinference-instrumentation-anthropic 3.1.0."
+fixed_in = ["openinference-instrumentation-anthropic>=3.1.0"]
+
+[[issue]]
+subject = "openinference"
+scenarios = ["anthropic/basic"]
+check = "tokens.single-report"
+status = "reported"
+url = "https://example.com/issues/2"
+"""
+
+
+@pytest.fixture
+def known_fix(monkeypatch, tmp_path):
+    path = tmp_path / "known_issues.toml"
+    path.write_text(KNOWN_WITH_FIX)
+    rows = report.known_issues(path)
+    monkeypatch.setattr(report, "known_issues", lambda: rows)
+
+
+@pytest.mark.parametrize(
+    ("source", "command"),
+    [
+        ("uv.lock", "uv add 'openinference-instrumentation-anthropic>=3.1.0'"),
+        ("poetry.lock", "poetry add 'openinference-instrumentation-anthropic>=3.1.0'"),
+        ("pdm.lock", "pdm add 'openinference-instrumentation-anthropic>=3.1.0'"),
+        ("Pipfile.lock", "pipenv install 'openinference-instrumentation-anthropic>=3.1.0'"),
+        # doctor reads the pin from the file, so the file is what must change. A `pip install`
+        # would be undone by the next `pip install -r`, and the next doctor run.
+        (
+            "requirements.txt",
+            "require 'openinference-instrumentation-anthropic>=3.1.0' in requirements.txt",
+        ),
+        (
+            "requirements*.txt",
+            "require 'openinference-instrumentation-anthropic>=3.1.0' in your requirements files",
+        ),
+        (
+            "pyproject.toml",
+            "require 'openinference-instrumentation-anthropic>=3.1.0' in pyproject.toml",
+        ),
+        (".venv", "pip install 'openinference-instrumentation-anthropic>=3.1.0'"),
+    ],
+)
+def test_a_fixed_finding_prints_the_upgrade_for_the_package_manager(known_fix, source, command):
+    found = doctor.Found(source, {})
+    text = doctor.render_text(found, doctor.summarize(result_doc(), source), "x")
+    assert f"    Fix first: {command}\n" in text
+    # Before the explanation of the class, and the workaround stays.
+    ghost = text.index("ST01 Ghost span")
+    assert ghost < text.index("Fix first:") < text.index("The app made the call")
+    assert "Today:" in text[ghost:]
+
+
+def test_a_finding_with_no_fixed_in_prints_no_upgrade(known):
+    text = doctor.render_text(
+        doctor.Found("uv.lock", {}), doctor.summarize(result_doc(), "uv.lock"), "x"
+    )
+    assert "Fix first" not in text
+
+
+def test_a_reported_entry_with_fixed_in_gives_no_upgrade(monkeypatch):
+    entry = {**REPORTED, "fixed_in": ["openinference-instrumentation-anthropic>=9"]}
+    monkeypatch.setattr(report, "known_issues", lambda: [entry])
+    (subject,) = doctor.summarize(result_doc(), "uv.lock")
+    assert all(c["upgrade"] is None for c in subject["classes"])
+
+
+def test_upgrade_keeps_the_highest_bound_and_skips_what_is_installed():
+    specs = ["a>=1.2.0", "a>=1.10.0", "b>=2.0", "c<3"]
+    assert doctor.upgrade_command("uv.lock", specs, {"b": "2.1.0"}) == "uv add 'a>=1.10.0' 'c<3'"
+    assert doctor.upgrade_command("uv.lock", ["b>=2.0"], {"B": "2.0"}) is None
+
+
+def test_json_carries_the_upgrade_command_and_fixed_in(known_fix):
+    (subject,) = doctor.summarize(result_doc(), "poetry.lock")
+    by_id = {c["id"]: c for c in subject["classes"]}
+    assert by_id["ST01"]["upgrade"] == (
+        "poetry add 'openinference-instrumentation-anthropic>=3.1.0'"
+    )
+    assert by_id["ST01"]["upstream_issues"][0]["fixed_in"] == [
+        "openinference-instrumentation-anthropic>=3.1.0"
+    ]
+    assert by_id["ST02"]["upgrade"] is None
+    assert by_id["ST02"]["upstream_issues"][0]["fixed_in"] == []
+
+
+def test_findings_come_largest_cost_first():
+    doc = result_doc()
+    cells = doc["subjects"]["openinference"]["cells"]
+    # The double span doubles the cost. A phantom count of 10,000 output tokens for 10 costs more.
+    phantom = {
+        "id": "output_tokens",
+        "verdict": "wrong",
+        "expected": 10,
+        "got": 10_000,
+        "where": None,
+        "detail": "",
+    }
+    cells["anthropic/basic"]["checks"].append(phantom)
+    del cells["anthropic/stream"]
+    classes = doctor.summarize(doc)[0]["classes"]
+    assert [c["id"] for c in classes] == ["ST04", "ST02"]
+    assert classes[0]["largest_cost_error"] > classes[1]["largest_cost_error"] == 100
 
 
 def test_doctor_with_no_known_library_exits_2(tmp_path, capsys):
@@ -451,3 +564,78 @@ def test_requirements_with_hashes_keep_their_pins(tmp_path):
         "    --hash=sha256:aaaa\n"
     )
     assert doctor._requirements([req]) == {"anthropic": "1.13.0", "opentelemetry-sdk": "1.45.2"}
+
+
+TABLE = {
+    "langchain": {"title": "LangChain", "issue": "https://example.com/issues/77"},
+    "langchain-openai": {"title": "LangChain", "issue": "https://example.com/issues/77"},
+    "cohere": {"title": "Cohere", "issue": "https://example.com/issues/83"},
+    "openlit": {"title": "OpenLIT", "issue": "https://example.com/issues/3"},
+}
+
+
+@pytest.fixture
+def table(monkeypatch):
+    monkeypatch.setattr(doctor, "uncovered_table", lambda: TABLE)
+
+
+def test_doctor_names_each_library_no_subject_covers_once(table):
+    versions = {"langchain": "1.0", "langchain-openai": "1.0", "cohere": "5.0", "rich": "14"}
+    assert doctor.uncovered(versions) == [
+        {"title": "Cohere", "packages": ["cohere"], "issue": "https://example.com/issues/83"},
+        {
+            "title": "LangChain",
+            "packages": ["langchain", "langchain-openai"],
+            "issue": "https://example.com/issues/77",
+        },
+    ]
+
+
+def test_a_package_that_a_subject_detects_is_covered(table):
+    assert doctor.uncovered({"openlit": "1.45.0"}) == []
+
+
+def test_every_uncovered_entry_names_a_title_and_an_issue_to_ask_in():
+    rows = doctor.uncovered_table()
+    assert {"litellm", "langchain", "google-genai", "instructor"} <= set(rows)
+    for name, row in rows.items():
+        assert name == subjects.package_name(name), name
+        assert row["title"], name
+        assert row["issue"].startswith("https://github.com/Plexito-de/spantruth/issues/"), name
+
+
+def test_text_names_the_uncovered_libraries_and_the_wrapper_guide(table):
+    found = doctor.Found("uv.lock", {"anthropic": "2.5.0", "cohere": "5.0"})
+    text = doctor.render_text(found, doctor.summarize(result_doc()), "x")
+    assert "Not covered yet: Cohere (cohere). Ask for it at https://example.com/issues/83" in text
+    assert "docs/test-your-wrapper.md" in text
+
+
+def test_text_has_no_uncovered_section_when_everything_is_covered(table):
+    text = doctor.render_text(doctor.Found("uv.lock", {}), doctor.summarize(result_doc()), "x")
+    assert "Not covered yet" not in text
+
+
+def test_json_carries_the_uncovered_libraries(table):
+    found = doctor.Found("uv.lock", {"cohere": "5.0"})
+    doc = doctor.json_doc(found, doctor.summarize(result_doc()), "x", 1)
+    assert doc["uncovered"][0]["title"] == "Cohere"
+    assert doc["exit_code"] == 1
+
+
+def test_only_uncovered_libraries_still_exit_2_and_say_where_to_ask(tmp_path, capsys, table):
+    project(tmp_path, requirements__txt="langchain==1.0\nrich==14.0\n")
+    assert cli.main(["doctor", str(tmp_path)]) == 2
+    err = capsys.readouterr().err
+    assert "Not covered yet: LangChain (langchain)" in err
+    assert "https://example.com/issues/77" in err
+    assert "test-your-wrapper.md" in err
+
+
+def test_json_with_nothing_to_check_still_prints_the_uncovered_libraries(tmp_path, capsys, table):
+    project(tmp_path, requirements__txt="cohere==5.0\n")
+    assert cli.main(["doctor", str(tmp_path), "--json"]) == 2
+    doc = json.loads(capsys.readouterr().out)
+    assert doc["exit_code"] == 2
+    assert doc["subjects"] == []
+    assert [u["title"] for u in doc["uncovered"]] == ["Cohere"]
