@@ -19,6 +19,11 @@ OPENAI_SERVED = "gpt-5-mini-2026-08-07"
 OPENAI_CACHE_MODEL = "gpt-5.6-luna"
 OPENAI_CACHE_SERVED = "gpt-5.6-luna-2026-10-14"
 ANTHROPIC_MODEL = "claude-sonnet-5-5"
+# The second model of the concurrent scenarios. Placeholders too.
+OPENAI_PAIR_MODEL = "gpt-5-nano"
+OPENAI_PAIR_SERVED = "gpt-5-nano-2026-08-07"
+ANTHROPIC_PAIR_MODEL = "claude-haiku-5-5"
+ANTHROPIC_PAIR_SERVED = "claude-haiku-5-5-20261001"
 ANTHROPIC_SERVED = "claude-sonnet-5-5-20260915"
 PARTS = ("The capital", " of France", " is Paris.")
 WEATHER = ("get_weather", {"city": "Paris"})
@@ -475,6 +480,8 @@ def _plans() -> list[Scenario]:
     weather = (("call_wt_w", WEATHER[0], '{"city":"Paris"}'),)
     time_ = (("call_wt_t", TIME[0], '{"zone":"Europe/Paris"}'),)
     answer = "It is 18 C and sunny in Paris, and the time is 14:05."
+    stream = dict(model=OPENAI_SERVED, parts=PARTS, finish="stop")
+    astream = dict(model=ANTHROPIC_SERVED, parts=PARTS, stop="end_turn")
     tool = dict(model=OPENAI_SERVED, text=None, finish="tool_calls")
     openai_loop = (
         oa.completion(
@@ -538,9 +545,60 @@ def _plans() -> list[Scenario]:
             calls=tuple(Call(model, r) for r in responses),
         )
 
+    def gather(provider: str, calls: tuple[Call, ...]) -> Scenario:
+        return Scenario(
+            id=f"{provider}/async-concurrent-streams",
+            provider=provider,
+            title="Two streams at once with asyncio.gather (async)",
+            catches="the counts of one concurrent call on the span of the other",
+            request_model=calls[0].request_model,
+            response=calls[0].response,
+            stream=True,
+            asynchronous=True,
+            concurrent=True,
+            calls=calls,
+        )
+
+    # Two models, so each span names its call by its request model, whatever the timing.
+    openai_pair = (
+        Call(
+            OPENAI_MODEL,
+            oa.chunks(
+                id="chatcmpl-wt-par1", prompt=1033, completion_tokens=149, cached=769, **stream
+            ),
+        ),
+        Call(
+            OPENAI_PAIR_MODEL,
+            oa.chunks(
+                id="chatcmpl-wt-par2",
+                prompt=1747,
+                completion_tokens=181,
+                **stream | {"model": OPENAI_PAIR_SERVED},
+            ),
+        ),
+    )
+    anthropic_pair = (
+        Call(
+            ANTHROPIC_MODEL,
+            an.events(
+                id="msg_wt_par1", input_tokens=264, output_tokens=149, cache_read=769, **astream
+            ),
+        ),
+        Call(
+            ANTHROPIC_PAIR_MODEL,
+            an.events(
+                id="msg_wt_par2",
+                input_tokens=1747,
+                output_tokens=181,
+                **astream | {"model": ANTHROPIC_PAIR_SERVED},
+            ),
+        ),
+    )
     return [
         loop("openai", OPENAI_MODEL, openai_loop),
         loop("anthropic", ANTHROPIC_MODEL, anthropic_loop),
+        gather("openai", openai_pair),
+        gather("anthropic", anthropic_pair),
     ]
 
 

@@ -97,7 +97,8 @@ class Scenario:
     `stream_usage` False leaves out OpenAI's `include_usage`, so the stream carries no usage.
     `api` is the OpenAI API the app calls: `chat` (Chat Completions) or `responses`.
     `calls` makes the app call more than once in its trace. As an agent loop, each call sends the
-    tool results of the call before it.
+    tool results of the call before it. With `concurrent`, the app starts every call at once
+    with `asyncio.gather` instead, and reads their streams side by side.
     """
 
     id: str
@@ -118,6 +119,7 @@ class Scenario:
     responses: tuple[Response, ...] = ()
     retries: int = 0
     calls: tuple[Call, ...] = ()
+    concurrent: bool = False
 
     def __post_init__(self) -> None:
         if not self.responses:

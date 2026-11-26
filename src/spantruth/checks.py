@@ -280,19 +280,32 @@ def _values(t: Truth, llm: list[SpanRecord]) -> list[Check]:
     return checks
 
 
-def _owner(span: SpanRecord, sc: Scenario, windows: list[list[int]]) -> int | None:
+def _owner(span: SpanRecord, sc: Scenario, t: Truth, windows: list[list[int]]) -> int | None:
     """The index of the call that a span belongs to, or None when no call fits.
 
     When every call asks for its own model, the span's request model names its call: a library
     sets it from the request, before any response can be mixed in. Otherwise it is the call whose
-    time window holds the span's start, which is unique for calls made one after the other.
+    time window holds the span's start, which is unique for calls made one after the other. Only
+    when the windows overlap and the request model names no call (some libraries record the served
+    model there, or one model name only) does any name or id of a call on the span decide: its
+    response id, or its served model under either model attribute. A concurrent plan gives each
+    call its own.
     """
     models = [c.request_model for c in sc.calls]
     if len(set(models)) == len(models):
         hit = lookup(span.attributes, "request_model")
-        return models.index(hit[1]) if hit and hit[1] in models else None
+        if hit and hit[1] in models:
+            return models.index(hit[1])
     inside = [i for i, (start, end) in enumerate(windows) if start <= span.start_ns <= end]
-    return inside[0] if len(inside) == 1 else None
+    if len(inside) <= 1:
+        return inside[0] if inside else None
+    named = {
+        hit[1]
+        for fact in ("request_model", "response_model", "response_id")
+        if (hit := lookup(span.attributes, fact))
+    }
+    fits = [i for i in inside if named & {t.calls[i].response_model, t.calls[i].response_id}]
+    return fits[0] if len(fits) == 1 else None
 
 
 def _crossed(c: Check, i: int, t: Truth) -> str:
@@ -314,7 +327,7 @@ def _per_call(sc: Scenario, t: Truth, obs: dict, llm: list[SpanRecord]) -> list[
     windows = [c["window"] for c in obs["seen"].get("calls", [])]
     owned: list[list[SpanRecord]] = [[] for _ in sc.calls]
     for s in llm:
-        if windows and (i := _owner(s, sc, windows)) is not None:
+        if windows and (i := _owner(s, sc, t, windows)) is not None:
             owned[i].append(s)
     worst: dict[str, Check] = {}
     failed: dict[str, list[str]] = {}
