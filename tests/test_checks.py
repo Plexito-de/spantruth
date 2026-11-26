@@ -8,7 +8,7 @@ import pytest
 from spantruth import scenarios
 from spantruth.checks import _formula, cell_verdict, grade
 from spantruth.conventions import lookup
-from spantruth.model import Call, Truth
+from spantruth.model import Truth
 from spantruth.receiver import LogRecordData, SpanRecord
 
 TRACE, PARENT = "a" * 32, "b" * 16
@@ -629,22 +629,99 @@ def test_all_usage_on_the_first_call_span_is_wrong_for_the_others():
     assert by_id(grade(sc, t, base, o, spans))["input_tokens"].verdict == "missing"
 
 
-def test_calls_to_different_models_are_matched_by_request_model():
-    # Concurrent calls overlap in time, so their spans are told apart by the model they ask for.
-    loop = scenarios.get("openai/agent-loop")
-    calls = (
-        Call("gpt-5-mini", loop.calls[0].response),
-        Call("gpt-5-nano", loop.calls[2].response),
-    )
-    sc = replace(loop, id="openai/probe", calls=calls)
-    t = scenarios.truth(sc)
-    _, _, base, o, spans = _call_spans("openai/agent-loop")
-    first = replace(
-        spans[0], attributes=spans[0].attributes | {"gen_ai.request.model": "gpt-5-mini"}
-    )
-    third = spans[2].attributes | {"gen_ai.request.model": "gpt-5-nano"}
-    # Both spans start in the first window: only the model can tell them apart.
-    third_span = replace(spans[2], start_ns=first.start_ns, attributes=third)
-    o["seen"]["calls"] = [{"window": [0, 1000]}, {"window": [0, 1000]}]
-    checks = grade(sc, t, base, o, [third_span, first])
+def _overlapping(sid, mutate=lambda i, attrs: None):
+    """Spans of a concurrent plan: both start at the same moment, inside both call windows."""
+    sc, t, base, o, spans = _call_spans(sid, mutate)
+    o["seen"]["calls"] = [{"window": [0, 1000]} for _ in spans]
+    return sc, t, base, o, [replace(s, start_ns=50) for s in reversed(spans)]
+
+
+@pytest.mark.parametrize(
+    "sid", ["openai/async-concurrent-streams", "anthropic/async-concurrent-streams"]
+)
+def test_concurrent_calls_are_matched_by_request_model(sid):
+    sc, t, base, o, spans = _overlapping(sid)
+    checks = grade(sc, t, base, o, spans)
     assert cell_verdict(checks) == "pass", [c for c in checks if c.verdict != "pass"]
+
+
+def test_swapped_counts_between_concurrent_calls_are_named():
+    def swap(i, attrs):
+        attrs["gen_ai.usage.output_tokens"] = (181, 149)[i]
+
+    sc, t, base, o, spans = _overlapping("openai/async-concurrent-streams", swap)
+    c = by_id(grade(sc, t, base, o, spans))["output_tokens"]
+    assert c.verdict == "wrong"
+    assert c.detail == "call 1 of 2: the output tokens of call 2; failed on calls 1, 2"
+
+
+def _served_only(keep_own_name=True):
+    """ddtrace's shape: the served model as `gen_ai.request.model`, and no response id or model."""
+
+    def mutate(i, attrs):
+        requested = attrs["gen_ai.request.model"]
+        attrs["gen_ai.request.model"] = attrs.pop("gen_ai.response.model")
+        del attrs["gen_ai.response.id"]
+        if keep_own_name:
+            attrs["openai.request.model"] = requested
+
+    return mutate
+
+
+def test_a_request_model_under_a_library_name_places_the_span():
+    sc, t, base, o, spans = _overlapping("openai/async-concurrent-streams", _served_only())
+    checks = by_id(grade(sc, t, base, o, spans))
+    assert "span.recorded" not in checks
+    assert checks["request_model"].verdict == "wrong"
+    assert checks["input_tokens"].verdict == "pass"
+
+
+def test_counts_crossed_onto_a_span_placed_by_its_request_model_are_named():
+    def crossed(i, attrs):
+        _served_only()(i, attrs)
+        if i == 0:  # call 1's span carries call 2's served model and counts
+            attrs["gen_ai.request.model"] = "gpt-5-nano-2026-08-07"
+            attrs["gen_ai.usage.input_tokens"], attrs["gen_ai.usage.output_tokens"] = 1747, 181
+
+    sc, t, base, o, spans = _overlapping("openai/async-concurrent-streams", crossed)
+    c = by_id(grade(sc, t, base, o, spans))["input_tokens"]
+    assert c.verdict == "wrong" and c.detail == "call 1 of 2: the input tokens of call 2"
+
+
+def test_a_served_model_alone_does_not_place_a_span_of_overlapping_calls():
+    # The served model is what crosses: matching on it would hide this crossing.
+    def crossed(i, attrs):
+        _served_only(keep_own_name=False)(i, attrs)
+        if i == 0:
+            attrs["gen_ai.request.model"] = "gpt-5-nano-2026-08-07"
+            attrs["gen_ai.usage.input_tokens"], attrs["gen_ai.usage.output_tokens"] = 1747, 181
+
+    sc, t, base, o, spans = _overlapping("openai/async-concurrent-streams", crossed)
+    checks = grade(sc, t, base, o, spans)
+    c = by_id(checks)["span.recorded"]
+    assert c.verdict == "inconclusive" and "not graded" in c.detail
+    assert "input_tokens" not in by_id(checks) and cell_verdict(checks) != "pass"
+
+
+def test_a_span_that_names_two_calls_is_a_crossing_not_a_missing_span():
+    def mixed(i, attrs):
+        _served_only(keep_own_name=False)(i, attrs)
+        if i == 0:  # call 1's served model, and call 2's response id
+            attrs["gen_ai.response.id"] = "chatcmpl-wt-par2"
+
+    sc, t, base, o, spans = _overlapping("openai/async-concurrent-streams", mixed)
+    checks = by_id(grade(sc, t, base, o, spans))
+    assert "span.recorded" not in checks  # both calls are graded on the span that names them
+    c = checks["response_id"]
+    assert c.verdict == "wrong"
+    assert c.detail.startswith("call 1 of 2: a span names calls 1 and 2; the response id of call 2")
+
+
+def test_a_span_that_names_no_call_of_overlapping_calls_is_not_graded():
+    def anonymous(i, attrs):
+        del attrs["gen_ai.request.model"], attrs["gen_ai.response.model"]
+        del attrs["gen_ai.response.id"]
+
+    sc, t, base, o, spans = _overlapping("openai/async-concurrent-streams", anonymous)
+    c = by_id(grade(sc, t, base, o, spans))["span.recorded"]
+    assert c.verdict == "inconclusive" and c.detail.endswith("failed on calls 1, 2")

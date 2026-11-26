@@ -59,6 +59,7 @@ def scenario(sc: Scenario) -> dict[str, Any]:
         "content": sc.content,
         # A scenario with several calls: the mock picks each call's response from the request,
         # by its model and by how many assistant messages it sends back.
+        "concurrent": sc.concurrent,
         "calls": [
             {"request_model": c.request_model, "response": response(c.response)} for c in sc.calls
         ],

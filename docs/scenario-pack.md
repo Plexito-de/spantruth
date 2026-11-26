@@ -94,6 +94,8 @@ completion text set that way, and empty for every other scenario.
 `calls` lists each call of a scenario that makes more than one, such as an agent loop:
 its `request_model` and its `response`. The mock server picks a call's response by the
 request's model and by how many assistant messages the request sends back.
+`concurrent` is true when the app starts those calls at the same time, with
+`asyncio.gather`, instead of one after the other.
 
 ## Use the pack with spantruth's own mock server
 

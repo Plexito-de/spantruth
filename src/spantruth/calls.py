@@ -199,7 +199,10 @@ async def _run_gemini_async(sc: Scenario, base_url: str, seen: Seen) -> None:
 def run(sc: Scenario, base_url: str, seen: Seen) -> None:
     """Run one scenario the way an application would. Exceptions propagate to the caller."""
     if sc.calls:
-        _loop(sc, base_url, seen)
+        if sc.concurrent:
+            asyncio.run(_gather(sc, base_url, seen))
+        else:
+            _loop(sc, base_url, seen)
         return
     if sc.provider == "gemini":
         if sc.asynchronous:
@@ -333,3 +336,37 @@ def _loop(sc: Scenario, base_url: str, seen: Seen) -> None:
         on_result(r, one)
         seen.add(one, start, time.time_ns())
         messages += step(r)
+
+
+async def _gather(sc: Scenario, base_url: str, seen: Seen) -> None:
+    """Concurrent calls on one async client, each a stream, read side by side.
+
+    Each reader yields to the event loop after every event, as an app that forwards each chunk
+    does, so the streams interleave and an instrumentation with shared state mixes them up.
+    """
+    if sc.provider == "openai":
+        import openai
+
+        client = openai.AsyncOpenAI(base_url=base_url, api_key="wt-test", max_retries=0, timeout=10)
+        create, on_event = client.chat.completions.create, _openai_chunk
+        extra: dict = {"stream_options": {"include_usage": True}}
+    else:
+        import anthropic
+
+        client = anthropic.AsyncAnthropic(
+            base_url=base_url, api_key="wt-test", max_retries=0, timeout=10
+        )
+        create, on_event = client.messages.create, _anthropic_event
+        extra = {"max_tokens": 1024}
+
+    async def one(model: str) -> tuple[Seen, int, int]:
+        part, start = Seen(), time.time_ns()
+        stream = await create(model=model, messages=PROMPT, stream=True, **extra)
+        async for event in stream:
+            on_event(event, part)
+            await asyncio.sleep(0)
+        await stream.close()
+        return part, start, time.time_ns()
+
+    for part, start, end in await asyncio.gather(*(one(c.request_model) for c in sc.calls)):
+        seen.add(part, start, end)

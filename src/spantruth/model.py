@@ -102,7 +102,8 @@ class Scenario:
     `content` is `off` or `on` for a scenario that sets the library's own switch for recording
     prompt and completion text, as the subject declares it. Empty: the switch is left alone.
     `calls` makes the app call more than once in its trace. As an agent loop, each call sends the
-    tool results of the call before it.
+    tool results of the call before it. With `concurrent`, the app starts every call at once
+    with `asyncio.gather` instead, and reads their streams side by side.
     """
 
     id: str
@@ -124,6 +125,7 @@ class Scenario:
     retries: int = 0
     content: str = ""
     calls: tuple[Call, ...] = ()
+    concurrent: bool = False
 
     def __post_init__(self) -> None:
         if not self.responses:

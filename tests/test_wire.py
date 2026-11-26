@@ -648,3 +648,29 @@ def test_only_the_azure_filter_fields_are_accepted_beyond_the_sdk_types():
     )
     found = {re.sub(r"(^|\.)\d+\.", r"\1", p) for p in _undeclared(parsed)}
     assert found == az.AZURE_ONLY
+
+
+@pytest.mark.parametrize(
+    "sid", ["openai/async-concurrent-streams", "anthropic/async-concurrent-streams"]
+)
+def test_concurrent_calls_overlap_and_each_gets_its_own_stream(sid):
+    sc = scenarios.get(sid)
+    seen = calls.Seen()
+    with MockServer() as mock:
+        calls.run(sc, mock.base_url(sc), seen)
+        models = sorted(json.loads(body)["model"] for _, _, body in mock.requests)
+    assert models == sorted(c.request_model for c in sc.calls)
+    assert seen.response_id == [c.response_id for c in scenarios.truth(sc).calls]
+    (start1, end1), (start2, end2) = (c["window"] for c in seen.calls)
+    assert start1 < end2 and start2 < end1  # the two calls ran at the same time
+
+
+def test_concurrent_calls_ask_for_different_models():
+    # The checks tell overlapping calls apart by request model, so a plan must give each its own.
+    for sc in ALL:
+        if sc.concurrent:
+            models = [c.request_model for c in sc.calls]
+            assert len(set(models)) == len(models), sc.id
+            # The fallback for a span with no usable request model: its served model or its id.
+            served = [(c.response_model, c.response_id) for c in scenarios.truth(sc).calls]
+            assert len({m for m, _ in served}) == len({i for _, i in served}) == len(models)
