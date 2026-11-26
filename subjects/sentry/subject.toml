@@ -1,8 +1,17 @@
 title = "Sentry SDK"
 homepage = "https://github.com/getsentry/sentry-python"
-providers = ["openai", "anthropic"]
+providers = ["openai", "anthropic", "gemini", "azure"]
 packages = ["sentry-sdk==2.74.0"]
 track = ["sentry-sdk"]
 # Many projects use Sentry for errors only, so `spantruth doctor` needs a provider SDK as well.
 detect_with = ["openai", "anthropic"]
-notes = "Sentry spans are not OpenTelemetry spans, and the SDK has no OTLP export for them (its OTLP integration sends OpenTelemetry spans to Sentry). A local adapter in instrument.py shows the SDK's own gen_ai spans to the harness: span data keys and values are unchanged, a Sentry status other than ok becomes ERROR, and a span the SDK never finishes stays open and is lost. span.parented comes from the adapter, not from Sentry, whose spans form their own trace. No DSN and no account: without a DSN the SDK has no transport, so nothing is sent."
+notes = "Sentry spans are not OpenTelemetry spans, and the SDK has no OTLP export for them (its OTLP integration sends OpenTelemetry spans to Sentry). A local adapter in instrument.py shows the SDK's own gen_ai spans to the harness: span data keys and values are unchanged, a Sentry status other than ok becomes ERROR, and a span the SDK never finishes stays open and is lost. span.parented comes from the adapter, not from Sentry, whose spans form their own trace. No DSN and no account: without a DSN the SDK has no transport, so nothing is sent. The adapter serves 2.x and 3.x: Sentry SDK 3.0 removed the transaction-based spans, so on 3.x it reads the streamed spans, whose op is the sentry.op attribute and whose data are their attributes. The setup is sentry_sdk.init(traces_sample_rate=1.0) in both versions."
+
+# Arguments of sentry_sdk.init(). instrument.py passes send_default_pii from SPANTRUTH_CONTENT;
+# include_prompts is True by default.
+[content]
+switch = "sentry_sdk.init(send_default_pii=...)"
+docs = "https://github.com/getsentry/sentry-python/blob/14c7fd5338e455112bbdf4d75cbc0864c7e97d31/sentry_sdk/integrations/openai.py#L431-L435"
+default = "off"
+off = {}
+on = {}

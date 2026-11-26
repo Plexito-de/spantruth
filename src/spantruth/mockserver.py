@@ -24,6 +24,46 @@ def _sse(event: Event) -> bytes:
     return f"{head}data: {data}\n\n".encode()
 
 
+def _planned(sc: Scenario, request: bytes) -> Response | None:
+    """The response to one call of a scenario with several, picked from the request alone.
+
+    Concurrent calls can arrive in any order, so a counter would not do.
+    """
+    try:
+        body = json.loads(request)
+    except ValueError:
+        return None
+    answered = sum(1 for m in body.get("messages", ()) if m.get("role") == "assistant")
+    call = sc.call_for(body.get("model", ""), answered)
+    return call.response if call else None
+
+
+def _gemini_route(sc: Scenario, path: str) -> str | None:
+    """Why a Gemini request went to the wrong method, or None when it is the right one.
+
+    A stream is `models/{model}:streamGenerateContent?alt=sse`, a single response
+    `models/{model}:generateContent`, under an API version such as `v1beta`.
+    """
+    route, _, query = path.partition("?")
+    method = "streamGenerateContent" if sc.stream else "generateContent"
+    if not route.endswith(f"/models/{sc.request_model}:{method}"):
+        return f"{sc.id} expects models/{sc.request_model}:{method}, not {route}"
+    if sc.stream and "alt=sse" not in query.split("&"):
+        return f"{sc.id} expects alt=sse on a stream, not ?{query}"
+    return None
+
+
+def _azure_route(sc: Scenario, path: str) -> str | None:
+    """Why an Azure request missed its deployment or its api-version, or None when it is right."""
+    route, _, query = path.partition("?")
+    want = f"/openai/deployments/{sc.request_model}/chat/completions"
+    if not route.endswith(want):
+        return f"{sc.id} expects {want}, not {route}"
+    if not any(p.startswith("api-version=") for p in query.split("&")):
+        return f"{sc.id} expects an api-version query parameter, not ?{query}"
+    return None
+
+
 class _Handler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
     server: MockServer
@@ -43,12 +83,21 @@ class _Handler(BaseHTTPRequestHandler):
         except KeyError as exc:
             self._json(404, {"error": {"message": str(exc)}})
             return
+        if sc.provider == "gemini" and (problem := _gemini_route(sc, self.path)):
+            self._json(404, {"error": {"code": 404, "message": problem, "status": "NOT_FOUND"}})
+            return
+        if sc.provider == "azure" and (problem := _azure_route(sc, self.path)):
+            self._json(404, {"error": {"code": "DeploymentNotFound", "message": problem}})
+            return
         self.server.record(sc.id, self.path, request)
         retry_header = self.headers.get("x-stainless-retry-count")
         retry_count = (
             int(retry_header) if retry_header is not None and retry_header.isdigit() else None
         )
-        response = self.server.next_response(sc, retry_count)
+        response = _planned(sc, request) if sc.calls else self.server.next_response(sc, retry_count)
+        if response is None:
+            self._json(404, {"error": {"message": f"no planned call of {sc.id} fits the request"}})
+            return
         if response.body is not None:
             self._json(response.status, response.body, response.headers)
         else:
@@ -145,6 +194,6 @@ class MockServer(ThreadingHTTPServer):
 
 
 def base_url(server_url: str, sc: Scenario) -> str:
-    """The `base_url` an SDK client needs for this scenario."""
+    """The `base_url` an SDK client needs for this scenario. google-genai adds `v1beta` itself."""
     prefix = f"{server_url}/s/{sc.key}"
     return f"{prefix}/v1" if sc.provider == "openai" else prefix

@@ -7,7 +7,9 @@ name at the pinned semantic-conventions-genai commit.
 
 from __future__ import annotations
 
+import contextlib
 import json
+import re
 from dataclasses import dataclass
 from typing import Any
 
@@ -113,6 +115,9 @@ FINISH_ALIASES = {
     "tool_use": "tool_call",
     "tool_calls": "tool_call",
     "max_tokens": "length",
+    # Gemini's FinishReason enum
+    "STOP": "stop",
+    "MAX_TOKENS": "length",
 }
 
 
@@ -169,3 +174,94 @@ def same_finish(expected: tuple[str, ...], got: Any) -> bool:
         return sorted(FINISH_ALIASES.get(v, v) for v in values)
 
     return norm(expected) == norm(got)
+
+
+# Where a library records the completion text. Each convention stores the text in a message
+# structure, often as a JSON string, so `text_of` reads the text out of any of these shapes.
+OUTPUT_ATTRIBUTES = (
+    "gen_ai.output.messages",  # current GenAI conventions, on the span or on the details event
+    "gen_ai.completion",  # older GenAI event attribute
+    "gen_ai.response.text",  # Sentry
+    "langfuse.observation.output",
+)
+# Conventions that flatten one message per index into attribute names.
+OUTPUT_INDEXED = (
+    re.compile(r"gen_ai\.completion\.(\d+)\.content"),  # OpenLLMetry legacy attributes
+    re.compile(r"llm\.output_messages\.(\d+)\.message\.content"),  # OpenInference
+    # OpenInference, a message of content blocks
+    re.compile(r"llm\.output_messages\.(\d+)\.message\.contents\.(\d+)\.message_content\.text"),
+)
+# Log records and span events that carry the completion in their body.
+OUTPUT_EVENTS = ("gen_ai.choice",)
+
+
+def text_of(value: Any) -> str | None:
+    """The text inside a message, a list of messages or parts, or a JSON string of either."""
+    if isinstance(value, str):
+        if value[:1] in ("[", "{"):
+            try:
+                return text_of(json.loads(value))
+            except ValueError:
+                return value
+        return value
+    if isinstance(value, list):
+        texts = [t for t in (text_of(v) for v in value) if t is not None]
+        return "".join(texts) if texts else None
+    if isinstance(value, dict):
+        if isinstance(value.get("parts"), list):
+            parts = value["parts"]
+            return text_of([p for p in parts if isinstance(p, dict) and p.get("type") == "text"])
+        for key in ("content", "text", "message"):
+            if key in value:
+                return text_of(value[key])
+    return None
+
+
+def output_texts(attributes: dict[str, Any]) -> list[tuple[str, str]]:
+    """(attribute, text) for every completion text recorded in one set of attributes."""
+    out = []
+    for name in OUTPUT_ATTRIBUTES:
+        if name in attributes and (text := text_of(attributes[name])) is not None:
+            out.append((name, text))
+    for pattern in OUTPUT_INDEXED:
+        indexed = sorted(
+            (tuple(map(int, m.groups())), n) for n in attributes if (m := pattern.fullmatch(n))
+        )
+        if indexed:
+            text = "".join(text_of(attributes[n]) or "" for _, n in indexed)
+            out.append((indexed[0][1], text))
+    return out
+
+
+def leaves(value: Any):
+    """Every string inside a value, with JSON strings opened, so a search sees nested text."""
+    if isinstance(value, str):
+        yield value
+        if value[:1] in ("[", "{"):
+            with contextlib.suppress(ValueError):
+                yield from leaves(json.loads(value))
+    elif isinstance(value, dict):
+        for v in value.values():
+            yield from leaves(v)
+    elif isinstance(value, (list, tuple)):
+        for v in value:
+            yield from leaves(v)
+
+
+# The token usage metrics, per token direction: (metric, the `gen_ai.token.type` it needs). The
+# pinned conventions split usage into per-direction histograms and counters. The single
+# `gen_ai.client.token.usage` histogram with `gen_ai.token.type` is their deprecated predecessor,
+# which many libraries still emit, so it is read too.
+TOKEN_METRICS: dict[str, tuple[tuple[str, str | None], ...]] = {
+    "input_tokens": (
+        ("gen_ai.client.inference.operation.input_tokens", None),
+        ("gen_ai.client.inference.usage.input_tokens", None),
+        ("gen_ai.client.token.usage", "input"),
+    ),
+    "output_tokens": (
+        ("gen_ai.client.inference.operation.output_tokens", None),
+        ("gen_ai.client.inference.usage.output_tokens", None),
+        ("gen_ai.client.token.usage", "output"),
+    ),
+}
+TOKEN_METRIC_NAMES = frozenset(name for names in TOKEN_METRICS.values() for name, _ in names)

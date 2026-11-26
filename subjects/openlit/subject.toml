@@ -1,5 +1,19 @@
 title = "OpenLIT"
 homepage = "https://github.com/openlit/openlit"
-providers = ["openai", "anthropic"]
+providers = ["openai", "anthropic", "gemini", "azure"]
 packages = ["openlit==1.45.0", "openai==2.54.0", "anthropic==0.125.0"]
 track = ["openlit"]
+
+# An argument of openlit.init(). instrument.py passes it from SPANTRUTH_CONTENT.
+[content]
+switch = "openlit.init(capture_message_content=...)"
+docs = "https://github.com/openlit/openlit/blob/fcebb5543846576a061d5aa75dc097e3c8c69646/sdk/python/README.md#L192"
+default = "on"
+off = {}
+on = {}
+
+# The OpenAI integration page lists gen_ai.client.token.usage. Anthropic is graded on code: both
+# integrations record through record_completion_metrics (__helpers.py L999-L1004,
+# https://github.com/openlit/openlit/blob/fcebb5543846576a061d5aa75dc097e3c8c69646/sdk/python/src/openlit/__helpers.py#L999-L1004).
+[metrics]
+docs = "https://github.com/openlit/openlit/blob/fcebb5543846576a061d5aa75dc097e3c8c69646/docs/latest/sdk/integrations/openai.mdx#L218"

@@ -33,7 +33,7 @@ def test_an_override_replaces_only_the_package_it_names():
 def test_logfire_is_pinned_and_tracked():
     lib = subjects.load("logfire")
     assert lib.title == "Pydantic Logfire"
-    assert lib.providers == ("openai", "anthropic")
+    assert lib.providers == ("openai", "anthropic", "gemini", "azure")
     assert lib.homepage == "https://github.com/pydantic/logfire"
     assert "logfire==5.4.0" in subjects.requirements(lib, latest=False)
     latest = subjects.requirements(lib, latest=True)
@@ -76,7 +76,7 @@ def test_latest_also_unpins_the_sdks():
 def test_openlit_is_pinned_and_tracked():
     lib = subjects.load("openlit")
     assert lib.title == "OpenLIT"
-    assert lib.providers == ("openai", "anthropic")
+    assert lib.providers == ("openai", "anthropic", "gemini", "azure")
     assert lib.homepage == "https://github.com/openlit/openlit"
     assert "openlit==1.45.0" in subjects.requirements(lib, latest=False)
     assert "openai==2.54.0" in subjects.requirements(lib, latest=False)
@@ -89,7 +89,7 @@ def test_openlit_is_pinned_and_tracked():
 def test_langfuse_is_pinned_and_tracked():
     lib = subjects.load("langfuse")
     assert lib.title == "Langfuse Python SDK"
-    assert lib.providers == ("openai",)
+    assert lib.providers == ("openai", "azure")
     assert lib.homepage == "https://github.com/langfuse/langfuse-python"
     assert "langfuse==5.2.0" in subjects.requirements(lib, latest=False)
     latest = subjects.requirements(lib, latest=True)
@@ -255,6 +255,52 @@ def test_only_a_built_in_subject_can_be_a_control(tmp_path):
     assert subjects.load("control-honest").kind == "control"
 
 
+def test_a_content_switch_sets_its_variables_and_the_mode(tmp_path):
+    honest = subjects.load("control-honest")
+    assert honest.content_env("off") == {
+        "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT": "false",
+        "SPANTRUTH_CONTENT": "off",
+    }
+    directory = _copy_subject(tmp_path)
+    config = directory / "subject.toml"
+    head = config.read_text().split("[content]")[0]
+    config.write_text(
+        head + '[content]\nswitch = "s"\ndocs = "https://x"\ndefault = "on"\non = {}\n'
+    )
+    lib = subjects.load(str(directory))
+    assert lib.content_env("off") is None  # no documented way to turn it off
+    assert lib.content_env("on") == {"SPANTRUTH_CONTENT": "on"}
+    assert subjects.load("openllmetry").content_env("off") is not None
+
+
+@pytest.mark.parametrize(
+    ("table", "error"),
+    [
+        ('switch = "s"\ndocs = "https://x"\n', "needs switch, docs and default"),
+        ('switch = "s"\ndocs = "http://x"\ndefault = "on"\n', "https address"),
+        ('switch = "s"\ndocs = "https://x"\ndefault = "yes"\n', 'must be "on" or "off"'),
+        ('switch = "s"\ndocs = "https://x"\ndefault = "on"\noff = { A = 1 }\n', "table of strings"),
+    ],
+)
+def test_a_bad_content_table_is_one_clear_error(tmp_path, table, error):
+    directory = _copy_subject(tmp_path)
+    config = directory / "subject.toml"
+    config.write_text(config.read_text().split("[content]")[0] + "[content]\n" + table)
+    with pytest.raises(subjects.SubjectError, match=error):
+        subjects.load(str(directory))
+
+
+def test_only_a_subject_that_documents_token_metrics_has_them_graded(tmp_path):
+    assert subjects.load("otel-official").metrics_docs.startswith("https://")
+    for name in ("logfire", "mlflow", "sentry", "ddtrace", "anthropic-sdk", "openinference"):
+        assert subjects.load(name).metrics_docs == ""
+    directory = _copy_subject(tmp_path)
+    config = directory / "subject.toml"
+    config.write_text(config.read_text().split("[metrics]")[0] + '[metrics]\ndocs = "http://x"\n')
+    with pytest.raises(subjects.SubjectError, match=r"\[metrics\] needs docs"):
+        subjects.load(str(directory))
+
+
 def test_a_checkout_with_a_broken_pyproject_is_a_usage_error(tmp_path):
     directory = _checkout(tmp_path, "[project\nname = ")
     with pytest.raises(subjects.SubjectError, match=r"pyproject\.toml"):
@@ -273,3 +319,85 @@ def test_the_wrapper_example_loads_as_a_subject():
     assert subject.name == "spantruth"
     assert "acme-llm==0.1.0" in subject.packages
     assert subjects.resolve_override(str(example)).startswith("acme-llm @ file://")
+
+
+def test_langchain_openinference_is_a_framework_subject():
+    lib = subjects.load("langchain-openinference")
+    assert lib.app
+    reqs = subjects.requirements(lib, latest=False)
+    assert {"langchain-openai==1.8.5", "openinference-instrumentation-langchain==0.1.90"} <= set(
+        reqs
+    )
+    assert "openai==3.42.1" in reqs  # LangChain runs the base SDK versions
+    assert "langchain-openai" in subjects.requirements(lib, latest=True)
+    # A LangChain stream is a generator: no with block, and no SDK streaming helper.
+    assert not lib.supports("openai/stream-early-exit-with")
+    assert not lib.supports("openai/stream-helper")
+    assert lib.supports("openai/responses-stream-missing-finish-abort")
+    assert lib.env["LANGSMITH_TRACING"] == "false"
+
+
+def test_langchain_openllmetry_is_a_framework_subject():
+    lib = subjects.load("langchain-openllmetry")
+    assert lib.app
+    reqs = subjects.requirements(lib, latest=False)
+    assert {"langchain-openai==1.8.5", "opentelemetry-instrumentation-langchain==0.63.1"} <= set(
+        reqs
+    )
+    assert "openai==3.42.1" in reqs  # LangChain runs the base SDK versions
+    assert "opentelemetry-instrumentation-langchain" in subjects.requirements(lib, latest=True)
+    # A LangChain stream is a generator: no with block, and no SDK streaming helper.
+    assert not lib.supports("anthropic/stream-early-exit-with")
+    assert not lib.supports("openai/async-stream-helper")
+    assert lib.env["LANGCHAIN_TRACING_V2"] == "false"
+
+
+def test_pydantic_ai_is_a_framework_subject():
+    lib = subjects.load("pydantic-ai")
+    assert lib.app
+    pinned = subjects.requirements(lib, latest=False)
+    assert "pydantic-ai-slim[openai,anthropic]==2.75.0" in pinned
+    # pydantic-ai-slim[openai] requires openai>=3.50.0, so the base pin is replaced.
+    assert "openai==3.50.0" in pinned and "openai==3.42.1" not in pinned
+    assert "pydantic-ai-slim" in subjects.requirements(lib, latest=True)
+    assert lib.supports("openai/responses-stream-missing-finish-abort")
+    assert lib.supports("anthropic/async-stream-early-exit")
+    # External tools end the run after the response that calls them.
+    assert lib.supports("openai/tool-call") and lib.supports("anthropic/stream-tool-call")
+    assert not lib.supports("openai/stream-helper")
+    assert not lib.supports("openai/stream-early-exit-with")
+
+
+def test_openai_agents_is_a_framework_subject():
+    lib = subjects.load("openai-agents")
+    assert lib.app
+    assert lib.providers == ("openai",)
+    reqs = subjects.requirements(lib, latest=False)
+    assert {"openai-agents==0.26.0", "openinference-instrumentation-openai-agents==2.8.7"} <= set(
+        reqs
+    )
+    assert "openai-agents" in subjects.requirements(lib, latest=True)
+    assert lib.supports("openai/basic") and lib.supports("openai/async-stream")
+    assert lib.supports("openai/responses-stream-missing-finish-abort")
+    # stop_on_first_tool ends the agent loop after the first tool call.
+    assert lib.supports("openai/tool-call") and lib.supports("openai/stream-tool-call")
+    # The SDK reads the model stream in a background task, whatever the app reads.
+    assert not lib.supports("openai/stream-early-exit")
+    # The SDK sends its own traces only with OPENAI_API_KEY set, which no subject process has.
+    assert "OPENAI_API_KEY" not in lib.env
+
+
+def test_litellm_is_a_framework_subject_that_stays_offline():
+    lib = subjects.load("litellm")
+    assert lib.app
+    assert "litellm==1.111.0" in subjects.requirements(lib, latest=False)
+    assert "litellm" in subjects.requirements(lib, latest=True)
+    # Not LiteLLM calls: the OpenAI SDK's own helper and the Responses API.
+    assert not lib.supports("openai/stream-helper")
+    assert not lib.supports("openai/responses-stream-missing-finish-abort")
+    assert lib.supports("openai/stream") and lib.supports("anthropic/async-basic")
+    # LiteLLM writes these calls onto the app's span, which no check grades yet.
+    assert not lib.supports("openai/basic") and not lib.supports("anthropic/async-stream")
+    # LiteLLM fetches its cost map and Anthropic beta headers from the web unless told not to.
+    assert lib.env["LITELLM_LOCAL_MODEL_COST_MAP"] == "True"
+    assert lib.env["LITELLM_LOCAL_ANTHROPIC_BETA_HEADERS"] == "True"

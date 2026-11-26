@@ -6,11 +6,29 @@ branding:
   color: green
 
 inputs:
+  command:
+    description: >-
+      `run` checks one subject, for a library's own repository. `doctor` reads the lock file of an
+      application and checks the libraries it uses at its versions. On a pull request it compares
+      with the base branch, and fails only on a finding that the change adds.
+    required: false
+    default: run
   subject:
     description: >-
-      A built-in subject, such as openllmetry, or the path of a subject directory in your
-      repository, such as ./spantruth.
-    required: true
+      For `run`: a built-in subject, such as openllmetry, or the path of a subject directory in
+      your repository, such as ./spantruth.
+    required: false
+    default: ""
+  path:
+    description: >-
+      For `doctor`: the project directory, or one dependency file.
+    required: false
+    default: "."
+  base:
+    description: >-
+      For `doctor`: the git ref to compare with. On a pull request, the base commit when empty.
+    required: false
+    default: ""
   with:
     description: >-
       Packages to replace in the subject, one per line: a local checkout such as
@@ -29,6 +47,12 @@ inputs:
     default: ""
   latest:
     description: Unpin the subject's tracked packages and the provider SDKs.
+    required: false
+    default: "false"
+  quick:
+    description: >-
+      Run one representative scenario per bug class and provider instead of every scenario. A
+      faster gate for each pull request. Run the full set nightly. Do not set scenario with it.
     required: false
     default: "false"
   artifact-name:
@@ -51,7 +75,9 @@ outputs:
   exit-code:
     description: >-
       0 when every cell ran and the failing checks match the expectation file, 1 when they
-      differ, 2 for a usage error, 3 when spantruth could not run a cell.
+      differ, 2 for a usage error, 3 when spantruth could not run a cell. For `doctor`: 1 when
+      the change adds a finding, or with no base when there is a finding; 2 when there is nothing
+      to check.
     value: ${{ steps.run.outputs.exit-code }}
   results:
     description: The path of the results document.
@@ -70,11 +96,16 @@ runs:
     - id: run
       shell: bash
       env:
+        COMMAND: ${{ inputs.command }}
         SUBJECT: ${{ inputs.subject }}
+        PROJECT: ${{ inputs.path }}
+        BASE: ${{ inputs.base }}
+        BASE_SHA: ${{ github.event.pull_request.base.sha }}
         WITH: ${{ inputs.with }}
         SCENARIO: ${{ inputs.scenario }}
         EXPECT: ${{ inputs.expect }}
         LATEST: ${{ inputs.latest }}
+        QUICK: ${{ inputs.quick }}
         ARTIFACT_NAME: ${{ inputs.artifact-name }}
         COMMENT: ${{ inputs.comment }}
       run: |
@@ -87,15 +118,63 @@ runs:
         uv pip install --quiet --no-config --python "$out/venv/bin/python" "$GITHUB_ACTION_PATH"
         spantruth="$out/venv/bin/spantruth"
 
-        args=(run --subject "$SUBJECT" --out "$out/results.json" --summary "$GITHUB_STEP_SUMMARY")
-        while read -r line; do
-          if [ -n "$line" ]; then args+=(--with "$line"); fi
-        done <<< "$WITH"
+        case "${COMMAND:-run}" in
+          run)
+            if [ -z "$SUBJECT" ]; then
+              echo "::error::spantruth: the run command needs the subject input"
+              echo "exit-code=2" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            args=(run --subject "$SUBJECT")
+            while read -r line; do
+              if [ -n "$line" ]; then args+=(--with "$line"); fi
+            done <<< "$WITH"
+            if [ -n "$EXPECT" ]; then args+=(--expect "$EXPECT"); fi
+            if [ "$LATEST" = "true" ]; then args+=(--latest); fi
+            if [ "${QUICK:-}" = "true" ]; then args+=(--quick); fi
+            label="$(basename "$SUBJECT")"
+            ;;
+          doctor)
+            project="${PROJECT:-.}"
+            args=(doctor "$project")
+            repo="$project"
+            if [ -f "$repo" ]; then repo="$(dirname "$repo")"; fi
+            base="${BASE:-${BASE_SHA:-}}"
+            if [[ "$base" == -* ]]; then
+              # A ref is never an option: `--upload-pack=...` must not reach git.
+              echo "::error::spantruth: the base input is a git ref, and it cannot start with -"
+              echo "exit-code=2" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            if [ -n "$base" ]; then
+              # A shallow checkout has no base commit, and fetching a branch such as main updates
+              # only origin/main, so the fetched commit is read from FETCH_HEAD.
+              commit="$(git -C "$repo" rev-parse --verify --quiet --end-of-options "$base^{commit}")" ||
+                commit=""
+              if [ -z "$commit" ] &&
+                git -C "$repo" fetch --quiet --no-tags --depth=1 --end-of-options origin "$base"; then
+                commit="$(git -C "$repo" rev-parse --verify --quiet --end-of-options "FETCH_HEAD^{commit}")" ||
+                  commit=""
+              fi
+              if [ -n "$commit" ]; then
+                args+=(--base "$commit")
+              else
+                echo "::warning::spantruth could not find the base commit, so doctor does not compare and fails on any finding"
+              fi
+            fi
+            # One comment and one artifact per project path: a monorepo runs a step per subproject.
+            label="doctor$(printf '%s' "${project#./}" | sed -e 's#/*$##' -e 's#^\.$##' | tr -c 'A-Za-z0-9._' '_' | sed -e 's#^.#-&#')"
+            ;;
+          *)
+            echo "::error::spantruth: the command input is run or doctor"
+            echo "exit-code=2" >> "$GITHUB_OUTPUT"
+            exit 0
+            ;;
+        esac
+        args+=(--out "$out/results.json" --summary "$GITHUB_STEP_SUMMARY")
         while read -r line; do
           if [ -n "$line" ]; then args+=(--scenario "$line"); fi
         done <<< "$SCENARIO"
-        if [ -n "$EXPECT" ]; then args+=(--expect "$EXPECT"); fi
-        if [ "$LATEST" = "true" ]; then args+=(--latest); fi
         if [ "$COMMENT" = "true" ]; then
           args+=(--comment "$out/comment.md")
           args+=(--comment-link "${GITHUB_SERVER_URL:-}/${GITHUB_REPOSITORY:-}/actions/runs/${GITHUB_RUN_ID:-}")
@@ -108,7 +187,7 @@ runs:
             echo "::warning::spantruth could not render the HTML report"
         fi
 
-        name="${ARTIFACT_NAME:-spantruth-$(basename "$SUBJECT")}"
+        name="${ARTIFACT_NAME:-spantruth-$label}"
         {
           echo "exit-code=$code"
           echo "results=$out/results.json"

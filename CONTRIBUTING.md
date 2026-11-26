@@ -61,6 +61,36 @@ uv run ruff check . && uv run ruff format --check .
    library. Find the line of code that causes it, or tell us in the pull request that you could
    not.
 
+## Add a framework
+
+A framework such as LiteLLM or Pydantic AI makes the provider call itself, so the app calls the
+framework and not the SDK. Such a subject also brings an `app.py` with one function:
+
+```python
+def run(scenario, base_url, seen):
+    # Make the scenario's call through the framework, pointed at base_url.
+    # Record what the app saw on `seen` (a `spantruth.calls.Seen`), as calls.py does.
+    ...
+```
+
+The driver calls it in the baseline run and in the instrumented run, so `app.unchanged` still
+compares the two. Keep the instrumentation in `instrument.py`, not in `app.py`: the baseline run
+must not trace. Exceptions propagate, as in `calls.py`.
+
+A framework that ends its spans after the call returns, in a thread or a queue, can also define
+`settle()` in `app.py`. The instrumented run calls it after the call and before it reads which
+spans ended, so a span that the framework ends later is not reported as lost.
+
+List the scenarios that the framework can make in `subject.toml`, such as
+`scenarios = ["openai/basic", "openai/stream"]`. The other scenarios are not run and have no cell.
+Only a subject with an `app.py` can list scenarios: a library that instruments the SDK meets every
+call that the SDK makes.
+
+A scenario with `calls`, such as an agent loop, makes several calls in one trace. For it, the app
+must call `seen.add(one, start_ns, end_ns)` once per call, with what the app saw of that call and
+when it ran, and send the message history from call to call the way `calls._loop` does. No app does
+that yet, so `subject.toml` cannot list such a scenario for a subject with an `app.py`.
+
 ## Add a scenario
 
 1. Build the response in `src/spantruth/scenarios.py` with the builders in `wire_openai.py` or

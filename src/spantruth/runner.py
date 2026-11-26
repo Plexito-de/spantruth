@@ -40,7 +40,9 @@ def driver_path(directory: Path) -> Path:
     return directory
 
 
-def _env(subject: subjects.Subject, otlp: str, shim: Path) -> dict[str, str]:
+def _env(
+    subject: subjects.Subject, otlp: str, shim: Path, content: dict[str, str] | None = None
+) -> dict[str, str]:
     keep = {k: v for k, v in os.environ.items() if k in ("PATH", "HOME", "LANG", "TMPDIR")}
     return (
         keep
@@ -54,6 +56,7 @@ def _env(subject: subjects.Subject, otlp: str, shim: Path) -> dict[str, str]:
         }
         | subjects.base().get("env", {})
         | subject.env
+        | (content or {})
     )
 
 
@@ -87,7 +90,7 @@ def run_subject(
     shim: Path,
     overrides: tuple[str, ...] = (),
 ) -> dict[str, Any]:
-    ids = [i for i in ids if scenarios.get(i).provider in subject.providers]
+    ids = [i for i in ids if subject.supports(i)]
     out: dict[str, Any] = {
         "title": subject.title,
         "homepage": subject.homepage,
@@ -96,6 +99,10 @@ def run_subject(
         "ref": subject.ref,
         "cells": {},
     }
+    if subject.content:
+        out["content"] = {k: subject.content[k] for k in ("switch", "docs", "default")}
+    if subject.metrics_docs:
+        out["metrics"] = {"docs": subject.metrics_docs}
     if not ids:
         return out
     try:
@@ -114,7 +121,7 @@ def run_subject(
         try:
             proc = _driver(
                 py,
-                ["baseline", *ids, "--mock", mock.url, "--out", str(base_file)],
+                baseline_args(subject, ids, mock.url, base_file),
                 _env(subject, "http://127.0.0.1:9", shim),
                 Path(tmp),
             )
@@ -129,10 +136,18 @@ def run_subject(
     return out
 
 
+def baseline_args(subject: subjects.Subject, ids: list[str], mock: str, out: Path) -> list[str]:
+    """The driver's baseline command. Only a subject with an app.py names its directory."""
+    args = ["baseline", *ids, "--mock", mock, "--out", str(out)]
+    return [*args, "--subject", str(subject.directory)] if subject.app else args
+
+
 def _cell(subject, sid, py, mock, tmp: Path, shim: Path, base: dict | None) -> dict[str, Any]:
     sc = scenarios.get(sid)
     obs_file = tmp / f"{sc.key}.json"
     stderr = ""
+    # A content scenario sets the library's own switch. Without one, the scenario runs as is.
+    content = subject.content_env(sc.content) if sc.content else None
     with Receiver() as rx:
         try:
             proc = _driver(
@@ -149,15 +164,20 @@ def _cell(subject, sid, py, mock, tmp: Path, shim: Path, base: dict | None) -> d
                     "--out",
                     str(obs_file),
                 ],
-                _env(subject, rx.url, shim),
+                _env(subject, rx.url, shim, content),
                 tmp,
             )
             stderr = proc.stderr[-2000:]
         except subprocess.TimeoutExpired:
             stderr = "the cell timed out"
-        spans = list(rx.spans)
+        spans, logs, metrics = list(rx.spans), list(rx.logs), list(rx.metrics)
     obs = _read(obs_file)
-    result = checks.grade(sc, scenarios.truth(sc), base, obs, spans)
+    switch = subject.content.get("switch") if content is not None else None
+    t = scenarios.truth(sc)
+    documented = subject.metrics_docs or None
+    result = checks.grade(
+        sc, t, base, obs, spans, logs, switch, metrics=metrics, metrics_docs=documented
+    )
     return {
         "verdict": checks.cell_verdict(result),
         "checks": [c.as_dict() for c in result],
@@ -165,6 +185,8 @@ def _cell(subject, sid, py, mock, tmp: Path, shim: Path, base: dict | None) -> d
             {"name": s.name, "scope": s.scope, "status": s.status, "attributes": s.attributes}
             for s in spans
         ],
+        **({"logs": [asdict(rec) for rec in logs]} if logs else {}),
+        **({"metrics": [asdict(p) for p in metrics]} if metrics else {}),
         "stderr": stderr if (obs is None or "instrument_error" in (obs or {})) else "",
     }
 

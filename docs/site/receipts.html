@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Receipts: wrong LLM numbers in Phoenix, MLflow and Jaeger</title>
+<meta name="description" content="Six instrumentation bugs, each sent to self-hosted Phoenix, MLflow and Jaeger. Doubled cost, a cache discount that drops your input, calls that cost nothing, and a dropped stream that counts as a success. Measured, with screenshots and the commands.">
+<meta property="og:title" content="What six LLM telemetry bugs look like in Phoenix, MLflow and Jaeger">
+<meta property="og:description" content="One call, $0.005 at list price: Phoenix showed $0.0100. A cached call, $0.0079: Phoenix showed $0.0055 and MLflow 1,564 of 6,179 tokens. Measured on local backends, with the commands to repeat it.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%231a6b37'/%3E%3Cpath d='M4 8l3 3 5-6' stroke='white' stroke-width='2' fill='none'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#fbfbf9;--fg:#1b1d21;--muted:#545b66;--line:#e2e4e8;--card:#fff;--bad:#9a1f27;--ok:#1a6b37;--link:#1a56b0}
+@media (prefers-color-scheme:dark){:root{--bg:#121417;--fg:#e8eaed;--muted:#a7aeb8;--line:#2a2e35;--card:#181b20;--bad:#ff9aa0;--ok:#7fd49b;--link:#8ab4ff}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:720px;margin:0 auto;padding:40px 16px 72px}
+h1{font-size:34px;line-height:1.2;margin:0 0 10px}h2{font-size:22px;margin:40px 0 10px}
+p{margin:12px 0}a{color:var(--link)}.muted{color:var(--muted);font-size:15px}code{font-size:15px;overflow-wrap:anywhere}
+pre{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow-x:auto;font-size:14px;line-height:1.5}
+pre code{overflow-wrap:normal}
+.wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--card);margin:14px 0}
+table{border-collapse:collapse;width:100%;font-size:15px}th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+caption{text-align:left;padding:10px 10px 0;color:var(--muted);font-size:14px}
+thead th{color:var(--muted);font-weight:600;font-size:14px}li{margin:6px 0}tbody th{font-weight:400}tr:last-child td,tr:last-child th{border-bottom:0}
+.bad{color:var(--bad);font-weight:600}.ok{color:var(--ok);font-weight:600}
+figure{margin:16px 0}figure img{display:block;max-width:100%;width:auto;height:auto;border:1px solid var(--line);border-radius:8px}
+figcaption{color:var(--muted);font-size:14px;margin-top:6px}
+.tag{color:var(--muted);font-size:15px;font-weight:400}
+@media (max-width:600px){
+ .cards thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+ .cards tr{display:block;border-bottom:1px solid var(--line);padding:6px 0}.cards tr:last-child{border-bottom:0}
+ .cards th,.cards td{display:flex;gap:10px;border:0;padding:2px 10px}
+ .cards tbody th{font-weight:600;padding-top:6px}
+ .cards td::before{content:attr(data-label);flex:0 0 7.5em;color:var(--muted);font-weight:400}
+}
+</style></head>
+<body><main>
+<h1>What six LLM telemetry bugs look like in Phoenix, MLflow and Jaeger</h1>
+<p class="muted">By Chris Krah. Plexito, my company, maintains spantruth, the tool this page uses. Measured on November 26, 2026 · <a href="index.html">the report</a> · <a href="https://github.com/Plexito-de/spantruth/tree/main/results/2026-11-26-receipts">raw data</a></p>
+
+<p>spantruth compares each span that an instrumentation library writes with what the provider sent. A wrong span is easy to dismiss in the abstract. So I sent six wrong spans to three self-hosted backends and read what each one shows.</p>
+
+<p><strong>In five of the six cases, all three backends showed a wrong number or a wrong status. In the sixth, MLflow was right and the other two were wrong.</strong></p>
+
+<div class="wrap"><table class="cards">
+<caption>The right value comes from the provider. Red is a wrong number in the backend.</caption>
+<thead><tr><th scope="col">Bug</th><th scope="col">Right value</th><th scope="col">Phoenix</th><th scope="col">MLflow</th><th scope="col">Jaeger</th></tr></thead>
+<tbody>
+<tr><th scope="row"><a href="#double">Double span</a></th><td data-label="Right value">1,450 tokens, $0.0050</td><td data-label="Phoenix"><span class="bad">$0.0100</span></td><td data-label="MLflow"><span class="ok">1,450 tokens</span></td><td data-label="Jaeger"><span class="bad">2 GenAI calls</span></td></tr>
+<tr><th scope="row"><a href="#cache">Cache-blind tokens</a></th><td data-label="Right value">6,179 tokens, $0.0079</td><td data-label="Phoenix"><span class="bad">1,564 tokens, $0.0055</span></td><td data-label="MLflow"><span class="bad">1,564 tokens</span></td><td data-label="Jaeger"><span class="bad">Input 1,187</span></td></tr>
+<tr><th scope="row"><a href="#ghost">Ghost span</a></th><td data-label="Right value">1 call, 1,913 input tokens so far</td><td data-label="Phoenix"><span class="bad">No call, $0</span></td><td data-label="MLflow"><span class="bad">No tokens</span></td><td data-label="Jaeger"><span class="bad">No call</span></td></tr>
+<tr><th scope="row"><a href="#vanish">Vanishing tokens</a></th><td data-label="Right value">2,450 tokens</td><td data-label="Phoenix"><span class="bad">0 tokens, $0</span></td><td data-label="MLflow"><span class="bad">No tokens</span></td><td data-label="Jaeger"><span class="bad">No tokens</span></td></tr>
+<tr><th scope="row"><a href="#phantom">Phantom tokens</a></th><td data-label="Right value">419 output, 2,730 total</td><td data-label="Phoenix"><span class="bad">420</span></td><td data-label="MLflow"><span class="bad">2,731 total</span></td><td data-label="Jaeger"><span class="bad">420</span></td></tr>
+<tr><th scope="row"><a href="#falseok">False OK</a></th><td data-label="Right value">Error: the connection dropped</td><td data-label="Phoenix"><span class="bad">OK</span></td><td data-label="MLflow"><span class="bad">OK</span></td><td data-label="Jaeger"><span class="bad">No error</span></td></tr>
+</tbody></table></div>
+<p class="muted">Costs are at list price. Claude Sonnet 5.5 costs $2 input, $0.10 cache read, $2.50 cache write and $10 output per million tokens. Phoenix priced input and output tokens at these rates. MLflow's default traces table shows tokens and no cost. Jaeger shows no cost.</p>
+
+<p>Each receipt is one spantruth scenario. It ran against a local fake provider, with the library version that has the bug. The same spans went to spantruth's grader and to Arize Phoenix 22.1.0, MLflow 3.18.0 and Jaeger 2.23.0. All three ran on <code>127.0.0.1</code>, with no account and no network. I read every number below from a backend's page or API. The IDs next to each heading, such as ST02, are the <a href="bugs.html">bug classes</a>.</p>
+
+<h2 id="double">Double span: the cost doubles <span class="tag">ST02</span></h2>
+<p>The Anthropic Python SDK writes its own span for each call since version 1.14.0. Add the OpenTelemetry GenAI instrumentation 1.3b0 and leave the SDK's tracing at its default: one call now has two spans with token counts. The call was 1,187 input and 263 output tokens, $0.005004 at list price.</p>
+<figure><img src="receipts/double-phoenix-cost.png" width="298" height="285" alt="Phoenix Total Cost tooltip: $0.0100, input $0.0047 and output $0.0053. The right cost is $0.0050." loading="lazy">
+<figcaption>Phoenix: the trace costs $0.0100, twice the list cost. Each of the two LLM spans shows 1,450 tokens and $0.005004. The project's <code>tokenCountTotal</code> stays at 1,450.</figcaption></figure>
+<figure><img src="receipts/double-jaeger-genai.png" width="430" height="30" alt="Jaeger trace header: Total Spans 3, GenAI calls: 2. The app made one call." loading="lazy">
+<figcaption>Jaeger: two GenAI calls for one call.</figcaption></figure>
+<figure><img src="receipts/double-mlflow-traces.png" width="320" height="80" alt="MLflow traces row: State OK, Tokens 1450, which is right." loading="lazy">
+<figcaption>MLflow got the same two spans and shows 1,450 tokens, the right count.</figcaption></figure>
+<p>The fix is in the <a href="double-spans.html">double spans write-up</a>: let one side report the call, for example with <code>ANTHROPIC_OPEN_TELEMETRY=false</code>.</p>
+
+<h2 id="cache">Cache-blind tokens: the cached call looks cheap <span class="tag">ST03</span></h2>
+<p>The call read 4,096 tokens from the prompt cache and wrote 519 to it. It also sent 1,187 uncached input tokens and got 377 output tokens. That is 6,179 tokens and $0.0078511. OpenLIT 1.45.0 puts 1,187 in <code>gen_ai.usage.input_tokens</code>. The OpenTelemetry GenAI conventions define that count to include the cached tokens. OpenLIT puts the cache counts in their own attributes.</p>
+<figure><img src="receipts/cache-phoenix-cost.png" width="298" height="285" alt="Phoenix Total Cost tooltip: $0.0055, input $0.0017 and output $0.0038. The right cost is $0.0079." loading="lazy">
+<figcaption>Phoenix: 1,564 tokens and $0.0055, 30% under the list cost. The input cost, 0.0017071, is exactly the cache read plus the cache write. The 1,187 uncached tokens cost nothing.</figcaption></figure>
+<p>MLflow shows 1,564 tokens. Its trace metadata keeps the cache read and write counts apart. Jaeger shows the span's four counts as they are: input 1,187, output 377, cache read 4,096 and cache write 519.</p>
+
+<h2 id="ghost">Ghost span: the call is not there <span class="tag">ST01</span></h2>
+<p>The app reads two events of a stream and closes it. By then the provider has sent 1,913 input tokens. OpenLLMetry 0.62.4 (<code>opentelemetry-instrumentation-anthropic</code>) never ends its span, so it never exports it.</p>
+<figure><img src="receipts/ghost-phoenix-trace.png" width="360" height="215" alt="Phoenix trace with one span, the app's spantruth.scenario, and Total Cost $0. The LLM call is missing." loading="lazy">
+<figcaption>Phoenix: the trace holds the app's own span and nothing else. Total Cost: $0.</figcaption></figure>
+<p>MLflow shows one trace, State OK, with no tokens. Jaeger shows one span, the app's.</p>
+
+<h2 id="vanish">Vanishing tokens: the call costs nothing <span class="tag">ST05</span></h2>
+<p>The app streams a chat completion through <code>with_streaming_response</code>. The stream carries 2,137 input and 313 output tokens. OpenLLMetry 0.62.4 (<code>opentelemetry-instrumentation-openai</code>) sends its span with no token count.</p>
+<figure><img src="receipts/vanish-mlflow-traces.png" width="320" height="80" alt="MLflow traces row: State OK, Tokens shown as a dash. The right count is 2,450." loading="lazy">
+<figcaption>MLflow: State OK, no tokens.</figcaption></figure>
+<p>Phoenix shows the span with 0 tokens and a Total Cost of $0. Jaeger's GenAI tab for the span has no token line.</p>
+
+<h2 id="phantom">Phantom tokens: one token too many <span class="tag">ST04</span></h2>
+<p>A stream ends with 419 output tokens. OpenLLMetry 0.62.4 adds the placeholder of 1 from <code>message_start</code> to the final count from <code>message_delta</code>. It reports 420 (<a href="https://github.com/traceloop/openllmetry/pull/4377">openllmetry#4377</a>).</p>
+<figure><img src="receipts/phantom-jaeger-genai.png" width="600" height="290" alt="Jaeger GenAI tab for anthropic.chat: Tokens Input 2,311, Output 420. The right output count is 419." loading="lazy">
+<figcaption>Jaeger: output 420. Phoenix shows 2,731 tokens with 420 completion tokens, and MLflow shows 2,731.</figcaption></figure>
+<p>The cost moves in the fifth decimal: Phoenix shows 0.008822, and the list cost is $0.008812. That is small for one call. But it happens on every stream, and the token count is wrong wherever you look.</p>
+
+<h2 id="falseok">False OK: a dropped stream is a success <span class="tag">ST07</span></h2>
+<p>The connection drops mid-stream, and the app gets <code>openai.APIConnectionError</code>. OpenLLMetry 0.62.4 (<code>opentelemetry-instrumentation-openai</code>) ends the span with status OK (<a href="https://github.com/traceloop/openllmetry/pull/4535">openllmetry#4535</a>).</p>
+<figure><img src="receipts/falseok-phoenix-trace.png" width="238" height="33" alt="Phoenix span title: openai.chat, OK. The call failed." loading="lazy">
+<figcaption>Phoenix: <code>openai.chat</code>, OK.</figcaption></figure>
+<figure><img src="receipts/falseok-mlflow-traces.png" width="320" height="80" alt="MLflow traces row: State OK. The call failed." loading="lazy">
+<figcaption>MLflow: State OK. Jaeger shows no error mark, and its API returns <code>otel.status_code=OK</code>.</figcaption></figure>
+<p>An error rate built on span status leaves this failure out.</p>
+
+<h2>Check your own versions</h2>
+<p>These are the versions that the nightly report pins, not the latest releases. To see what the versions in your Python project get wrong, run this in its directory. It needs no API key, and it does not run your code:</p>
+<pre><code>uvx spantruth@0.5.0 doctor</code></pre>
+<p>It tests the libraries it recognizes against the same fake provider. It knows nothing about your backend. It tells you which spans are wrong, and this page shows what such spans look like.</p>
+
+<h2>How this was measured</h2>
+<p>Each receipt ran spantruth's own driver in the library's pinned environment. The driver sent its spans to a tee on loopback. The tee kept a copy for the grader and sent the same bytes to the backend. I read each backend's API: Phoenix GraphQL, MLflow trace search and Jaeger's trace API. I took the screenshots with Playwright, in a browser that blocked every request to another host. The six cells ran twice, each time into new backend data, and every backend number was the same.</p>
+<p>The <a href="https://github.com/Plexito-de/spantruth/tree/main/results/2026-11-26-receipts">results directory</a> has the full table, each backend's raw answers, the full screenshots and the commands. To run one receipt from a spantruth clone, with Phoenix on port 16106:</p>
+<pre><code>uv run python results/2026-11-26-receipts/scripts/cell.py \
+  otel-official-sdk-on anthropic/basic phoenix my-double /tmp</code></pre>
+<p>I did not measure Langfuse. It needs Postgres, ClickHouse, Redis and object storage, and its documented setups use containers. I did not run Grafana Tempo or Opik in this round. I did not measure a real provider, async calls, other libraries with the same bugs, or how each backend sums many calls. The other four bug classes do not change a token count or a cost, so they are not here.</p>
+
+<h2>This is six of ten</h2>
+<p><a href="bugs.html">Here are the ten bug classes</a>, and <a href="index.html">here is the report</a> that tests each library for them every night. If a receipt is unfair to your library or your backend, <a href="https://github.com/Plexito-de/spantruth/issues">open an issue</a> with your versions.</p>
+</main></body></html>

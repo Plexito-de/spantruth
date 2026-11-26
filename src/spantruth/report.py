@@ -44,21 +44,37 @@ def _subjects(doc: dict) -> list[str]:
 
 
 STATUSES = ("reported", "disputed", "fixed-upstream")
-# A release that has the fix: a package name and one lower bound or pin, such as `pkg>=3.1.0`.
-FIXED_IN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*\s*(>=|==|~=|>)\s*[0-9][A-Za-z0-9.+!-]*")
+# The first release that has the fix: a package name and `>=` or `==` that version.
+FIXED_IN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*\s*(>=|==)\s*[0-9][A-Za-z0-9.+!-]*")
+# The keys a fixed-upstream entry has, and any other entry has not.
+FIX_KEYS = ("fixed_on", "fixed_in", "fix_url", "fixed_by")
 ISO_DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
+# A GitHub login: letters, digits and single hyphens, at most 39 characters.
+LOGIN = re.compile(r"[A-Za-z0-9](?:-?[A-Za-z0-9]){0,38}")
 
 
 def _check_issue(issue: dict[str, Any]) -> None:
     """Refuse an entry that a reader of `fixed_in` or of the dates would misread."""
     where = issue.get("url", "an entry")
+    if not str(issue.get("url", "")).startswith("https://"):
+        raise ValueError(f"known issue {where}: url must be an https address")
     if issue.get("status") not in STATUSES:
         raise ValueError(f"known issue {where}: status must be one of {', '.join(STATUSES)}")
+    fixed = issue["status"] == "fixed-upstream"
+    for key in FIX_KEYS:
+        if (key in issue) != fixed:
+            need = "needs" if fixed else "cannot have"
+            raise ValueError(f"known issue {where}: a {issue['status']} entry {need} {key}")
     fixed_in = issue.get("fixed_in", [])
     if not isinstance(fixed_in, list) or not all(
         isinstance(s, str) and FIXED_IN.fullmatch(s) for s in fixed_in
     ):
         raise ValueError(f"known issue {where}: fixed_in must be a list such as ['pkg>=1.2.0']")
+    for key in ("reported_by", "fixed_by"):
+        if key in issue and not (isinstance(issue[key], str) and LOGIN.fullmatch(issue[key])):
+            raise ValueError(f"known issue {where}: {key} must be a GitHub login")
+    if "fix_url" in issue and not str(issue["fix_url"]).startswith("https://"):
+        raise ValueError(f"known issue {where}: fix_url must be an https address")
     dates = {}
     for key in ("reported_on", "fixed_on"):
         if key not in issue:
@@ -77,7 +93,7 @@ def _check_issue(issue: dict[str, Any]) -> None:
 
 
 def known_issues(path: Path = KNOWN) -> list[dict[str, Any]]:
-    """The entries of known_issues.toml. `fixed_in`, `reported_on` and `fixed_on` are optional."""
+    """The entries of known_issues.toml. Its header lists the optional keys."""
     issues = tomllib.loads(path.read_text()).get("issue", []) if path.exists() else []
     for issue in issues:
         _check_issue(issue)
@@ -181,9 +197,13 @@ def _fence(text: str) -> str:
     return f"{fence}\n{text}\n{fence}"
 
 
-def _bug(finding: dict[str, Any]) -> str:
-    bug = finding["bug_class"]
+def bug_link(bug: bugclasses.BugClass | None) -> str:
+    """A Markdown link to the class on the page of bug classes, or a dash for no class."""
     return f"[{bug.id} {bug.name}]({BUGS_URL}#{bug.id})" if bug else "—"
+
+
+def _bug(finding: dict[str, Any]) -> str:
+    return bug_link(finding["bug_class"])
 
 
 def _fmt(value: Any) -> str:
@@ -239,7 +259,7 @@ def _difference_rows(result: dict, differences: list) -> list[str]:
         cell = result["cells"].get(d.scenario, {})
         record = next((c for c in cell.get("checks", ()) if c["id"] == d.check), None)
         bug = bugclasses.classify(record or {"id": d.check})
-        name = f"[{bug.id} {bug.name}]({BUGS_URL}#{bug.id})" if bug else "—"
+        name = bug_link(bug)
         if d.expected is None:
             change = f"newly failing: {d.got}"
         elif d.got is None:
@@ -279,15 +299,19 @@ def comment(doc: dict, subject: str, differences: list | None = None, link: str 
     found = [f for f in findings(doc) if f["subject"] == subject and f["bug_class"]]
     seen = sorted({f["bug_class"].id for f in found})
     if seen and not differences:
-        names = ", ".join(f"[{i} {bugclasses.BY_ID[i].name}]({BUGS_URL}#{i})" for i in seen)
+        names = ", ".join(bug_link(bugclasses.BY_ID[i]) for i in seen)
         lines += ["", f"Bug classes in this run: {names}."]
-    details = f"[Details]({link}). " if link.startswith(("https://", "http://")) else ""
-    lines += [
-        "",
-        f"{details}Checked by [spantruth](https://github.com/Plexito-de/spantruth), which compares "
-        "what a library reports with what the provider sent.",
-    ]
+    lines += ["", comment_footer(link)]
     return "\n".join(lines) + "\n"
+
+
+def comment_footer(link: str) -> str:
+    """The last line of every pull request comment. Only a web address becomes a link."""
+    details = f"[Details]({link}). " if link.startswith(("https://", "http://")) else ""
+    return (
+        f"{details}Checked by [spantruth](https://github.com/Plexito-de/spantruth), which compares "
+        "what a library reports with what the provider sent."
+    )
 
 
 def html(doc: dict) -> str:
@@ -300,3 +324,19 @@ def bugs_html(doc: dict, findings_page: str = "index.html") -> str:
     from .site import render_bugs
 
     return render_bugs(doc, findings_page)
+
+
+def bug_pages(doc: dict) -> dict[str, str]:
+    """The pages that `--bugs` writes beside the bug page, by path from its directory."""
+    from .site import render_class, render_fixes, render_method, sitemap
+
+    known = known_issues()
+    return {
+        "fixes.html": render_fixes(known),
+        "method.html": render_method(doc, known),
+        **{
+            f"bugs/{bugclasses.slug(c)}.html": render_class(doc, c, known)
+            for c in bugclasses.CLASSES
+        },
+        "sitemap.xml": sitemap(),
+    }

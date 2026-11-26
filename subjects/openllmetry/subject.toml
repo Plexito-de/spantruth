@@ -1,13 +1,32 @@
 title = "OpenLLMetry"
 homepage = "https://github.com/traceloop/openllmetry"
-providers = ["openai", "anthropic"]
+providers = ["openai", "anthropic", "gemini", "azure"]
 packages = [
   "opentelemetry-instrumentation-openai==0.62.4",
   "opentelemetry-instrumentation-anthropic==0.62.4",
+  "opentelemetry-instrumentation-google-generativeai==0.62.4",
 ]
-track = ["opentelemetry-instrumentation-openai", "opentelemetry-instrumentation-anthropic"]
+track = [
+  "opentelemetry-instrumentation-openai",
+  "opentelemetry-instrumentation-anthropic",
+  "opentelemetry-instrumentation-google-generativeai",
+]
 detect = [
   "opentelemetry-instrumentation-openai",
   "opentelemetry-instrumentation-anthropic",
+  "opentelemetry-instrumentation-google-generativeai",
   "traceloop-sdk",
 ]
+
+[content]
+switch = "TRACELOOP_TRACE_CONTENT"
+docs = "https://github.com/traceloop/openllmetry/blob/be498301c40c55155e6d0678b63943093cda14d1/packages/opentelemetry-instrumentation-openai/README.md#L25-L32"
+default = "on"
+off = { TRACELOOP_TRACE_CONTENT = "false" }
+on = { TRACELOOP_TRACE_CONTENT = "true" }
+
+# Documented only in the changelog: token usage metrics for OpenAI V1 (#369). Anthropic is
+# graded on code: the anthropic package creates the token histogram (anthropic/__init__.py L458,
+# https://github.com/traceloop/openllmetry/blob/be498301c40c55155e6d0678b63943093cda14d1/packages/opentelemetry-instrumentation-anthropic/opentelemetry/instrumentation/anthropic/__init__.py#L458).
+[metrics]
+docs = "https://github.com/traceloop/openllmetry/blob/be498301c40c55155e6d0678b63943093cda14d1/CHANGELOG.md#L1692"

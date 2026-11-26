@@ -1,8 +1,21 @@
 title = "OpenInference"
 homepage = "https://github.com/Arize-ai/openinference"
-providers = ["openai", "anthropic"]
+providers = ["openai", "anthropic", "gemini", "azure"]
 packages = [
   "openinference-instrumentation-openai==0.1.69",
   "openinference-instrumentation-anthropic==3.3.0",
+  "openinference-instrumentation-google-genai==1.6.7",
 ]
-track = ["openinference-instrumentation-openai", "openinference-instrumentation-anthropic"]
+track = [
+  "openinference-instrumentation-openai",
+  "openinference-instrumentation-anthropic",
+  "openinference-instrumentation-google-genai",
+]
+
+# Hidden inputs and outputs become "__REDACTED__" or are dropped, so no text remains.
+[content]
+switch = "OPENINFERENCE_HIDE_INPUTS and OPENINFERENCE_HIDE_OUTPUTS"
+docs = "https://github.com/Arize-ai/openinference/blob/a9ac9c11841e1fc27385afb2ef796567e2433317/spec/configuration.md#L13-L20"
+default = "on"
+off = { OPENINFERENCE_HIDE_INPUTS = "true", OPENINFERENCE_HIDE_OUTPUTS = "true" }
+on = { OPENINFERENCE_HIDE_INPUTS = "false", OPENINFERENCE_HIDE_OUTPUTS = "false" }

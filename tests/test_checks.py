@@ -1,6 +1,7 @@
 """Every verdict the checks can return, on hand-built records. No subprocess, no network."""
 
 import json
+from dataclasses import replace
 
 import pytest
 
@@ -8,7 +9,7 @@ from spantruth import scenarios
 from spantruth.checks import _formula, cell_verdict, grade
 from spantruth.conventions import lookup
 from spantruth.model import Truth
-from spantruth.receiver import SpanRecord
+from spantruth.receiver import LogRecordData, MetricPoint, SpanRecord
 
 TRACE, PARENT = "a" * 32, "b" * 16
 BASE = {"exception": None, "seen": {"text": "x", "events": 0, "response_id": "r", "usage": None}}
@@ -50,10 +51,24 @@ def honest(sid):
     return t, attrs
 
 
+def point(name, value, count=1, temporality=2, time_ns=5, **attrs):
+    kind = "histogram" if count is not None else "sum"
+    # The exporter sends a histogram's sum as a double.
+    value = float(value) if kind == "histogram" else value
+    return MetricPoint(name, kind, "{token}", attrs, value, count, temporality, 1, time_ns, "lib")
+
+
+def histograms(t, name="gen_ai.client.inference.operation"):
+    return [
+        point(f"{name}.input_tokens", t.input_tokens),
+        point(f"{name}.output_tokens", t.output_tokens),
+    ]
+
+
 def test_correct_span_passes():
     sc = scenarios.get("anthropic/cache-hit")
     t, attrs = honest(sc.id)
-    checks = grade(sc, t, BASE, obs(), [span(attrs)])
+    checks = grade(sc, t, BASE, obs(), [span(attrs)], metrics=histograms(t))
     assert cell_verdict(checks) == "pass", [c for c in checks if c.verdict != "pass"]
 
 
@@ -377,3 +392,449 @@ def test_a_cache_scenario_without_a_ttl_breakdown_gets_no_new_guess():
     t = scenarios.truth(scenarios.get("anthropic/cache-hit"))
     assert _formula("cache_write_tokens", 2 * t.cache_write_tokens, t) == ""
     assert _formula("input_tokens", t.input_tokens + t.cache_write_tokens, t) == ""
+
+
+@pytest.mark.parametrize("sid", ["openai/compat-no-details", "openai/compat-extra-timing-fields"])
+def test_a_cache_count_the_usage_has_no_field_for_is_invented(sid):
+    sc = scenarios.get(sid)
+    t, attrs = honest(sc.id)
+    attrs["gen_ai.usage.cache_read.input_tokens"] = t.input_tokens
+    c = by_id(grade(sc, t, BASE, obs(), [span(attrs)]))["cache_read_tokens"]
+    assert (c.verdict, c.got) == ("wrong", t.input_tokens)
+    assert c.detail == "invented: the usage has no field for it"
+
+
+@pytest.mark.parametrize("value", [0, None])
+def test_a_zero_or_no_cache_count_on_a_usage_without_details_is_not_graded(value):
+    sc = scenarios.get("openai/compat-null-details")
+    t, attrs = honest(sc.id)
+    if value is not None:
+        attrs["gen_ai.usage.cache_read.input_tokens"] = value
+    checks = grade(sc, t, BASE, obs(), [span(attrs)])
+    assert by_id(checks)["cache_read_tokens"].verdict == "n/a"
+    assert cell_verdict(checks) == "pass"
+
+
+def test_a_cache_count_where_the_wire_sends_zero_is_still_not_graded():
+    # `cached_tokens: 0` is a field, so no invention can be shown: the check keeps its old verdict.
+    sc = scenarios.get("openai/basic")
+    t, attrs = honest(sc.id)
+    attrs["gen_ai.usage.cache_read.input_tokens"] = 97
+    assert by_id(grade(sc, t, BASE, obs(), [span(attrs)]))["cache_read_tokens"].verdict == "n/a"
+
+
+def test_a_cache_count_in_partial_details_passes():
+    sc = scenarios.get("openai/compat-partial-details")
+    t, attrs = honest(sc.id)
+    checks = grade(sc, t, BASE, obs(), [span(attrs)])
+    assert by_id(checks)["cache_read_tokens"].verdict == "pass"
+    assert cell_verdict(checks) == "pass"
+
+
+# Content capture: graded against the library's own switch.
+SWITCH = "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT"
+ANSWER = "The capital of France is Paris."
+QUESTION = "What is the capital of France?"
+
+
+def content(sid, spans, logs=(), switch=SWITCH, text=ANSWER):
+    sc = scenarios.get(sid)
+    base = BASE | {"seen": BASE["seen"] | {"text": text}}
+    checks = grade(sc, scenarios.truth(sc), base, obs(text=text), spans, list(logs), switch)
+    return by_id(checks)
+
+
+def log(body=None, event_name="gen_ai.client.inference.operation.details", **attrs):
+    return LogRecordData(event_name, body, attrs, TRACE, "c" * 16, "lib")
+
+
+def _messages(role, text):
+    return json.dumps([{"role": role, "parts": [{"type": "text", "content": text}]}])
+
+
+def test_no_content_with_the_switch_off_passes():
+    _t, attrs = honest("openai/content-off")
+    c = content("openai/content-off", [span(attrs)])["content.off_respected"]
+    assert c.verdict == "pass"
+
+
+@pytest.mark.parametrize(
+    "where",
+    [
+        {"gen_ai.input.messages": _messages("user", QUESTION)},
+        {"llm.output_messages.0.message.content": ANSWER},
+        {"gen_ai.completion.0.content": " of France"},  # one chunk of a stream
+        {"output.value": json.dumps({"choices": [{"message": {"content": ANSWER}}]})},
+    ],
+)
+def test_prompt_or_completion_text_with_the_switch_off_is_wrong(where):
+    _t, attrs = honest("openai/content-off")
+    c = content("openai/content-off", [span(attrs | where)])["content.off_respected"]
+    assert c.verdict == "wrong" and SWITCH in c.detail
+    assert c.where == f"span chat: {next(iter(where))}"
+
+
+def test_completion_text_in_a_log_record_with_the_switch_off_is_wrong():
+    _t, attrs = honest("anthropic/stream-content-off")
+    record = log({"message": {"role": "assistant", "content": ANSWER}}, "gen_ai.choice")
+    c = content("anthropic/stream-content-off", [span(attrs)], [record])["content.off_respected"]
+    assert c.verdict == "wrong" and c.where == "log record gen_ai.choice: <body>"
+
+
+def test_a_redacted_value_is_not_content():
+    _t, attrs = honest("openai/content-off")
+    attrs["llm.output_messages.0.message.content"] = "__REDACTED__"
+    assert content("openai/content-off", [span(attrs)])["content.off_respected"].verdict == "pass"
+
+
+def test_without_a_declared_switch_content_is_not_graded():
+    _t, attrs = honest("openai/content-off")
+    attrs["gen_ai.input.messages"] = QUESTION
+    off = content("openai/content-off", [span(attrs)], switch=None)["content.off_respected"]
+    on = content("openai/content-on", [span(attrs)], switch=None)["content.output_matches"]
+    assert (off.verdict, on.verdict) == ("n/a", "n/a")
+
+
+def test_other_scenarios_get_no_content_check():
+    _t, attrs = honest("openai/basic")
+    attrs["gen_ai.input.messages"] = QUESTION
+    graded = content("openai/basic", [span(attrs)])
+    assert not {"content.off_respected", "content.output_matches"} & graded.keys()
+
+
+@pytest.mark.parametrize(
+    "where",
+    [
+        {"gen_ai.output.messages": _messages("assistant", ANSWER)},
+        {"gen_ai.output.messages": json.loads(_messages("assistant", ANSWER))},
+        {"llm.output_messages.0.message.content": ANSWER},
+        {
+            "llm.output_messages.0.message.contents.0.message_content.text": "The capital",
+            "llm.output_messages.0.message.contents.1.message_content.text": " of France is Paris.",
+        },
+        {"gen_ai.completion.0.content": ANSWER},
+        {"gen_ai.response.text": json.dumps([ANSWER])},
+        {"langfuse.observation.output": json.dumps({"role": "assistant", "content": ANSWER})},
+    ],
+)
+def test_output_text_equal_to_what_the_app_read_passes(where):
+    _t, attrs = honest("openai/content-on")
+    c = content("openai/content-on", [span(attrs | where)])["content.output_matches"]
+    assert c.verdict == "pass" and c.got == ANSWER
+
+
+def test_output_text_in_the_details_event_is_read():
+    _t, attrs = honest("openai/stream-content-on")
+    record = log(**{"gen_ai.output.messages": _messages("assistant", ANSWER)})
+    c = content("openai/stream-content-on", [span(attrs)], [record])["content.output_matches"]
+    assert c.verdict == "pass"
+    assert c.where == "log record gen_ai.client.inference.operation.details: gen_ai.output.messages"
+
+
+def test_a_first_chunk_as_the_output_is_wrong():
+    _t, attrs = honest("anthropic/stream-content-on")
+    attrs["gen_ai.output.messages"] = _messages("assistant", "The capital")
+    c = content("anthropic/stream-content-on", [span(attrs)])["content.output_matches"]
+    assert (c.verdict, c.expected, c.got) == ("wrong", ANSWER, "The capital")
+
+
+def test_no_output_text_with_the_switch_on_is_missing():
+    _t, attrs = honest("openai/content-on")
+    c = content("openai/content-on", [span(attrs)])["content.output_matches"]
+    assert c.verdict == "missing" and c.expected == ANSWER
+
+
+def _call_spans(sid, mutate=lambda i, attrs: None):
+    """One honest span per call of a plan, each starting inside its call's window."""
+    sc = scenarios.get(sid)
+    t = scenarios.truth(sc)
+    spans, windows = [], []
+    for i, ct in enumerate(t.calls):
+        windows.append({"window": [100 * i + 10, 100 * i + 90]})
+        attrs = {"gen_ai.operation.name": "chat", "gen_ai.request.model": ct.request_model}
+        attrs |= {
+            "gen_ai.response.model": ct.response_model,
+            "gen_ai.response.id": ct.response_id,
+            "gen_ai.response.finish_reasons": list(ct.finish_reasons),
+            "gen_ai.usage.input_tokens": ct.input_tokens,
+            "gen_ai.usage.output_tokens": ct.output_tokens,
+        }
+        if ct.cache_read_tokens:
+            attrs["gen_ai.usage.cache_read.input_tokens"] = ct.cache_read_tokens
+        mutate(i, attrs)
+        start = 100 * i + 20
+        spans.append(
+            SpanRecord(
+                TRACE,
+                f"{i:016x}",
+                PARENT,
+                "chat",
+                3,
+                start,
+                start + 5,
+                "UNSET",
+                "",
+                attrs,
+                {},
+                "lib",
+                (),
+            )
+        )
+    seen = {"response_id": [c.response_id for c in t.calls], "calls": windows}
+    o = obs(**seen)
+    base = {"exception": None, "seen": o["seen"]}
+    return sc, t, base, o, spans
+
+
+@pytest.mark.parametrize("sid", ["openai/agent-loop", "anthropic/agent-loop"])
+def test_each_call_of_an_agent_loop_on_its_own_span_passes(sid):
+    sc, t, base, o, spans = _call_spans(sid)
+    checks = grade(sc, t, base, o, spans)
+    assert cell_verdict(checks) == "pass", [c for c in checks if c.verdict != "pass"]
+    assert len([c for c in checks if c.id == "input_tokens"]) == 1
+
+
+def test_three_spans_with_usage_are_not_one_call_reported_three_times():
+    # Each call reports once, so the single-report check does not fire on the plan.
+    sc, t, base, o, spans = _call_spans("openai/agent-loop")
+    assert "tokens.single-report" not in by_id(grade(sc, t, base, o, spans))
+
+
+def test_a_count_of_another_call_is_named():
+    def cross(i, attrs):
+        if i == 1:
+            attrs["gen_ai.usage.input_tokens"] = 1171  # the input tokens of call 1
+
+    sc, t, base, o, spans = _call_spans("openai/agent-loop", cross)
+    c = by_id(grade(sc, t, base, o, spans))["input_tokens"]
+    assert (c.verdict, c.expected, c.got) == ("wrong", 1307, 1171)
+    assert c.detail == "call 2 of 3: the input tokens of call 1"
+
+
+def test_every_call_that_fails_is_named():
+    def raw(i, attrs):
+        attrs["gen_ai.usage.input_tokens"] -= attrs.get("gen_ai.usage.cache_read.input_tokens", 0)
+
+    sc, t, base, o, spans = _call_spans("anthropic/agent-loop", raw)
+    c = by_id(grade(sc, t, base, o, spans))["input_tokens"]
+    assert c.verdict == "wrong" and c.detail.startswith("call 2 of 3: cache reads")
+    assert c.detail.endswith("; failed on calls 2, 3")
+
+
+def test_a_call_with_no_span_is_missing():
+    sc, t, base, o, spans = _call_spans("openai/agent-loop")
+    c = by_id(grade(sc, t, base, o, spans[:2]))["span.recorded"]
+    assert (c.verdict, c.detail) == ("missing", "call 3 of 3: no LLM span matched this call")
+
+
+def test_a_span_outside_every_call_window_belongs_to_no_call():
+    sc, t, base, o, spans = _call_spans("openai/agent-loop")
+    late = replace(spans[0], span_id="f" * 16, start_ns=10_000, attributes=spans[0].attributes)
+    checks = grade(sc, t, base, o, [*spans, late])
+    assert cell_verdict(checks) == "pass"
+
+
+def test_all_usage_on_the_first_call_span_is_wrong_for_the_others():
+    def all_on_first(i, attrs):
+        if i:
+            del attrs["gen_ai.usage.input_tokens"], attrs["gen_ai.usage.output_tokens"]
+
+    sc, t, base, o, spans = _call_spans("openai/agent-loop", all_on_first)
+    assert by_id(grade(sc, t, base, o, spans))["input_tokens"].verdict == "missing"
+
+
+def _overlapping(sid, mutate=lambda i, attrs: None):
+    """Spans of a concurrent plan: both start at the same moment, inside both call windows."""
+    sc, t, base, o, spans = _call_spans(sid, mutate)
+    o["seen"]["calls"] = [{"window": [0, 1000]} for _ in spans]
+    return sc, t, base, o, [replace(s, start_ns=50) for s in reversed(spans)]
+
+
+@pytest.mark.parametrize(
+    "sid", ["openai/async-concurrent-streams", "anthropic/async-concurrent-streams"]
+)
+def test_concurrent_calls_are_matched_by_request_model(sid):
+    sc, t, base, o, spans = _overlapping(sid)
+    checks = grade(sc, t, base, o, spans)
+    assert cell_verdict(checks) == "pass", [c for c in checks if c.verdict != "pass"]
+
+
+def test_swapped_counts_between_concurrent_calls_are_named():
+    def swap(i, attrs):
+        attrs["gen_ai.usage.output_tokens"] = (181, 149)[i]
+
+    sc, t, base, o, spans = _overlapping("openai/async-concurrent-streams", swap)
+    c = by_id(grade(sc, t, base, o, spans))["output_tokens"]
+    assert c.verdict == "wrong"
+    assert c.detail == "call 1 of 2: the output tokens of call 2; failed on calls 1, 2"
+
+
+def _served_only(keep_own_name=True):
+    """ddtrace's shape: the served model as `gen_ai.request.model`, and no response id or model."""
+
+    def mutate(i, attrs):
+        requested = attrs["gen_ai.request.model"]
+        attrs["gen_ai.request.model"] = attrs.pop("gen_ai.response.model")
+        del attrs["gen_ai.response.id"]
+        if keep_own_name:
+            attrs["openai.request.model"] = requested
+
+    return mutate
+
+
+def test_a_request_model_under_a_library_name_places_the_span():
+    sc, t, base, o, spans = _overlapping("openai/async-concurrent-streams", _served_only())
+    checks = by_id(grade(sc, t, base, o, spans))
+    assert "span.recorded" not in checks
+    assert checks["request_model"].verdict == "wrong"
+    assert checks["input_tokens"].verdict == "pass"
+
+
+def test_counts_crossed_onto_a_span_placed_by_its_request_model_are_named():
+    def crossed(i, attrs):
+        _served_only()(i, attrs)
+        if i == 0:  # call 1's span carries call 2's served model and counts
+            attrs["gen_ai.request.model"] = "gpt-5-nano-2026-08-07"
+            attrs["gen_ai.usage.input_tokens"], attrs["gen_ai.usage.output_tokens"] = 1747, 181
+
+    sc, t, base, o, spans = _overlapping("openai/async-concurrent-streams", crossed)
+    c = by_id(grade(sc, t, base, o, spans))["input_tokens"]
+    assert c.verdict == "wrong" and c.detail == "call 1 of 2: the input tokens of call 2"
+
+
+def test_a_served_model_alone_does_not_place_a_span_of_overlapping_calls():
+    # The served model is what crosses: matching on it would hide this crossing.
+    def crossed(i, attrs):
+        _served_only(keep_own_name=False)(i, attrs)
+        if i == 0:
+            attrs["gen_ai.request.model"] = "gpt-5-nano-2026-08-07"
+            attrs["gen_ai.usage.input_tokens"], attrs["gen_ai.usage.output_tokens"] = 1747, 181
+
+    sc, t, base, o, spans = _overlapping("openai/async-concurrent-streams", crossed)
+    checks = grade(sc, t, base, o, spans)
+    c = by_id(checks)["span.recorded"]
+    assert c.verdict == "inconclusive" and "not graded" in c.detail
+    assert "input_tokens" not in by_id(checks) and cell_verdict(checks) != "pass"
+
+
+def test_a_span_that_names_two_calls_is_a_crossing_not_a_missing_span():
+    def mixed(i, attrs):
+        _served_only(keep_own_name=False)(i, attrs)
+        if i == 0:  # call 1's served model, and call 2's response id
+            attrs["gen_ai.response.id"] = "chatcmpl-wt-par2"
+
+    sc, t, base, o, spans = _overlapping("openai/async-concurrent-streams", mixed)
+    checks = by_id(grade(sc, t, base, o, spans))
+    assert "span.recorded" not in checks  # both calls are graded on the span that names them
+    c = checks["response_id"]
+    assert c.verdict == "wrong"
+    assert c.detail.startswith("call 1 of 2: a span names calls 1 and 2; the response id of call 2")
+
+
+def test_a_span_that_names_no_call_of_overlapping_calls_is_not_graded():
+    def anonymous(i, attrs):
+        del attrs["gen_ai.request.model"], attrs["gen_ai.response.model"]
+        del attrs["gen_ai.response.id"]
+
+    sc, t, base, o, spans = _overlapping("openai/async-concurrent-streams", anonymous)
+    c = by_id(grade(sc, t, base, o, spans))["span.recorded"]
+    assert c.verdict == "inconclusive" and c.detail.endswith("failed on calls 1, 2")
+
+
+# Token usage metrics, per call, against the wire.
+METRIC_DOCS = "https://example.org/docs#token-metrics"
+
+
+def metric(sid, points, attrs=None, docs=METRIC_DOCS):
+    sc = scenarios.get(sid)
+    t, honest_attrs = honest(sid)
+    spans = [span(attrs or honest_attrs)]
+    checks = by_id(grade(sc, t, BASE, obs(), spans, metrics=points, metrics_docs=docs))
+    return checks["metric.input_tokens"], checks["metric.output_tokens"]
+
+
+def token_usage(t):
+    return [
+        point("gen_ai.client.token.usage", t.input_tokens, **{"gen_ai.token.type": "input"}),
+        point("gen_ai.client.token.usage", t.output_tokens, **{"gen_ai.token.type": "output"}),
+    ]
+
+
+@pytest.mark.parametrize(
+    "points",
+    [histograms, lambda t: histograms(t, "gen_ai.client.inference.usage"), token_usage],
+)
+def test_every_token_metric_name_is_read(points):
+    t = scenarios.truth(scenarios.get("openai/cache-hit"))
+    inp, out = metric("openai/cache-hit", points(t))
+    assert (inp.verdict, inp.got, out.verdict, out.got) == ("pass", 5379, "pass", 377)
+
+
+def test_a_counter_split_by_modality_is_summed():
+    t = scenarios.truth(scenarios.get("openai/basic"))
+    name = "gen_ai.client.inference.usage.input_tokens"
+    split = [
+        point(name, 1000, None, **{"gen_ai.token.modality": "text"}),
+        point(name, t.input_tokens - 1000, None, **{"gen_ai.token.modality": "image"}),
+    ]
+    assert metric("openai/basic", split)[0].verdict == "pass"
+
+
+def test_a_cumulative_stream_exported_twice_counts_once():
+    t = scenarios.truth(scenarios.get("openai/basic"))
+    again = [replace(p, time_ns=9) for p in histograms(t)]
+    assert [c.verdict for c in metric("openai/basic", histograms(t) + again)] == ["pass", "pass"]
+
+
+def test_two_recordings_for_one_call_are_wrong():
+    t = scenarios.truth(scenarios.get("openai/basic"))
+    name = "gen_ai.client.inference.operation.output_tokens"
+    halves = [point(name, 200, temporality=1), point(name, t.output_tokens - 200, temporality=1)]
+    out = metric("openai/basic", halves)[1]
+    assert (out.verdict, out.got, out.detail) == ("wrong", 2, "recorded 2 times for one call")
+
+
+def test_cache_left_out_of_the_input_metric_is_wrong_and_named():
+    t = scenarios.truth(scenarios.get("anthropic/cache-hit"))
+    raw = t.input_tokens - t.cache_read_tokens - t.cache_write_tokens
+    name = "gen_ai.client.inference.operation.input_tokens"
+    inp = metric("anthropic/cache-hit", [point(name, raw)])[0]
+    assert (inp.verdict, inp.got, inp.detail) == ("wrong", raw, "cache reads and writes left out")
+
+
+def test_reasoning_left_out_of_the_output_metric_is_wrong_and_named():
+    t = scenarios.truth(scenarios.get("anthropic/thinking"))
+    name = "gen_ai.client.inference.operation.output_tokens"
+    out = metric("anthropic/thinking", [point(name, t.output_tokens - t.reasoning_tokens)])[1]
+    assert out.verdict == "wrong" and out.detail == "reasoning tokens left out of output"
+
+
+def test_an_estimate_on_a_stream_without_usage_is_wrong():
+    attrs = {"gen_ai.request.model": "gpt-5-mini", "gen_ai.operation.name": "chat"}
+    estimate = point("gen_ai.client.token.usage", 16, **{"gen_ai.token.type": "output"})
+    out = metric("openai/stream-no-usage", [estimate], attrs)[1]
+    assert out.verdict == "wrong" and "estimated" in out.detail
+
+
+def test_no_metric_from_a_library_that_documents_them_is_missing():
+    inp, out = metric("openai/basic", [])
+    assert (inp.verdict, out.verdict) == ("missing", "missing")
+    assert inp.detail == "no token usage metric arrived"
+
+
+def test_a_library_that_documents_no_token_metrics_is_not_graded():
+    t = scenarios.truth(scenarios.get("anthropic/cache-hit"))
+    wrong = [point("gen_ai.client.inference.operation.input_tokens", 1)]
+    for points in ([], histograms(t), wrong):
+        checks = metric("anthropic/cache-hit", points, docs=None)
+        assert [(c.verdict, c.detail) for c in checks] == [
+            ("n/a", "the library documents no token metrics")
+        ] * 2
+
+
+def test_metrics_are_not_graded_on_a_failed_call_or_without_a_span():
+    sc = scenarios.get("openai/rate-limited")
+    graded = grade(sc, scenarios.truth(sc), BASE, obs(), [span({"gen_ai.request.model": "m"})])
+    assert not {"metric.input_tokens", "metric.output_tokens"} & by_id(graded).keys()
+    sc = scenarios.get("openai/basic")
+    assert "metric.input_tokens" not in by_id(grade(sc, scenarios.truth(sc), BASE, obs(), []))

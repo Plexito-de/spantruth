@@ -3,6 +3,7 @@
 import anthropic
 import openai
 import pytest
+from google import genai
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
@@ -24,12 +25,34 @@ def mock():
 
 def _consume(sc, mock):
     """Run the scenario through the real SDK. Return (events or response, exception)."""
+    if sc.provider == "gemini":
+        client = genai.Client(
+            api_key="test", http_options=genai.types.HttpOptions(base_url=mock.base_url(sc))
+        )
+        kw = {"model": sc.request_model, "contents": "hi"}
+        call = (
+            client.models.generate_content_stream if sc.stream else client.models.generate_content
+        )
+        try:
+            result = call(**kw)
+            return (list(result) if sc.stream else result), None
+        except Exception as exc:
+            return None, exc
     if sc.api == "responses":
         client = openai.OpenAI(base_url=mock.base_url(sc), api_key="test", max_retries=sc.retries)
         kw = {"model": sc.request_model, "input": "hi", "stream": sc.stream}
         call = client.responses.create
-    elif sc.provider == "openai":
-        client = openai.OpenAI(base_url=mock.base_url(sc), api_key="test", max_retries=sc.retries)
+    elif sc.provider in ("openai", "azure"):
+        client = (
+            openai.AzureOpenAI(
+                azure_endpoint=mock.base_url(sc),
+                api_version="2024-10-21",
+                api_key="test",
+                max_retries=sc.retries,
+            )
+            if sc.provider == "azure"
+            else openai.OpenAI(base_url=mock.base_url(sc), api_key="test", max_retries=sc.retries)
+        )
         kw = {"model": sc.request_model, "messages": [{"role": "user", "content": "hi"}]}
         if sc.stream:
             kw["stream"] = True
@@ -58,13 +81,18 @@ def _consume(sc, mock):
 def test_every_fixture_round_trips_through_the_real_sdk(sc, mock):
     result, exc = _consume(sc, mock)
     if sc.response.status == 429:
-        assert type(exc).__name__ == "RateLimitError"
+        if sc.provider == "gemini":
+            assert type(exc).__name__ == "ClientError" and exc.status == "RESOURCE_EXHAUSTED"
+        else:
+            assert type(exc).__name__ == "RateLimitError"
     elif sc.expects_error:
         assert exc is not None, "a dropped connection or error event must raise"
     elif sc.stream:
         assert exc is None and len(result) == sum(
             isinstance(e.data, dict) for e in sc.response.events
         )
+    elif sc.provider == "gemini":
+        assert exc is None and result.response_id == sc.response.body["responseId"]
     else:
         assert exc is None and result.id == sc.response.body["id"]
 
@@ -106,6 +134,84 @@ def test_receiver_decodes_otlp_protobuf_from_the_real_exporter():
     assert chat.resource["service.name"] == "t"
 
 
+def test_receiver_keeps_log_records_and_span_event_attributes():
+    from opentelemetry.exporter.otlp.proto.http._log_exporter import OTLPLogExporter
+    from opentelemetry.sdk._logs import LoggerProvider
+    from opentelemetry.sdk._logs.export import SimpleLogRecordProcessor
+
+    with Receiver() as rx:
+        lp = LoggerProvider()
+        lp.add_log_record_processor(SimpleLogRecordProcessor(OTLPLogExporter(f"{rx.url}/v1/logs")))
+        lp.get_logger("lib").emit(
+            event_name="gen_ai.choice",
+            body={"message": {"content": "Paris"}},
+            attributes={"gen_ai.provider.name": "openai"},
+        )
+        lp.shutdown()
+        tp = TracerProvider()
+        tp.add_span_processor(SimpleSpanProcessor(OTLPSpanExporter(f"{rx.url}/v1/traces")))
+        with tp.get_tracer("t").start_as_current_span("chat m") as s:
+            s.add_event("gen_ai.content.completion", {"gen_ai.completion": "Paris"})
+        tp.shutdown()
+        [record], [chat] = rx.logs, rx.spans
+    assert (record.event_name, record.body) == ("gen_ai.choice", {"message": {"content": "Paris"}})
+    assert record.attributes == {"gen_ai.provider.name": "openai"}
+    assert rx.counts["logs"] == 1
+    assert chat.events == ("gen_ai.content.completion",)
+    assert chat.event_attributes == ({"gen_ai.completion": "Paris"},)
+
+
+def test_receiver_keeps_metric_points_from_the_real_exporter():
+    from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
+    from opentelemetry.sdk.metrics import MeterProvider
+    from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+
+    with Receiver() as rx:
+        reader = PeriodicExportingMetricReader(
+            OTLPMetricExporter(f"{rx.url}/v1/metrics"), export_interval_millis=3_600_000
+        )
+        meter = MeterProvider(metric_readers=[reader]).get_meter("lib")
+        meter.create_histogram("gen_ai.client.token.usage").record(
+            1187, {"gen_ai.token.type": "input"}
+        )
+        meter.create_counter("gen_ai.client.inference.usage.output_tokens").add(263)
+        reader.force_flush()
+        points = {p.name: p for p in rx.metrics}
+    hist = points["gen_ai.client.token.usage"]
+    assert (hist.kind, hist.value, hist.count, hist.temporality) == ("histogram", 1187, 1, 2)
+    assert hist.attributes == {"gen_ai.token.type": "input"} and hist.scope == "lib"
+    counter = points["gen_ai.client.inference.usage.output_tokens"]
+    assert (counter.kind, counter.value, counter.count) == ("sum", 263, None)
+    assert rx.counts["metrics"] == 2
+
+
+def test_the_driver_passes_a_meter_provider_only_to_an_instrument_that_takes_one():
+    from types import SimpleNamespace
+
+    from spantruth.driver import _call_instrument
+
+    seen = {}
+
+    def old(tracer_provider, otlp_endpoint):
+        seen["old"] = (tracer_provider, otlp_endpoint)
+
+    def new(tracer_provider, otlp_endpoint, meter_provider=None):
+        seen["new"] = meter_provider
+
+    def anything(**kwargs):
+        seen["any"] = sorted(kwargs)
+
+    for fn in (old, new, anything):
+        _call_instrument(
+            SimpleNamespace(instrument=fn), tracer_provider=1, otlp_endpoint=2, meter_provider=3
+        )
+    assert seen == {
+        "old": (1, 2),
+        "new": 3,
+        "any": ["meter_provider", "otlp_endpoint", "tracer_provider"],
+    }
+
+
 def test_receiver_drops_other_paths():
     import urllib.request
 
@@ -144,3 +250,40 @@ def test_mock_server_retries_without_retry_header(mock):
     r2 = mock.next_response(sc)
     assert r1.status == 429
     assert r2.status == 200
+
+
+def test_gemini_requests_reach_the_methods_of_the_real_api(mock):
+    mock.reset()
+    for sid in ("gemini/basic", "gemini/stream"):
+        _consume(scenarios.get(sid), mock)
+    paths = [path for _sid, path, _body in mock.requests]
+    assert paths[0].endswith("/models/gemini-3.5-flash-lite:generateContent")
+    assert paths[1].endswith("/models/gemini-3.5-flash-lite:streamGenerateContent?alt=sse")
+
+
+def test_a_gemini_request_to_the_wrong_method_is_a_404(mock):
+    # A stream scenario asked for a single response: the fake provider refuses it, so a fixture
+    # cannot answer a call the real API would route elsewhere.
+    sc = scenarios.get("gemini/stream")
+    client = genai.Client(
+        api_key="test", http_options=genai.types.HttpOptions(base_url=mock.base_url(sc))
+    )
+    with pytest.raises(genai.errors.ClientError) as caught:
+        client.models.generate_content(model=sc.request_model, contents="hi")
+    assert caught.value.code == 404
+
+
+def test_azure_requests_reach_the_deployment_with_an_api_version(mock):
+    mock.reset()
+    _consume(scenarios.get("azure/basic"), mock)
+    ((_sid, path, _body),) = mock.requests
+    assert path.endswith(
+        "/openai/deployments/wt-chat-deployment/chat/completions?api-version=2024-10-21"
+    )
+
+
+def test_an_azure_request_without_the_deployment_path_is_a_404(mock):
+    sc = scenarios.get("azure/basic")
+    client = openai.OpenAI(base_url=f"{mock.base_url(sc)}/openai", api_key="test", max_retries=0)
+    with pytest.raises(openai.NotFoundError):
+        client.chat.completions.create(model=sc.request_model, messages=[])

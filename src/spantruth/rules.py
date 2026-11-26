@@ -11,6 +11,11 @@ RECORDING_ERRORS = (
     "docs/general/recording-errors.md"
 )
 
+REQUIREMENT_LEVELS = (
+    "https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/"
+    "docs/general/attribute-requirement-level.md"
+)
+
 RULES: dict[str, tuple[str, str]] = {
     "app.unchanged": (
         "spantruth rule: instrumentation does not change what the application receives: the same "
@@ -69,14 +74,17 @@ RULES: dict[str, tuple[str, str]] = {
     "input_tokens": (
         "Input tokens SHOULD include all types of input tokens, including cached tokens. For "
         "Anthropic, whose `input_tokens` excludes them, cache reads and cache writes MUST be "
-        "added. OpenInference states the same rule for `llm.token_count.prompt`.",
+        "added. Gemini's `promptTokenCount` is the total effective prompt size, cached content "
+        "included (ai.google.dev/api/generate-content#UsageMetadata). "
+        "OpenInference states the same rule for `llm.token_count.prompt`.",
         f"{GENAI}/model/gen-ai/spans.yaml#L842-L866",
     ),
     "output_tokens": (
         "Output tokens, with reasoning tokens included. For Anthropic, whose `output_tokens` "
         "includes thinking tokens, reasoning tokens are part of, not in addition to, output "
-        "tokens. OpenInference states the same rule for `llm.token_count.completion`.",
-        f"{GENAI}/model/gen-ai/registry.yaml#L336",
+        "tokens. For Gemini, whose `candidatesTokenCount` excludes `thoughtsTokenCount`, the two "
+        "are added. OpenInference states the same rule for `llm.token_count.completion`.",
+        f"{GENAI}/model/gen-ai/registry.yaml#L336-L350",
     ),
     "cache_read_tokens": (
         "Input tokens read from the provider cache.",
@@ -96,5 +104,39 @@ RULES: dict[str, tuple[str, str]] = {
         "spantruth rule: one call reports its token usage on one span. Usage on two spans of one "
         "call is counted twice by any backend that sums token attributes across spans.",
         "",
+    ),
+    "content.off_respected": (
+        "Prompt and completion text are Opt-In: instrumentations SHOULD populate them if and only "
+        "if the user configures the instrumentation to do so. spantruth grades the documented off "
+        "switch, not the library's default: with the switch set to off, no prompt or completion "
+        "text appears in the exported spans, span events or log records.",
+        f"{REQUIREMENT_LEVELS}#L115-L117",
+    ),
+    "content.output_matches": (
+        "Opt-In content SHOULD be populated if the user configures the instrumentation to do "
+        "so, so with the library's content switch on, the completion text is recorded, and it "
+        "equals the text the application read. Instrumentations MAY give users a way to filter "
+        "or truncate output messages; no scenario sets such an option, so the text is compared "
+        "whole. `gen_ai.output.messages` and the other conventions' output names are read.",
+        f"{REQUIREMENT_LEVELS}#L115-L117",
+    ),
+    "metric.input_tokens": (
+        "The input token metric is Recommended: it SHOULD be reported when an operation involves "
+        "the usage of tokens and the count is readily available, and the recorded value SHOULD "
+        "match the token count returned by the provider, cached tokens included. Read from "
+        "`gen_ai.client.inference.operation.input_tokens`, `gen_ai.client.inference.usage."
+        "input_tokens`, or the deprecated `gen_ai.client.token.usage` with `gen_ai.token.type` "
+        "`input`. The histograms count tokens per inference operation, so one call is one "
+        "recording. Graded only for a library that documents token metrics (`[metrics]` in "
+        "subject.toml); a documented library that emits none is missing.",
+        f"{GENAI}/model/gen-ai/token-metrics.yaml#L100-L121",
+    ),
+    "metric.output_tokens": (
+        "The output token metric counts the output tokens of the call, reasoning tokens "
+        "included, with the same rules as the input token metric. Read from "
+        "`gen_ai.client.inference.operation.output_tokens`, `gen_ai.client.inference.usage."
+        "output_tokens`, or the deprecated `gen_ai.client.token.usage` with `gen_ai.token.type` "
+        "`output`.",
+        f"{GENAI}/model/gen-ai/token-metrics.yaml#L33-L38",
     ),
 }

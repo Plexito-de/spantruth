@@ -1,0 +1,211 @@
+{
+  "app_exception": null,
+  "app_seen": {
+    "events": 8,
+    "response_id": "msg_wt_stream",
+    "text": "The capital of France is Paris.",
+    "usage": null
+  },
+  "backend": "jaeger",
+  "checks": [
+    {
+      "detail": "",
+      "expected": null,
+      "got": null,
+      "id": "app.unchanged",
+      "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+      "rule_url": "",
+      "verdict": "pass",
+      "where": null
+    },
+    {
+      "detail": "",
+      "expected": null,
+      "got": null,
+      "id": "span.parented",
+      "rule": "The span belongs to the trace that was active when the application made the call.",
+      "rule_url": "https://opentelemetry.io/docs/specs/otel/trace/api/#context-interaction",
+      "verdict": "pass",
+      "where": null
+    },
+    {
+      "detail": "",
+      "expected": "claude-sonnet-5-5",
+      "got": "claude-sonnet-5-5",
+      "id": "request_model",
+      "rule": "The model name the request asked for.",
+      "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/registry.yaml#L98",
+      "verdict": "pass",
+      "where": "gen_ai.request.model"
+    },
+    {
+      "detail": "",
+      "expected": "claude-sonnet-5-5-20260915",
+      "got": "claude-sonnet-5-5-20260915",
+      "id": "response_model",
+      "rule": "The name of the model that generated the response.",
+      "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/registry.yaml#L205",
+      "verdict": "pass",
+      "where": "gen_ai.response.model"
+    },
+    {
+      "detail": "",
+      "expected": "msg_wt_stream",
+      "got": "msg_wt_stream",
+      "id": "response_id",
+      "rule": "The unique identifier of the completion.",
+      "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/registry.yaml#L200",
+      "verdict": "pass",
+      "where": "gen_ai.response.id"
+    },
+    {
+      "detail": "",
+      "expected": [
+        "end_turn"
+      ],
+      "got": [
+        "stop"
+      ],
+      "id": "finish_reasons",
+      "rule": "One finish reason per choice, as received. A normalized value is accepted too.",
+      "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/registry.yaml#L210-L221",
+      "verdict": "pass",
+      "where": "gen_ai.response.finish_reasons"
+    },
+    {
+      "detail": "",
+      "expected": 2311,
+      "got": 2311,
+      "id": "input_tokens",
+      "rule": "Input tokens SHOULD include all types of input tokens, including cached tokens. For Anthropic, whose `input_tokens` excludes them, cache reads and cache writes MUST be added. OpenInference states the same rule for `llm.token_count.prompt`.",
+      "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/spans.yaml#L842-L866",
+      "verdict": "pass",
+      "where": "gen_ai.usage.input_tokens"
+    },
+    {
+      "detail": "",
+      "expected": 419,
+      "got": 420,
+      "id": "output_tokens",
+      "rule": "Output tokens, with reasoning tokens included. For Anthropic, whose `output_tokens` includes thinking tokens, reasoning tokens are part of, not in addition to, output tokens. OpenInference states the same rule for `llm.token_count.completion`.",
+      "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/registry.yaml#L336",
+      "verdict": "wrong",
+      "where": "gen_ai.usage.output_tokens"
+    },
+    {
+      "detail": "",
+      "expected": null,
+      "got": null,
+      "id": "cache_read_tokens",
+      "rule": "Input tokens read from the provider cache.",
+      "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/registry.yaml#L301",
+      "verdict": "n/a",
+      "where": null
+    },
+    {
+      "detail": "",
+      "expected": null,
+      "got": null,
+      "id": "cache_write_tokens",
+      "rule": "Input tokens written to the provider cache.",
+      "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/registry.yaml#L308",
+      "verdict": "n/a",
+      "where": null
+    },
+    {
+      "detail": "",
+      "expected": null,
+      "got": null,
+      "id": "reasoning_tokens",
+      "rule": "Output tokens used for reasoning. For Anthropic, thinking tokens reported in `output_tokens_details` map to this count. OpenInference records them as `llm.token_count.completion_details.reasoning`.",
+      "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/registry.yaml#L346",
+      "verdict": "n/a",
+      "where": null
+    }
+  ],
+  "driver_returncode": 0,
+  "driver_stderr": "",
+  "forwarded": [
+    {
+      "backend_status": 200,
+      "path": "/v1/traces"
+    },
+    {
+      "backend_status": 200,
+      "path": "/v1/traces"
+    }
+  ],
+  "project": "rc-phantom-jaeger",
+  "provider_requests": [
+    {
+      "path": "/s/anthropic--stream/v1/messages",
+      "scenario": "anthropic/stream"
+    }
+  ],
+  "scenario": "anthropic/stream",
+  "spans": [
+    {
+      "attributes": {
+        "gen_ai.input.messages": "[{\"role\": \"user\", \"parts\": [{\"type\": \"text\", \"content\": \"What is the capital of France?\"}]}]",
+        "gen_ai.is_streaming": true,
+        "gen_ai.operation.name": "chat",
+        "gen_ai.output.messages": "[{\"role\": \"assistant\", \"parts\": [{\"type\": \"text\", \"content\": \"The capital of France is Paris.\"}], \"finish_reason\": \"stop\"}]",
+        "gen_ai.provider.name": "anthropic",
+        "gen_ai.request.max_tokens": 1024,
+        "gen_ai.request.model": "claude-sonnet-5-5",
+        "gen_ai.response.finish_reasons": [
+          "stop"
+        ],
+        "gen_ai.response.id": "msg_wt_stream",
+        "gen_ai.response.model": "claude-sonnet-5-5-20260915",
+        "gen_ai.usage.cache_creation.input_tokens": 0,
+        "gen_ai.usage.cache_read.input_tokens": 0,
+        "gen_ai.usage.input_tokens": 2311,
+        "gen_ai.usage.output_tokens": 420,
+        "gen_ai.usage.total_tokens": 2731
+      },
+      "name": "anthropic.chat",
+      "parent_span_id": "8469b5415cfc88ab",
+      "scope": "opentelemetry.instrumentation.anthropic",
+      "span_id": "2fe6cffa71aa7eca",
+      "status": "OK",
+      "trace_id": "67a86a4de5167778026b7aa8f2c5e71b"
+    },
+    {
+      "attributes": {},
+      "name": "spantruth.scenario",
+      "parent_span_id": "",
+      "scope": "spantruth.driver",
+      "span_id": "8469b5415cfc88ab",
+      "status": "UNSET",
+      "trace_id": "67a86a4de5167778026b7aa8f2c5e71b"
+    }
+  ],
+  "subject": "openllmetry",
+  "truth": {
+    "cache_read_tokens": null,
+    "cache_write_long_tokens": null,
+    "cache_write_tokens": null,
+    "error": null,
+    "finish_reasons": [
+      "end_turn"
+    ],
+    "input_tokens": 2311,
+    "no_usage": false,
+    "output_tokens": 419,
+    "reasoning_tokens": null,
+    "request_model": "claude-sonnet-5-5",
+    "response_id": "msg_wt_stream",
+    "response_model": "claude-sonnet-5-5-20260915",
+    "unread_counts": []
+  },
+  "verdict": "wrong",
+  "versions": {
+    "anthropic": "2.4.0",
+    "openai": "3.42.1",
+    "opentelemetry-exporter-otlp-proto-http": "1.45.2",
+    "opentelemetry-instrumentation-anthropic": "0.62.4",
+    "opentelemetry-instrumentation-openai": "0.62.4",
+    "opentelemetry-sdk": "1.45.2"
+  }
+}

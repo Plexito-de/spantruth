@@ -1,0 +1,584 @@
+{
+  "jaeger": {
+    "rc-cache-jaeger": {
+      "spans": [
+        {
+          "name": "POST",
+          "tags": {},
+          "trace_id": "bd934acb32a4888b5d08618052c9f894"
+        },
+        {
+          "name": "chat claude-sonnet-5-5",
+          "tags": {
+            "gen_ai.client.token.usage": 1564,
+            "gen_ai.request.max_tokens": 1024,
+            "gen_ai.server.time_per_output_token": 0,
+            "gen_ai.server.time_to_first_token": 0.04147601127624512,
+            "gen_ai.usage.cache_creation.input_tokens": 519,
+            "gen_ai.usage.cache_read.input_tokens": 4096,
+            "gen_ai.usage.input_tokens": 1187,
+            "gen_ai.usage.output_tokens": 377,
+            "otel.status_code": "OK"
+          },
+          "trace_id": "bd934acb32a4888b5d08618052c9f894"
+        },
+        {
+          "name": "spantruth.scenario",
+          "tags": {},
+          "trace_id": "bd934acb32a4888b5d08618052c9f894"
+        }
+      ]
+    },
+    "rc-double-jaeger": {
+      "spans": [
+        {
+          "name": "anthropic.messages.create",
+          "tags": {
+            "gen_ai.request.max_tokens": 1024,
+            "gen_ai.usage.cache_read.input_tokens": 0,
+            "gen_ai.usage.cache_write.input_tokens": 0,
+            "gen_ai.usage.input_tokens": 1187,
+            "gen_ai.usage.output_tokens": 263,
+            "otel.status_code": "OK"
+          },
+          "trace_id": "8715491af381d8188ed87cbc32508b75"
+        },
+        {
+          "name": "chat claude-sonnet-5-5",
+          "tags": {
+            "gen_ai.request.max_tokens": 1024,
+            "gen_ai.usage.input_tokens": 1187,
+            "gen_ai.usage.output_tokens": 263
+          },
+          "trace_id": "8715491af381d8188ed87cbc32508b75"
+        },
+        {
+          "name": "spantruth.scenario",
+          "tags": {},
+          "trace_id": "8715491af381d8188ed87cbc32508b75"
+        }
+      ]
+    },
+    "rc-falseok-jaeger": {
+      "spans": [
+        {
+          "name": "openai.chat",
+          "tags": {
+            "otel.status_code": "OK"
+          },
+          "trace_id": "3b02de3ec6fb4d5911c5ad8e33dd9dda"
+        },
+        {
+          "name": "spantruth.scenario",
+          "tags": {},
+          "trace_id": "3b02de3ec6fb4d5911c5ad8e33dd9dda"
+        }
+      ]
+    },
+    "rc-ghost-jaeger": {
+      "spans": [
+        {
+          "name": "spantruth.scenario",
+          "tags": {},
+          "trace_id": "2acead7dd224e775ff4453d8def941d4"
+        }
+      ]
+    },
+    "rc-phantom-jaeger": {
+      "spans": [
+        {
+          "name": "anthropic.chat",
+          "tags": {
+            "gen_ai.request.max_tokens": 1024,
+            "gen_ai.usage.cache_creation.input_tokens": 0,
+            "gen_ai.usage.cache_read.input_tokens": 0,
+            "gen_ai.usage.input_tokens": 2311,
+            "gen_ai.usage.output_tokens": 420,
+            "gen_ai.usage.total_tokens": 2731,
+            "otel.status_code": "OK"
+          },
+          "trace_id": "67a86a4de5167778026b7aa8f2c5e71b"
+        },
+        {
+          "name": "spantruth.scenario",
+          "tags": {},
+          "trace_id": "67a86a4de5167778026b7aa8f2c5e71b"
+        }
+      ]
+    },
+    "rc-vanish-jaeger": {
+      "spans": [
+        {
+          "name": "openai.chat",
+          "tags": {},
+          "trace_id": "66bebab84f1c4643807d39c6656fca3c"
+        },
+        {
+          "name": "spantruth.scenario",
+          "tags": {},
+          "trace_id": "66bebab84f1c4643807d39c6656fca3c"
+        }
+      ]
+    }
+  },
+  "mlflow": {
+    "rc-cache-mlflow": {
+      "experiment_id": "5",
+      "traces": [
+        {
+          "execution_duration": "0.392s",
+          "request_time": "2026-11-26T16:06:57.165Z",
+          "state": "OK",
+          "tags": {
+            "mlflow.artifactLocation": "/tmp/w11/final/data/mlflow/artifacts/5/traces/tr-424ae333101de89b0c565e6b82192508/artifacts",
+            "mlflow.trace.spansLocation": "TRACKING_STORE",
+            "openinference.project.name": "rc-cache-mlflow",
+            "service.instance.id": "709127ec-01f3-42b0-95a5-350b185d310b",
+            "service.name": "spantruth"
+          },
+          "token_usage": {
+            "cache_creation_input_tokens": 519,
+            "cache_read_input_tokens": 4096,
+            "input_tokens": 1187,
+            "output_tokens": 377,
+            "total_tokens": 1564
+          },
+          "trace_id": "tr-424ae333101de89b0c565e6b82192508",
+          "trace_location": {
+            "mlflow_experiment": {
+              "experiment_id": "5"
+            },
+            "type": "MLFLOW_EXPERIMENT"
+          },
+          "trace_metadata": {
+            "mlflow.trace.tokenUsage": "{\"input_tokens\": 1187, \"output_tokens\": 377, \"total_tokens\": 1564, \"cache_read_input_tokens\": 4096, \"cache_creation_input_tokens\": 519}"
+          }
+        }
+      ]
+    },
+    "rc-double-mlflow": {
+      "experiment_id": "4",
+      "traces": [
+        {
+          "execution_duration": "7.407s",
+          "request_time": "2026-11-26T16:06:18.374Z",
+          "state": "OK",
+          "tags": {
+            "mlflow.artifactLocation": "/tmp/w11/final/data/mlflow/artifacts/4/traces/tr-6e14937badff02def6df8fb1ee3d3770/artifacts",
+            "mlflow.trace.spansLocation": "TRACKING_STORE",
+            "openinference.project.name": "rc-double-mlflow",
+            "service.instance.id": "08ebc0ab-8537-40d2-8c8a-9dd504be50df",
+            "service.name": "spantruth"
+          },
+          "token_usage": {
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0,
+            "input_tokens": 1187,
+            "output_tokens": 263,
+            "total_tokens": 1450
+          },
+          "trace_id": "tr-6e14937badff02def6df8fb1ee3d3770",
+          "trace_location": {
+            "mlflow_experiment": {
+              "experiment_id": "4"
+            },
+            "type": "MLFLOW_EXPERIMENT"
+          },
+          "trace_metadata": {
+            "mlflow.trace.tokenUsage": "{\"input_tokens\": 1187, \"output_tokens\": 263, \"total_tokens\": 1450, \"cache_read_input_tokens\": 0, \"cache_creation_input_tokens\": 0}"
+          }
+        }
+      ]
+    },
+    "rc-falseok-mlflow": {
+      "experiment_id": "3",
+      "traces": [
+        {
+          "execution_duration": "0.197s",
+          "request_time": "2026-11-26T16:05:44.695Z",
+          "state": "OK",
+          "tags": {
+            "mlflow.artifactLocation": "/tmp/w11/final/data/mlflow/artifacts/3/traces/tr-f6dfa5fbe089b7febf124c9018857525/artifacts",
+            "mlflow.trace.spansLocation": "TRACKING_STORE",
+            "openinference.project.name": "rc-falseok-mlflow",
+            "service.instance.id": "a08c7a5d-29e9-4e9f-8301-229398f2f4e6",
+            "service.name": "spantruth"
+          },
+          "token_usage": null,
+          "trace_id": "tr-f6dfa5fbe089b7febf124c9018857525",
+          "trace_location": {
+            "mlflow_experiment": {
+              "experiment_id": "3"
+            },
+            "type": "MLFLOW_EXPERIMENT"
+          }
+        }
+      ]
+    },
+    "rc-ghost-mlflow": {
+      "experiment_id": "2",
+      "traces": [
+        {
+          "execution_duration": "0.133s",
+          "request_time": "2026-11-26T16:05:13.365Z",
+          "state": "OK",
+          "tags": {
+            "mlflow.artifactLocation": "/tmp/w11/final/data/mlflow/artifacts/2/traces/tr-745a1e0cb79c7ab1a554b181c41a7aed/artifacts",
+            "mlflow.trace.spansLocation": "TRACKING_STORE",
+            "openinference.project.name": "rc-ghost-mlflow",
+            "service.instance.id": "22e0aa32-b6d5-4805-b670-176f0de36fc9",
+            "service.name": "spantruth"
+          },
+          "token_usage": null,
+          "trace_id": "tr-745a1e0cb79c7ab1a554b181c41a7aed",
+          "trace_location": {
+            "mlflow_experiment": {
+              "experiment_id": "2"
+            },
+            "type": "MLFLOW_EXPERIMENT"
+          }
+        }
+      ]
+    },
+    "rc-phantom-mlflow": {
+      "experiment_id": "1",
+      "traces": [
+        {
+          "execution_duration": "7.073s",
+          "request_time": "2026-11-26T16:04:30.066Z",
+          "state": "OK",
+          "tags": {
+            "mlflow.artifactLocation": "/tmp/w11/final/data/mlflow/artifacts/1/traces/tr-bdd878817377af8cd322ee20a8396e2d/artifacts",
+            "mlflow.trace.spansLocation": "TRACKING_STORE",
+            "openinference.project.name": "rc-phantom-mlflow",
+            "service.instance.id": "3c14166e-2a27-4769-bbfb-7c1ee9c6cd86",
+            "service.name": "spantruth"
+          },
+          "token_usage": {
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0,
+            "input_tokens": 2311,
+            "output_tokens": 420,
+            "total_tokens": 2731
+          },
+          "trace_id": "tr-bdd878817377af8cd322ee20a8396e2d",
+          "trace_location": {
+            "mlflow_experiment": {
+              "experiment_id": "1"
+            },
+            "type": "MLFLOW_EXPERIMENT"
+          },
+          "trace_metadata": {
+            "mlflow.trace.tokenUsage": "{\"input_tokens\": 2311, \"output_tokens\": 420, \"total_tokens\": 2731, \"cache_read_input_tokens\": 0, \"cache_creation_input_tokens\": 0}"
+          }
+        }
+      ]
+    },
+    "rc-vanish-mlflow": {
+      "experiment_id": "6",
+      "traces": [
+        {
+          "execution_duration": "0.192s",
+          "request_time": "2026-11-26T16:07:27.189Z",
+          "state": "OK",
+          "tags": {
+            "mlflow.artifactLocation": "/tmp/w11/final/data/mlflow/artifacts/6/traces/tr-a3ecc4fb41ad8f7a0e5f87380fb5ae13/artifacts",
+            "mlflow.trace.spansLocation": "TRACKING_STORE",
+            "openinference.project.name": "rc-vanish-mlflow",
+            "service.instance.id": "37b18618-1bed-4a64-b65e-57cd139f467f",
+            "service.name": "spantruth"
+          },
+          "token_usage": null,
+          "trace_id": "tr-a3ecc4fb41ad8f7a0e5f87380fb5ae13",
+          "trace_location": {
+            "mlflow_experiment": {
+              "experiment_id": "6"
+            },
+            "type": "MLFLOW_EXPERIMENT"
+          }
+        }
+      ]
+    }
+  },
+  "phoenix": {
+    "rc-cache-phoenix": {
+      "costSummary": {
+        "completion": {
+          "cost": 0.0037700000000000003
+        },
+        "prompt": {
+          "cost": 0.0017071
+        },
+        "total": {
+          "cost": 0.0054771
+        }
+      },
+      "name": "rc-cache-phoenix",
+      "spans": [
+        {
+          "costSummary": null,
+          "name": "POST",
+          "parentId": "dc92b6a3bac81dc1",
+          "spanId": "b900db7138f93934",
+          "statusCode": "UNSET",
+          "statusMessage": "",
+          "tokenCountCompletion": null,
+          "tokenCountPrompt": null,
+          "tokenCountTotal": 0
+        },
+        {
+          "costSummary": {
+            "total": {
+              "cost": 0.0054771
+            }
+          },
+          "name": "chat claude-sonnet-5-5",
+          "parentId": "f127fd37e99ef7d4",
+          "spanId": "dc92b6a3bac81dc1",
+          "statusCode": "OK",
+          "statusMessage": "",
+          "tokenCountCompletion": 377,
+          "tokenCountPrompt": 1187,
+          "tokenCountTotal": 1564
+        },
+        {
+          "costSummary": null,
+          "name": "spantruth.scenario",
+          "parentId": null,
+          "spanId": "f127fd37e99ef7d4",
+          "statusCode": "UNSET",
+          "statusMessage": "",
+          "tokenCountCompletion": null,
+          "tokenCountPrompt": null,
+          "tokenCountTotal": 0
+        }
+      ],
+      "tokenCountCompletion": 377.0,
+      "tokenCountPrompt": 1187.0,
+      "tokenCountTotal": 1564.0,
+      "traceCount": 1
+    },
+    "rc-double-phoenix": {
+      "costSummary": {
+        "completion": {
+          "cost": 0.005260000000000001
+        },
+        "prompt": {
+          "cost": 0.004748
+        },
+        "total": {
+          "cost": 0.010008
+        }
+      },
+      "name": "rc-double-phoenix",
+      "spans": [
+        {
+          "costSummary": {
+            "total": {
+              "cost": 0.005004
+            }
+          },
+          "name": "anthropic.messages.create",
+          "parentId": "22a8fedcba7546a6",
+          "spanId": "36e5a7e2f3c2278e",
+          "statusCode": "OK",
+          "statusMessage": "",
+          "tokenCountCompletion": 263,
+          "tokenCountPrompt": 1187,
+          "tokenCountTotal": 1450
+        },
+        {
+          "costSummary": {
+            "total": {
+              "cost": 0.005004
+            }
+          },
+          "name": "chat claude-sonnet-5-5",
+          "parentId": "412e1b651b3db862",
+          "spanId": "22a8fedcba7546a6",
+          "statusCode": "UNSET",
+          "statusMessage": "",
+          "tokenCountCompletion": 263,
+          "tokenCountPrompt": 1187,
+          "tokenCountTotal": 1450
+        },
+        {
+          "costSummary": null,
+          "name": "spantruth.scenario",
+          "parentId": null,
+          "spanId": "412e1b651b3db862",
+          "statusCode": "UNSET",
+          "statusMessage": "",
+          "tokenCountCompletion": null,
+          "tokenCountPrompt": null,
+          "tokenCountTotal": 0
+        }
+      ],
+      "tokenCountCompletion": 263.0,
+      "tokenCountPrompt": 1187.0,
+      "tokenCountTotal": 1450.0,
+      "traceCount": 1
+    },
+    "rc-falseok-phoenix": {
+      "costSummary": {
+        "completion": {
+          "cost": null
+        },
+        "prompt": {
+          "cost": null
+        },
+        "total": {
+          "cost": null
+        }
+      },
+      "name": "rc-falseok-phoenix",
+      "spans": [
+        {
+          "costSummary": null,
+          "name": "openai.chat",
+          "parentId": "297634f36c2fda9e",
+          "spanId": "2c882620731809db",
+          "statusCode": "OK",
+          "statusMessage": "",
+          "tokenCountCompletion": 0,
+          "tokenCountPrompt": 0,
+          "tokenCountTotal": 0
+        },
+        {
+          "costSummary": null,
+          "name": "spantruth.scenario",
+          "parentId": null,
+          "spanId": "297634f36c2fda9e",
+          "statusCode": "UNSET",
+          "statusMessage": "",
+          "tokenCountCompletion": null,
+          "tokenCountPrompt": null,
+          "tokenCountTotal": 0
+        }
+      ],
+      "tokenCountCompletion": 0.0,
+      "tokenCountPrompt": 0.0,
+      "tokenCountTotal": 0.0,
+      "traceCount": 1
+    },
+    "rc-ghost-phoenix": {
+      "costSummary": {
+        "completion": {
+          "cost": null
+        },
+        "prompt": {
+          "cost": null
+        },
+        "total": {
+          "cost": null
+        }
+      },
+      "name": "rc-ghost-phoenix",
+      "spans": [
+        {
+          "costSummary": null,
+          "name": "spantruth.scenario",
+          "parentId": null,
+          "spanId": "dc7471915b1680ba",
+          "statusCode": "UNSET",
+          "statusMessage": "",
+          "tokenCountCompletion": null,
+          "tokenCountPrompt": null,
+          "tokenCountTotal": 0
+        }
+      ],
+      "tokenCountCompletion": 0.0,
+      "tokenCountPrompt": 0.0,
+      "tokenCountTotal": 0.0,
+      "traceCount": 1
+    },
+    "rc-phantom-phoenix": {
+      "costSummary": {
+        "completion": {
+          "cost": 0.004200000000000001
+        },
+        "prompt": {
+          "cost": 0.004621999999999999
+        },
+        "total": {
+          "cost": 0.008822
+        }
+      },
+      "name": "rc-phantom-phoenix",
+      "spans": [
+        {
+          "costSummary": {
+            "total": {
+              "cost": 0.008822
+            }
+          },
+          "name": "anthropic.chat",
+          "parentId": "7508debd65e271fa",
+          "spanId": "86afc7d4b056122e",
+          "statusCode": "OK",
+          "statusMessage": "",
+          "tokenCountCompletion": 420,
+          "tokenCountPrompt": 2311,
+          "tokenCountTotal": 2731
+        },
+        {
+          "costSummary": null,
+          "name": "spantruth.scenario",
+          "parentId": null,
+          "spanId": "7508debd65e271fa",
+          "statusCode": "UNSET",
+          "statusMessage": "",
+          "tokenCountCompletion": null,
+          "tokenCountPrompt": null,
+          "tokenCountTotal": 0
+        }
+      ],
+      "tokenCountCompletion": 420.0,
+      "tokenCountPrompt": 2311.0,
+      "tokenCountTotal": 2731.0,
+      "traceCount": 1
+    },
+    "rc-vanish-phoenix": {
+      "costSummary": {
+        "completion": {
+          "cost": null
+        },
+        "prompt": {
+          "cost": null
+        },
+        "total": {
+          "cost": null
+        }
+      },
+      "name": "rc-vanish-phoenix",
+      "spans": [
+        {
+          "costSummary": null,
+          "name": "openai.chat",
+          "parentId": "c59a963bd1086a1e",
+          "spanId": "01a8b2dc62b4e53e",
+          "statusCode": "UNSET",
+          "statusMessage": "",
+          "tokenCountCompletion": 0,
+          "tokenCountPrompt": 0,
+          "tokenCountTotal": 0
+        },
+        {
+          "costSummary": null,
+          "name": "spantruth.scenario",
+          "parentId": null,
+          "spanId": "c59a963bd1086a1e",
+          "statusCode": "UNSET",
+          "statusMessage": "",
+          "tokenCountCompletion": null,
+          "tokenCountPrompt": null,
+          "tokenCountTotal": 0
+        }
+      ],
+      "tokenCountCompletion": 0.0,
+      "tokenCountPrompt": 0.0,
+      "tokenCountTotal": 0.0,
+      "traceCount": 1
+    }
+  }
+}

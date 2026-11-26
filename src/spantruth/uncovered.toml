@@ -1,0 +1,82 @@
+# Python packages for LLM calls that no subject covers yet. `spantruth doctor` names each one it
+# finds in a project, with the issue where a user can ask for it, so a project is never left with
+# nothing to do. The key is the package name as PyPI normalizes it.
+#
+# A package that a library subject detects is covered, and doctor skips its entry here. Delete the
+# entry when the subject or provider lands.
+
+[litellm]
+title = "LiteLLM"
+issue = "https://github.com/Plexito-de/spantruth/issues/76"
+
+[langchain]
+title = "LangChain"
+issue = "https://github.com/Plexito-de/spantruth/issues/77"
+
+[langchain-core]
+title = "LangChain"
+issue = "https://github.com/Plexito-de/spantruth/issues/77"
+
+[langchain-openai]
+title = "LangChain"
+issue = "https://github.com/Plexito-de/spantruth/issues/77"
+
+[langchain-anthropic]
+title = "LangChain"
+issue = "https://github.com/Plexito-de/spantruth/issues/77"
+
+[llama-index]
+title = "LlamaIndex"
+issue = "https://github.com/Plexito-de/spantruth/issues/78"
+
+[llama-index-core]
+title = "LlamaIndex"
+issue = "https://github.com/Plexito-de/spantruth/issues/78"
+
+[pydantic-ai]
+title = "Pydantic AI"
+issue = "https://github.com/Plexito-de/spantruth/issues/79"
+
+[pydantic-ai-slim]
+title = "Pydantic AI"
+issue = "https://github.com/Plexito-de/spantruth/issues/79"
+
+[openai-agents]
+title = "OpenAI Agents SDK"
+issue = "https://github.com/Plexito-de/spantruth/issues/80"
+
+[mistralai]
+title = "Mistral"
+issue = "https://github.com/Plexito-de/spantruth/issues/82"
+
+[cohere]
+title = "Cohere"
+issue = "https://github.com/Plexito-de/spantruth/issues/83"
+
+[groq]
+title = "Groq"
+issue = "https://github.com/Plexito-de/spantruth/issues/84"
+
+[crewai]
+title = "CrewAI"
+issue = "https://github.com/Plexito-de/spantruth/issues/85"
+
+[dspy]
+title = "DSPy"
+issue = "https://github.com/Plexito-de/spantruth/issues/86"
+
+[dspy-ai]
+title = "DSPy"
+issue = "https://github.com/Plexito-de/spantruth/issues/86"
+
+[haystack-ai]
+title = "Haystack"
+issue = "https://github.com/Plexito-de/spantruth/issues/87"
+
+[agentops]
+title = "AgentOps"
+issue = "https://github.com/Plexito-de/spantruth/issues/88"
+
+[instructor]
+title = "Instructor"
+issue = "https://github.com/Plexito-de/spantruth/issues/89"

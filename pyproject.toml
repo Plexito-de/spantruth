@@ -30,8 +30,20 @@ Homepage = "https://github.com/Plexito-de/spantruth"
 Issues = "https://github.com/Plexito-de/spantruth/issues"
 Report = "https://plexito-de.github.io/spantruth/"
 
+[project.optional-dependencies]
+# The pytest plugin sends the spans of the test process to its receiver over OTLP.
+pytest = [
+    "pytest>=8",
+    "opentelemetry-sdk>=1.30",
+    "opentelemetry-exporter-otlp-proto-http>=1.30",
+]
+
 [project.scripts]
 spantruth = "spantruth.cli:main"
+
+# pytest loads the plugin when spantruth is installed. `-p no:spantruth` turns it off.
+[project.entry-points.pytest11]
+spantruth = "spantruth.pytest_plugin"
 
 [dependency-groups]
 test = [
@@ -40,9 +52,12 @@ test = [
     # The fixtures are checked with the SDK types, so test with the SDKs the subjects run.
     "openai>=3.42.1",
     "anthropic>=2.4.0",
+    "google-genai>=3.6.1",
     "opentelemetry-sdk>=1.45.2",
     "opentelemetry-exporter-otlp-proto-http>=1.45.2",
     "pyyaml>=6",
+    # tests/test_schema.py validates the results documents against schema/.
+    "jsonschema>=4.23",
 ]
 lint = ["ruff>=0.17"]
 
@@ -62,6 +77,8 @@ packages = ["src/spantruth"]
 "subjects" = "spantruth/subjects"
 "known_issues.toml" = "spantruth/known_issues.toml"
 "prices.toml" = "spantruth/prices.toml"
+# The version table that `doctor` reads offline. scripts/refresh-versions.sh refreshes it.
+"versions.json" = "spantruth/versions.json"
 
 [tool.uv]
 default-groups = ["test", "lint"]
@@ -81,5 +98,6 @@ timeout = 120
 markers = [
     "slow: builds a subject virtual environment or runs a subprocess (more than 1 s)",
     "external: downloads packages from PyPI",
+    "collector: runs the otelcol-contrib binary, skipped when it is absent",
 ]
 addopts = "-ra"

@@ -6,6 +6,8 @@ under test, so they are data, never markup. Colors are paired tokens, one value 
 
 from __future__ import annotations
 
+import re
+from datetime import date
 from html import escape
 from typing import Any
 
@@ -57,6 +59,12 @@ section{border-top:1px solid var(--line);padding:18px 0 6px;scroll-margin-top:12
 section:target{outline:2px solid var(--link);outline-offset:6px;border-radius:4px}
 section h2{margin:0 0 6px}.id{color:var(--muted);font-weight:400;font-size:14px;margin-right:8px}
 .num{white-space:nowrap;text-align:right}
+pre{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px;
+overflow-x:auto}pre code{font-size:14px}.libs li{margin:10px 0;overflow-wrap:anywhere}
+@media (max-width:640px){.stack table,.stack tbody,.stack tr,.stack th,.stack td{display:block}
+.stack thead{display:none}.stack tr{border-bottom:1px solid var(--line);padding:8px 0}
+.stack th,.stack td{border:0;padding:2px 12px}.stack td[data-label]::before{
+content:attr(data-label) ": ";color:var(--muted)}}
 """
 
 
@@ -152,6 +160,44 @@ SOCIAL = (
     'main/docs/assets/social-preview.png">\n<meta name="twitter:card" '
     'content="summary_large_image">'
 )
+SITE = "https://plexito-de.github.io/spantruth/"
+ASSETS = "https://raw.githubusercontent.com/Plexito-de/spantruth/main/docs/assets/"
+
+
+def _head(title: str, description: str, path: str, card: tuple[str, str] | None = None) -> str:
+    """Everything up to <main>: a title, a description, the canonical address and a link preview.
+
+    `card` is a 1200x630 preview under docs/assets/ and its alternative text. Without one, the
+    page shows the repository's social preview. Every argument is spantruth's own text, and is
+    escaped all the same.
+    """
+    title, description = escape(title), escape(description)
+    url = escape(SITE + path)
+    image = f'<meta property="og:image" content="{escape(ASSETS)}social-preview.png">'
+    if card:
+        image = (
+            f'<meta property="og:image" content="{escape(ASSETS + card[0])}">\n'
+            '<meta property="og:image:width" content="1200">\n'
+            '<meta property="og:image:height" content="630">\n'
+            f'<meta property="og:image:alt" content="{escape(card[1])}">'
+        )
+    return f"""<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{title}</title>
+<meta name="description" content="{description}">
+<link rel="canonical" href="{url}">
+{ICON}
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="spantruth">
+<meta property="og:title" content="{title}">
+<meta property="og:description" content="{description}">
+<meta property="og:url" content="{url}">
+{image}
+<meta name="twitter:card" content="summary_large_image">
+<style>{CSS}</style></head>
+<body><main>
+"""
 
 
 def _money(value: float) -> str:
@@ -319,24 +365,21 @@ def render_bugs(doc: dict, findings_page: str = "index.html") -> str:
                 for i in c.instances
             )
             facts.append(f"<dt>In public</dt><dd>{links}</dd>")
+        page = bugclasses.PAGES[c.id]
         sections.append(
             f'<section id="{c.id}"><h2><span class="id">{c.id}</span>{escape(c.name)}</h2>'
             f"<p>{escape(c.summary)}</p><p>{escape(c.dashboard)}</p><dl>{''.join(facts)}</dl>"
-            "</section>"
+            f'<p><a href="bugs/{bugclasses.slug(c)}.html">{escape(page.symptom)}</a>: what '
+            "causes it, which versions show it, and how to fix it</p></section>"
         )
     meta = f"spantruth {escape(doc['spantruth'])} · {escape(doc['created'])}"
-    return f"""<!doctype html>
-<html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>LLM telemetry bugs</title>
-{ICON}
-<meta property="og:title" content="The ten ways LLM telemetry goes wrong">
-{SOCIAL}
-<meta name="description" content="Ten ways LLM telemetry goes wrong: ghost spans, double spans,
-phantom tokens and more, each measured against what the provider sent.">
-<style>{CSS}</style></head>
-<body><main>
-<h1>The ten ways LLM telemetry goes wrong</h1>
+    head = _head(
+        "The ten ways LLM telemetry goes wrong",
+        "Ten ways LLM telemetry goes wrong: ghost spans, double spans, phantom tokens and more, "
+        "each measured against what the provider sent.",
+        "bugs.html",
+    )
+    return f"""{head}<h1>The ten ways LLM telemetry goes wrong</h1>
 <p>Your cost dashboard, your token budget and your error rate all read the numbers that an
 instrumentation library writes on a span. When one of those numbers is wrong, nothing fails. The
 dashboard is just wrong, with full confidence. These are the classes of bug that spantruth measures,
@@ -344,9 +387,409 @@ each one checked against what the provider actually sent.</p>
 <p>To see which of them your own versions have, run <code>uvx spantruth doctor</code> in your
 project.</p>
 <p class="muted">{meta} · <a href="{escape(findings_page)}">the full report</a> ·
+<a href="fixes.html">fixed upstream</a> ·
+<a href="method.html">how we know a check is right</a> ·
 <a href="https://github.com/Plexito-de/spantruth">source</a></p>
 {"".join(sections)}
 <p class="muted">{_cost_note()}</p>
+</main></body></html>
+"""
+
+
+def _thread(url: str) -> str:
+    """`repo#12` for a GitHub issue or pull request, the host for any other address."""
+    match = re.match(r"https://github\.com/[^/]+/([^/]+)/(?:issues|pull)/(\d+)", url)
+    return f"{match[1]}#{match[2]}" if match else url.split("/")[2]
+
+
+def _person(login: str) -> str:
+    return _link(f"@{escape(login)}", f"https://github.com/{login}")
+
+
+def _day(value: str) -> str:
+    d = date.fromisoformat(value)
+    return f"{d:%B} {d.day}, {d.year}"
+
+
+def _releases(issue: dict[str, Any]) -> str:
+    """`pkg 3.1.0` for each `pkg>=3.1.0` in `fixed_in`."""
+    return ", ".join(re.sub(r"\s*(>=|==|~=|>)\s*", " ", s) for s in issue["fixed_in"])
+
+
+def _fix_anchor(issue: dict[str, Any]) -> str:
+    return re.sub(r"[^A-Za-z0-9-]", "-", _thread(issue["url"]))
+
+
+def _run_day(created: Any) -> str:
+    """`November 26, 2026` for a run's timestamp, or the value as it is when it is not one."""
+    try:
+        return _day(str(created)[:10])
+    except ValueError:
+        return str(created)
+
+
+def _fix(issue: dict[str, Any]) -> str:
+    """One fix: the release that has it, the bug it removes, who reported it and who fixed it."""
+    days = (date.fromisoformat(issue["fixed_on"]) - date.fromisoformat(issue["reported_on"])).days
+    bug = bugclasses.classify({"id": issue["check"]})
+    chip = (
+        f'<p><a href="bugs/{bugclasses.slug(bug)}.html">{bug.id} {escape(bug.name)}</a>: '
+        f"{escape(bug.summary)}</p>"
+        if bug
+        else ""
+    )
+    upgrade = " ".join(f'"{s}"' for s in issue["fixed_in"])
+    return (
+        f'<section id="{escape(_fix_anchor(issue))}"><h2>{escape(_releases(issue))}</h2>{chip}<dl>'
+        f"<dt>Reported</dt><dd>{_link(escape(_thread(issue['url'])), issue['url'])} by "
+        f"{_person(issue['reported_by'])}, {_day(issue['reported_on'])}</dd>"
+        f"<dt>Fixed</dt><dd>{_link(escape(_thread(issue['fix_url'])), issue['fix_url'])} by "
+        f"{_person(issue['fixed_by'])}, merged {_day(issue['fixed_on'])}</dd>"
+        f"<dt>Report to merge</dt><dd>{days} day{'' if days == 1 else 's'}</dd>"
+        f"<dt>To get it</dt><dd><code>pip install {escape(upgrade)}</code></dd>"
+        "</dl></section>"
+    )
+
+
+def render_fixes(known: list[dict[str, Any]]) -> str:
+    """Every upstream fix of a known issue, newest first, with who reported it and who fixed it."""
+    done = [k for k in known if k["status"] == "fixed-upstream"]
+    done.sort(key=lambda k: (k["fixed_on"], k["url"]), reverse=True)
+    sections = "".join(_fix(k) for k in done) or "<p>No upstream fix yet.</p>"
+    count = f"{len(done)} fix{'' if len(done) == 1 else 'es'}"
+    head = _head(
+        "Telemetry bugs fixed upstream, with credit",
+        "LLM telemetry bugs that library maintainers and contributors fixed: who reported "
+        "each one, who wrote the fix, and the first release that has it.",
+        "fixes.html",
+    )
+    return f"""{head}<h1>Fixed upstream</h1>
+<p>Each bug below was fixed by the people who maintain and contribute to an instrumentation
+library. spantruth reproduces each bug. They did the work that removed it. Each entry names
+who reported the bug, who wrote the fix, and the first release that has it. Thank you to all of
+them.</p>
+<p>To get a fix, upgrade to the release it names. To see which bugs your own versions still have,
+run <code>uvx spantruth doctor</code> in your project.</p>
+<p class="muted">{count} · <a href="index.html">the report</a> ·
+<a href="bugs.html">the ten bug classes</a> ·
+<a href="method.html">how we know a check is right</a> ·
+<a href="https://github.com/Plexito-de/spantruth/blob/main/known_issues.toml">the data</a></p>
+{sections}
+<p class="muted">A fix that is missing here? Add it to known_issues.toml in a pull request, with
+the issue, the fix and the release.</p>
+</main></body></html>
+"""
+
+
+def class_description(bug: bugclasses.BugClass) -> str:
+    """The search snippet of a class page: what goes wrong, then what the page answers."""
+    return f"{bug.summary} Which library versions show it, how to check yours, how to fix it."
+
+
+# Packages that every subject runs. A class page names them only as the SDK a finding used.
+_SDKS = ("anthropic", "openai")
+_HARNESS = ("opentelemetry-sdk", "opentelemetry-exporter-otlp-proto-http")
+
+
+def _library_versions(subject: dict, providers: set[str]) -> str:
+    """`pkg 1.0, with anthropic 2.4.0`: the library's own packages, then the SDKs it wrapped."""
+    versions = subject.get("versions", {})
+    own = [f"{k} {v}" for k, v in sorted(versions.items()) if k not in _SDKS + _HARNESS]
+    sdks = [f"{k} {versions[k]}" for k in _SDKS if k in providers and k in versions]
+    if own and sdks:
+        return f"{', '.join(own)}, with {', '.join(sdks)}"
+    return ", ".join(own or sdks)
+
+
+def _shown_by(doc: dict, found: list[dict[str, Any]]) -> str:
+    """Each library that shows the class, in name order, with its versions and its findings."""
+    by_subject: dict[str, dict[str, str]] = {}
+    for f in found:
+        by_subject.setdefault(f["subject"], {}).setdefault(f["scenario"], f["anchor"])
+    items = []
+    for name in sorted(by_subject):
+        cells = by_subject[name]
+        providers = {sid.split("/")[0] for sid in cells}
+        versions = _library_versions(doc["subjects"][name], providers)
+        links = ", ".join(
+            f'<a href="../index.html#{escape(anchor)}"><code>{escape(sid)}</code></a>'
+            for sid, anchor in cells.items()
+        )
+        count = f"{len(cells)} scenario{'' if len(cells) == 1 else 's'}"
+        items.append(
+            f"<li><strong>{escape(name)}</strong> "
+            f'<span class="muted">{escape(versions)}</span><br>{count}: {links}</li>'
+        )
+    return f'<ul class="libs">{"".join(items)}</ul>'
+
+
+def _class_fixes(bug: bugclasses.BugClass, known: list[dict[str, Any]]) -> str:
+    fixes = [
+        k
+        for k in known
+        if k["status"] == "fixed-upstream"
+        and (c := bugclasses.classify({"id": k["check"]}))
+        and c.id == bug.id
+    ]
+    items = "".join(
+        f'<li><a href="../fixes.html#{escape(_fix_anchor(k))}">{escape(_releases(k))}</a>, '
+        f"fixed by {_person(k['fixed_by'])}</li>"
+        for k in sorted(fixes, key=lambda k: k["fixed_on"], reverse=True)
+    )
+    return f"<p>Fixed upstream in these releases:</p><ul>{items}</ul>" if items else ""
+
+
+def render_class(doc: dict, bug: bugclasses.BugClass, known: list[dict[str, Any]]) -> str:
+    """One bug class, titled by what a user sees, with the libraries that show it in this run."""
+    page = bugclasses.PAGES[bug.id]
+    every = [f for f in findings(doc, []) if doc["subjects"][f["subject"]]["kind"] != "control"]
+    found = _seen(every)[bug.id]
+    mode = "latest releases" if doc.get("mode") == "latest" else "pinned versions"
+    run = (
+        f"In the run of {escape(_run_day(doc['created']))}, at the {mode}, with spantruth "
+        f"{escape(doc['spantruth'])}"
+    )
+    if found:
+        shown = (
+            f"<p>{run}. Each scenario links to its finding, with the exported spans and the "
+            'command that reproduces it. The <a href="../latest.html">latest releases</a> can '
+            f"differ.</p>{_shown_by(doc, found)}"
+        )
+    else:
+        shown = (
+            f"<p>{run}, no library shows it. The "
+            '<a href="../latest.html">latest releases</a> can differ.</p>'
+        )
+    reported = "".join(
+        f"<li>{_link(escape(i.label), i.url)}, reported by {escape(i.credit)}</li>"
+        for i in bug.instances
+    )
+    article = (
+        f'<p>The long version, with measurements: <a href="../{escape(page.article)}">'
+        f"the write-up</a>.</p>"
+        if page.article
+        else ""
+    )
+    slug = bugclasses.slug(bug)
+    card = (f"cards/{slug}.png", f"{page.symptom}. {bug.summary}")
+    head = _head(page.symptom, class_description(bug), f"bugs/{slug}.html", card)
+    name = f"{bug.id} {escape(bug.name)}"
+    return f"""{head}<p class="muted"><a href="../bugs.html#{bug.id}">{name}</a>, one of
+<a href="../bugs.html">ten ways LLM telemetry goes wrong</a></p>
+<h1>{escape(page.symptom)}</h1>
+<p>{escape(bug.summary)} {escape(bug.dashboard)}</p>
+<h2>What causes it</h2>
+<p>{escape(page.cause)}</p>
+<h2>Which versions show it</h2>
+{shown}
+<h2>How to check your project</h2>
+<p>Run this in your project's directory:</p>
+<pre><code>uvx spantruth doctor</code></pre>
+<p>It reads your lock file, or your requirements if you have no lock file, and tests the
+libraries it recognizes, at your versions, against a local fake provider. It needs no API key and
+does not run your code. The first run downloads those library versions into environments of
+its own. A finding of this kind is named <strong>{name}</strong>.</p>
+<h2>How to fix it</h2>
+<p>{escape(page.fix)}</p>
+{_class_fixes(bug, known)}{article}
+{f"<p>Reported in public:</p><ul>{reported}</ul>" if reported else ""}
+<p class="muted"><a href="../index.html">the report</a> · <a href="../fixes.html">fixed
+upstream</a> · <a href="https://github.com/Plexito-de/spantruth">source</a></p>
+</main></body></html>
+"""
+
+
+def sitemap() -> str:
+    """Every page of the site, by its full address. The site lives under one path."""
+    paths = [
+        "index.html",
+        "latest.html",
+        "bugs.html",
+        "fixes.html",
+        "method.html",
+        "changes.html",
+        "double-spans.html",
+        *(f"bugs/{bugclasses.slug(c)}.html" for c in bugclasses.CLASSES),
+    ]
+    urls = "".join(f"<url><loc>{escape(SITE + p)}</loc></url>\n" for p in paths)
+    return (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        f'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{urls}</urlset>\n'
+    )
+
+
+REPO = "https://github.com/Plexito-de/spantruth"
+# The faults that control-faulty switches on in reference.py: what each one does wrong, and the
+# checks that must catch it. A test holds this to subjects/control-faulty/instrument.py.
+FAULTS = {
+    "anthropic-raw-input": (
+        "Copies Anthropic's input_tokens as it is, without the cache reads and writes.",
+        ("input_tokens", "metric.input_tokens"),
+    ),
+    "close-leaks-span": (
+        "Does not end the span when the app closes a stream or stops reading it early.",
+        ("span.ended",),
+    ),
+    "content-first-chunk": (
+        "Records only the first chunk of a stream as the completion text.",
+        ("content.output_matches",),
+    ),
+    "content-ignores-off": (
+        "Records prompt and completion text with the library's switch set to off.",
+        ("content.off_respected",),
+    ),
+    "gemini-candidates-output": (
+        "Reports Gemini's candidatesTokenCount alone as the output, without the thinking tokens.",
+        ("output_tokens", "metric.output_tokens"),
+    ),
+    "errors-as-success": (
+        "Ends the span of a failed call without status ERROR and without error.type.",
+        ("error.status", "error.type"),
+    ),
+    "estimate-tokens": (
+        "Guesses the output count from the length of the text when a stream carries no usage.",
+        ("output_tokens", "metric.output_tokens"),
+    ),
+    "metric-reasoning-left-out": (
+        "Leaves the reasoning tokens out of the output token metric, while the span counts them.",
+        ("metric.output_tokens",),
+    ),
+    "retry-as-error": (
+        "Marks a call as failed when it succeeded after the SDK retried a 429.",
+        ("status.unset",),
+    ),
+}
+
+
+def _control_verdicts(doc: dict) -> str:
+    """What the two controls did in this run, compared by the code that CI uses."""
+    from . import expectations, subjects
+
+    out = []
+    honest = doc["subjects"].get("control-honest")
+    if honest is None:
+        out.append("control-honest is not in this run.")
+    elif expectations.failing(honest):
+        out.append("control-honest moved: it failed a check. The suite is wrong until it is fixed.")
+    else:
+        n = len(honest["cells"])
+        out.append(f"control-honest passed every check in {n} scenario{'' if n == 1 else 's'}.")
+    faulty = doc["subjects"].get("control-faulty")
+    if faulty is None:
+        out.append("control-faulty is not in this run.")
+    else:
+        expected = expectations.load(subjects.SUBJECTS / "control-faulty" / "expected.toml")
+        moved = expectations.compare(
+            expected, expectations.failing(faulty), ran=set(faulty["cells"])
+        )
+        out.append(
+            f"control-faulty moved in {len(moved)} check{'' if len(moved) == 1 else 's'}. "
+            "The suite is wrong until it is fixed."
+            if moved
+            else "control-faulty failed exactly its planted faults, and passed every other check."
+        )
+    return " ".join(out)
+
+
+def _fault_rows() -> tuple[str, str, int]:
+    """The table of planted faults, the size of the expectation file, and the checks it names."""
+    from . import expectations, subjects
+
+    expected = expectations.load(subjects.SUBJECTS / "control-faulty" / "expected.toml")
+    rows = []
+    for name, (what, checks) in FAULTS.items():
+        n = sum(1 for found in expected.values() if any(c in found for c in checks))
+        caught = ", ".join(f"<code>{escape(c)}</code>" for c in checks)
+        rows.append(
+            f'<tr><th scope="row"><code>{escape(name)}</code></th><td>{escape(what)}</td>'
+            f'<td data-label="Must fail">{caught}, in {n} scenario{"" if n == 1 else "s"}</td></tr>'
+        )
+    total = sum(len(found) for found in expected.values())
+    planted = len({c for found in expected.values() for c in found})
+    return "".join(rows), f"{total} failing checks in {len(expected)} scenarios", planted
+
+
+def _rule_rows() -> tuple[str, int, int]:
+    """The table of checks and rules, the number that cite a specification, and the total."""
+    from .rules import RULES
+
+    rows = []
+    for check, (text, url) in RULES.items():
+        source = _link("the spec", url) if _url(url) else "spantruth's own rule"
+        rows.append(
+            f'<tr><th scope="row"><code>{escape(check)}</code></th><td>{escape(text)}</td>'
+            f'<td data-label="Source">{source}</td></tr>'
+        )
+    return "".join(rows), sum(1 for _, url in RULES.values() if url), len(RULES)
+
+
+def render_method(doc: dict, known: list[dict[str, Any]]) -> str:
+    """Why a finding can be trusted, for a maintainer who doubts one, and how to dispute it."""
+    from .scenarios import SCENARIOS
+
+    faults, size, planted = _fault_rows()
+    rule_rows, cited, total = _rule_rows()
+    disputed = sum(1 for k in known if k["status"] == "disputed")
+    head = _head(
+        "How we know a spantruth check is right",
+        "Two controls, planted faults, a cited rule behind every check, fixtures checked with the "
+        "SDK types, offline runs, and the way to dispute a finding.",
+        "method.html",
+    )
+    return f"""{head}<h1>How we know a check is right</h1>
+<p>A red cell on the report is a claim about somebody's work. This page says why the claim holds,
+and how to show us that it does not. The controls and the fixture tests below run in CI on
+every pull request.</p>
+<p class="muted"><a href="index.html">the report</a> · <a href="bugs.html">the ten bug classes</a> ·
+<a href="fixes.html">fixed upstream</a> · <a href="{REPO}">source</a></p>
+<h2>Two controls run in every report</h2>
+<p>Both controls run spantruth's own reference instrumentation,
+<a href="{REPO}/blob/main/src/spantruth/reference.py">reference.py</a>, through every scenario,
+beside the libraries. <code>control-honest</code> runs it as written and has to pass every check.
+<code>control-faulty</code> runs it with the faults below switched on and has to fail exactly the
+checks in its <a href="{REPO}/blob/main/subjects/control-faulty/expected.toml">expectation file</a>
+({size}), and pass every other one. If either control moves, a check or the harness is wrong, not
+a library. The expectation file is never edited to make a test pass.</p>
+<p><strong>In this run:</strong> {escape(_control_verdicts(doc))}</p>
+<div class="wrap stack"><table><thead><tr><th scope="col">Planted fault</th><th scope="col">What it
+does wrong</th><th scope="col">Must fail</th></tr></thead><tbody>{faults}</tbody></table></div>
+<p>The planted faults make {planted} of the {total} checks fail on purpose. A new check gets a
+planted fault in the same pull request.</p>
+<h2>Every check cites a rule</h2>
+<p>A finding names its check and links the rule it applies. {cited} of the {total} checks apply a
+sentence of a specification, most of them linked at a fixed commit or version, so
+the link shows the sentence we read. The others are spantruth's own rules, for what no
+specification states, such as that a call produces a span at all. They are written out here, so
+you can disagree with them.</p>
+<div class="wrap stack"><table><thead><tr><th scope="col">Check</th><th scope="col">Rule</th>
+<th scope="col">Source</th></tr></thead><tbody>{rule_rows}</tbody></table></div>
+<h2>The fixtures are the provider's wire format</h2>
+<p>Each of the {len(SCENARIOS)} scenarios is a provider response built to the provider's wire
+format, and one is replayed from a recorded stream. A test parses
+every fixture with the provider's own SDK types (the <code>openai</code> and
+<code>anthropic</code> packages) and fails on any field the types do not declare. A fixture value
+is never changed to make a library pass. The token counts in one fixture are all different from
+each other, so a library that reads the wrong field cannot pass by chance.</p>
+<h2>Runs are offline and repeatable</h2>
+<p>The provider is a local server that replays fixed responses: no API key, no model and no
+sampling. Each library runs at the versions pinned in its <code>subject.toml</code>, in its own
+environment. Its process gets a proxy address that goes nowhere, so a client that honors the proxy
+variables fails fast instead of calling out. A client that opens raw sockets is not stopped by
+this, so we check each new subject for outbound calls.</p>
+<h2>Each library runs with its documented setup</h2>
+<p>Each library is set up the way its documentation shows, in
+<code>subjects/&lt;name&gt;/instrument.py</code>. If that is not the setup you document, the result
+is not fair, and we want to know.</p>
+<h2>How to dispute a finding</h2>
+<p>Open an issue with the <a href="{REPO}/issues/new?template=dispute.yml">Dispute a finding</a>
+form. Every dispute is decided in public, in that issue, on one question: does the cited rule say
+what the check claims? If it does not, we fix the check, and the cell changes for every library.
+If the specification is unclear, the cell is marked disputed in
+<a href="{REPO}/blob/main/known_issues.toml">known_issues.toml</a>, and we ask the specification's
+owners.</p>
+<p>Cells marked disputed today: {disputed}.</p>
+<p>The project publishes no ranking and no total score, only each finding with its evidence. See
+<a href="{REPO}/blob/main/GOVERNANCE.md">GOVERNANCE.md</a>.</p>
 </main></body></html>
 """
 
@@ -389,14 +832,16 @@ against the wire.</p>
 <p class="muted">{meta} · <a href="https://github.com/Plexito-de/spantruth">source</a></p>
 <p>Pages: <a href="index.html">pinned versions</a> · <a href="latest.html">latest releases</a> ·
 <a href="bugs.html">the ten bug classes</a> ·
-<a href="changes.html">what new releases changed</a>. A fix that ships upstream turns its cell
+<a href="changes.html">what new releases changed</a> ·
+<a href="fixes.html">fixed upstream, with credit</a>. A fix that ships upstream turns its cell
 green on the latest-releases page first.</p>
 <div class="legend">{legend}</div>
 {_matrix(doc, names, first)}
 <p class="muted">The controls run the suite's own reference instrumentation.
 <code>control-honest</code> has to pass every check, and <code>control-faulty</code> has to fail
 exactly its planted faults. If either moves, the suite is wrong, not a library. CI checks both,
-so their cells are not in the findings below.</p>
+so their cells are not in the findings below. <a href="method.html">How we know a check is
+right</a>.</p>
 <h2>Bug classes in this run</h2>
 {_class_table(every)}
 <h2>Findings</h2>

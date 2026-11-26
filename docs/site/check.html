@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'; require-trusted-types-for 'script'">
+<meta name="referrer" content="no-referrer">
+<title>Check your lock file: spantruth</title>
+<meta name="description" content="Paste a uv.lock, poetry.lock, pdm.lock, Pipfile.lock or requirements.txt and see what the nightly spantruth run found for your LLM instrumentation versions. The file stays in your browser.">
+<meta property="og:title" content="Does your LLM telemetry tell the truth? Check your lock file">
+<meta property="og:image" content="https://raw.githubusercontent.com/Plexito-de/spantruth/main/docs/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%231a6b37'/%3E%3Cpath d='M4 8l3 3 5-6' stroke='white' stroke-width='2' fill='none'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="check.css">
+<script type="module" src="check.js"></script>
+</head>
+<body><main>
+<h1>Check your lock file</h1>
+<p>Paste or drop the lock file of your project. The page finds your LLM instrumentation
+libraries and shows what the nightly spantruth run found for those exact versions: which checks
+fail, which bug class each one is, and the release that fixes it.</p>
+<p class="private"><strong>Your file stays in your browser.</strong> This page reads it here and
+sends it nowhere. Its only request loads the published table, <code>versions.json</code>. It has
+no third-party script, no analytics and no cookies.</p>
+<p class="muted"><a href="index.html">The report</a> · <a href="latest.html">latest releases</a> ·
+<a href="bugs.html">the ten bug classes</a> · <a href="https://github.com/Plexito-de/spantruth">source</a></p>
+<form id="form" novalidate>
+<label for="lock">Lock file: uv.lock, poetry.lock, pdm.lock, Pipfile.lock or requirements.txt</label>
+<textarea id="lock" name="lock" spellcheck="false" autocomplete="off" autocapitalize="off"
+placeholder="Paste the file here, or drop it on this box."></textarea>
+<div class="row">
+<button type="submit">Check</button>
+<label class="file">or choose a file <input id="file" type="file" accept=".lock,.txt,text/plain,application/json,application/toml"></label>
+</div>
+</form>
+<p id="status" role="status" aria-live="polite"></p>
+<div id="result" tabindex="-1" aria-live="polite"></div>
+<h2 class="more">For a full answer, run doctor on your machine</h2>
+<p>The table covers the last releases of each library, each one run with spantruth's own pins
+for the other packages. <code>doctor</code> runs your exact versions together, on your machine,
+against a local fake provider:</p>
+<pre><code>uvx spantruth doctor</code></pre>
+<p class="muted">It reads the same lock files, and it never runs your application code.
+<a href="https://github.com/Plexito-de/spantruth#readme">How it works</a>.</p>
+</main></body></html>

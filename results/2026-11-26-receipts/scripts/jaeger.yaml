@@ -1,0 +1,34 @@
+# Jaeger v2 all-in-one with memory storage. Every port is on loopback.
+service:
+  extensions: [jaeger_storage, jaeger_query]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [jaeger_storage_exporter]
+  telemetry:
+    metrics:
+      level: none
+extensions:
+  jaeger_query:
+    storage:
+      traces: mem
+    http:
+      endpoint: 127.0.0.1:16786
+    grpc:
+      endpoint: 127.0.0.1:16785
+  jaeger_storage:
+    backends:
+      mem:
+        memory:
+          max_traces: 100000
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 127.0.0.1:14418
+processors:
+  batch: {}
+exporters:
+  jaeger_storage_exporter:
+    trace_storage: mem

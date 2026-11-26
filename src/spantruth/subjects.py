@@ -47,10 +47,72 @@ class Subject:
     detect_with: tuple[str, ...] = ()
     # How the subject was named: a built-in name, or the path that was given.
     ref: str = ""
+    # The library's documented switch for recording prompt and completion text. See `_content`.
+    content: dict = field(default_factory=dict)
+    # A pinned link to where the library documents its token usage metrics. Only a subject with one
+    # has its metrics graded. Empty: the library never claimed token metrics.
+    metrics_docs: str = ""
+
+    # A framework subject brings an `app.py` that makes each call through the framework, and lists
+    # the scenarios it can express. Every other scenario is not run, so it has no cell.
+    app: bool = False
+    scenarios: tuple[str, ...] = ()
+
+    def content_env(self, mode: str) -> dict[str, str] | None:
+        """The variables that set the content switch to `mode`, or None when it cannot be set."""
+        if mode not in self.content:
+            return None
+        return dict(self.content[mode]) | {"SPANTRUTH_CONTENT": mode}
+
+    def supports(self, scenario_id: str) -> bool:
+        """True when this subject runs the scenario: its provider, and its list if it has one."""
+        if scenarios.get(scenario_id).provider not in self.providers:
+            return False
+        return not self.app or scenario_id in self.scenarios
 
 
 def base() -> dict:
     return tomllib.loads((SUBJECTS / "_base.toml").read_text())
+
+
+def _content(config: Path, data: dict) -> dict:
+    """The `[content]` table: the library's own switch for recording prompt and completion text.
+
+        [content]
+        switch = "TRACELOOP_TRACE_CONTENT"   # the documented name, shown in each finding
+        docs = "https://..."                 # a pinned link to the sentence that documents it
+        default = "on"                       # what the library does when the switch is not set
+        off = { TRACELOOP_TRACE_CONTENT = "false" }
+        on = { TRACELOOP_TRACE_CONTENT = "true" }
+
+    `off` and `on` hold the variables that set the switch that way. A library without a way to
+    turn content off leaves out `off`. A switch that is an argument in code, not a variable, has an
+    empty table: instrument.py then reads SPANTRUTH_CONTENT, which the runner sets to the mode.
+    """
+    table = data.get("content")
+    if table is None:
+        return {}
+    if not isinstance(table, dict) or not {"switch", "docs", "default"} <= table.keys():
+        raise SubjectError(f"{config}: [content] needs switch, docs and default")
+    if not str(table["docs"]).startswith("https://"):
+        raise SubjectError(f"{config}: [content] docs must be an https address")
+    if table["default"] not in ("on", "off"):
+        raise SubjectError(f'{config}: [content] default must be "on" or "off"')
+    for mode in ("off", "on"):
+        env = table.get(mode, {})
+        if not isinstance(env, dict) or not all(isinstance(v, str) for v in env.values()):
+            raise SubjectError(f"{config}: [content] {mode} must be a table of strings")
+    return table
+
+
+def _metrics(config: Path, data: dict) -> str:
+    """The `[metrics]` table: `docs`, a pinned link to where the library documents token metrics."""
+    table = data.get("metrics")
+    if table is None:
+        return ""
+    if not isinstance(table, dict) or not str(table.get("docs", "")).startswith("https://"):
+        raise SubjectError(f"{config}: [metrics] needs docs, an https address")
+    return table["docs"]
 
 
 def is_path(ref: str) -> bool:
@@ -82,6 +144,8 @@ def load(ref: str) -> Subject:
         raise SubjectError(f"{directory}: no instrument.py")
     if not str(data["homepage"]).startswith(("https://", "http://")):
         raise SubjectError(f"{config}: homepage must be an http or https address")
+    app = (directory / "app.py").is_file()
+    supported = _supported(config, data, app)
     kind = data.get("kind", "library")
     if kind == "control" and directory.parent != SUBJECTS:
         raise SubjectError(f'{config}: kind = "control" is reserved for the built-in controls')
@@ -99,7 +163,43 @@ def load(ref: str) -> Subject:
         detect=tuple(data.get("detect", data.get("track", ()))),
         detect_with=tuple(data.get("detect_with", ())),
         ref=ref if is_path(ref) else directory.name,
+        content=_content(config, data),
+        metrics_docs=_metrics(config, data),
+        app=app,
+        scenarios=supported,
     )
+
+
+def _supported(config: Path, data: dict, app: bool) -> tuple[str, ...]:
+    """The scenarios a subject with an `app.py` supports. Only such a subject may list them.
+
+    A library that instruments the SDK meets every call pattern the SDK has, so it may not leave a
+    scenario out: that would hide a red cell. A framework decides which calls it can make.
+    """
+    listed = data.get("scenarios")
+    if listed is None:
+        if app:
+            raise SubjectError(f"{config}: a subject with an app.py must list its scenarios")
+        return ()
+    if not app:
+        raise SubjectError(f"{config}: scenarios is only for a subject with an app.py")
+    if not isinstance(listed, list) or not listed or not all(isinstance(i, str) for i in listed):
+        raise SubjectError(f"{config}: scenarios must be a non-empty list of scenario IDs")
+    unknown = [sid for sid in listed if sid not in scenarios.SCENARIOS]
+    if unknown:
+        raise SubjectError(f"{config}: unknown scenario {', '.join(unknown)}")
+    off = [sid for sid in listed if scenarios.get(sid).provider not in data["providers"]]
+    if off:
+        raise SubjectError(f"{config}: scenario {', '.join(off)} is for a provider not listed")
+    # A scenario with several calls needs an app that records each call with seen.add() and sends
+    # the message history as calls.py does. No app does that yet. `calls` is absent before it lands.
+    several = [sid for sid in listed if getattr(scenarios.get(sid), "calls", ())]
+    if several:
+        raise SubjectError(
+            f"{config}: scenario {', '.join(several)} makes several calls, "
+            "which an app.py cannot run yet"
+        )
+    return tuple(listed)
 
 
 def all_names() -> list[str]:

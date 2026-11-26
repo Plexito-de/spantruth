@@ -2,7 +2,9 @@
 
 The scenarios in `scenarios.py` build their responses in code. A recorded fixture is the other
 source: a real provider stream, kept byte for byte, with the provenance of where it came from.
-Only what replay needs is read: one exchange, its status, its SSE frames, and how it ended.
+Only what replay needs is read: one exchange, its status, its JSON body or SSE frames, and how it
+ended. The tier says where the bytes came from: `recorded` from the real API, `documented` from the
+provider's documentation, `derived` from another fixture by a named transform.
 Format: https://github.com/kartsan03/wiretruth/blob/main/docs/formats.md
 """
 
@@ -29,17 +31,25 @@ def frame(raw: str) -> Event:
 
 
 def load(path: Path) -> Response:
-    """The response of a recorded fixture. An `abort` end drops the connection after the end."""
+    """The response of a recorded fixture. An `abort` end drops the connection after the end.
+
+    The format names a normal end `clean`. `complete` is read the same way.
+    """
     doc = json.loads(Path(path).read_text())
     if doc.get("format") != FORMAT:
         raise ValueError(f"{path}: format {doc.get('format')!r}, expected {FORMAT!r}")
     if len(doc["exchanges"]) != 1:
         raise ValueError(f"{path}: replay needs exactly one exchange")
     response = doc["exchanges"][0]["response"]
-    events = tuple(frame(raw) for raw in response["body"]["sse"])
-    end = response.get("end", "complete")
-    if end not in ("complete", "abort"):
+    end = response.get("end", "clean")
+    if end not in ("clean", "complete", "abort"):
         raise ValueError(f"{path}: unknown end {end!r}")
+    body = response["body"]
+    if "json" in body:
+        if end == "abort":
+            raise ValueError(f"{path}: an abort end needs an sse body")
+        return Response(status=response["status"], body=body["json"])
+    events = tuple(frame(raw) for raw in body["sse"])
     return Response(
         status=response["status"],
         events=events,
@@ -49,3 +59,8 @@ def load(path: Path) -> Response:
 
 def requested_model(path: Path) -> str:
     return json.loads(Path(path).read_text())["provenance"]["requested_model"]
+
+
+def tier(path: Path) -> str:
+    """Where the bytes came from: `recorded`, `documented` or `derived`."""
+    return json.loads(Path(path).read_text())["tier"]

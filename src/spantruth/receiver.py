@@ -38,6 +38,37 @@ class SpanRecord:
     resource: dict[str, Any]
     scope: str
     events: tuple[str, ...]
+    # The attributes of each span event, in the order of `events`. The content checks search them.
+    event_attributes: tuple[dict[str, Any], ...] = ()
+
+
+@dataclass(frozen=True)
+class LogRecordData:
+    """One OTLP log record. GenAI instrumentations send prompt and completion events as these."""
+
+    event_name: str
+    body: Any
+    attributes: dict[str, Any]
+    trace_id: str
+    span_id: str
+    scope: str
+
+
+@dataclass(frozen=True)
+class MetricPoint:
+    """One data point of one metric. A histogram point has `count`; a sum or gauge does not."""
+
+    name: str
+    kind: str
+    unit: str
+    attributes: dict[str, Any]
+    value: float
+    count: int | None
+    # 1 delta, 2 cumulative, 0 for a gauge.
+    temporality: int
+    start_ns: int
+    time_ns: int
+    scope: str
 
 
 def value(v: AnyValue) -> Any:
@@ -77,18 +108,69 @@ def decode_traces(payload: bytes) -> list[SpanRecord]:
                         resource=resource,
                         scope=ss.scope.name,
                         events=tuple(e.name for e in s.events),
+                        event_attributes=tuple(_attrs(e.attributes) for e in s.events),
                     )
                 )
     return out
 
 
-def _decode_count(kind: str, payload: bytes) -> int:
-    """Logs and metrics are counted in v0.1, not graded."""
-    if kind == "logs":
-        req = logs_service_pb2.ExportLogsServiceRequest.FromString(payload)
-        return sum(len(s.log_records) for r in req.resource_logs for s in r.scope_logs)
+def decode_logs(payload: bytes) -> list[LogRecordData]:
+    req = logs_service_pb2.ExportLogsServiceRequest.FromString(payload)
+    return [
+        LogRecordData(
+            event_name=rec.event_name or _attrs(rec.attributes).get("event.name", ""),
+            body=value(rec.body),
+            attributes=_attrs(rec.attributes),
+            trace_id=rec.trace_id.hex(),
+            span_id=rec.span_id.hex(),
+            scope=sl.scope.name,
+        )
+        for rl in req.resource_logs
+        for sl in rl.scope_logs
+        for rec in sl.log_records
+    ]
+
+
+def _points(metric) -> tuple[str, int, list[tuple[Any, float, int | None]]]:
+    kind = metric.WhichOneof("data") or ""
+    if kind == "histogram":
+        data = metric.histogram
+        return kind, data.aggregation_temporality, [(p, p.sum, p.count) for p in data.data_points]
+    if kind in ("sum", "gauge"):
+        data = getattr(metric, kind)
+        temporality = data.aggregation_temporality if kind == "sum" else 0
+        points = [
+            (p, getattr(p, p.WhichOneof("value") or "as_int"), None) for p in data.data_points
+        ]
+        return kind, temporality, points
+    return kind, 0, []  # exponential histograms and summaries are not graded
+
+
+def decode_metrics(payload: bytes) -> tuple[int, list[MetricPoint]]:
+    """The number of metrics in the request, and every point of the kinds that are graded."""
     req = metrics_service_pb2.ExportMetricsServiceRequest.FromString(payload)
-    return sum(len(s.metrics) for r in req.resource_metrics for s in r.scope_metrics)
+    count, out = 0, []
+    for rm in req.resource_metrics:
+        for sm in rm.scope_metrics:
+            for metric in sm.metrics:
+                count += 1
+                kind, temporality, points = _points(metric)
+                out += [
+                    MetricPoint(
+                        name=metric.name,
+                        kind=kind,
+                        unit=metric.unit,
+                        attributes=_attrs(p.attributes),
+                        value=v,
+                        count=n,
+                        temporality=temporality,
+                        start_ns=p.start_time_unix_nano,
+                        time_ns=p.time_unix_nano,
+                        scope=sm.scope.name,
+                    )
+                    for p, v, n in points
+                ]
+    return count, out
 
 
 class _Handler(BaseHTTPRequestHandler):
@@ -106,8 +188,10 @@ class _Handler(BaseHTTPRequestHandler):
         try:
             if kind == "traces":
                 self.server.add_spans(decode_traces(payload))
-            elif kind is not None:
-                self.server.add_count(kind, _decode_count(kind, payload))
+            elif kind == "logs":
+                self.server.add_logs(decode_logs(payload))
+            elif kind == "metrics":
+                self.server.add_metrics(*decode_metrics(payload))
         except DecodeError as exc:
             self.server.add_error(f"{self.path}: {exc}")
             self.send_response(400)
@@ -128,6 +212,8 @@ class Receiver(ThreadingHTTPServer):
     def __init__(self, port: int = 0) -> None:
         super().__init__(("127.0.0.1", port), _Handler)
         self.spans: list[SpanRecord] = []
+        self.logs: list[LogRecordData] = []
+        self.metrics: list[MetricPoint] = []
         self.counts = {"logs": 0, "metrics": 0}
         self.errors: list[str] = []
         self._lock = threading.Lock()
@@ -147,9 +233,15 @@ class Receiver(ThreadingHTTPServer):
         with self._lock:
             self.spans.extend(spans)
 
-    def add_count(self, kind: str, n: int) -> None:
+    def add_logs(self, logs: list[LogRecordData]) -> None:
         with self._lock:
-            self.counts[kind] += n
+            self.logs.extend(logs)
+            self.counts["logs"] += len(logs)
+
+    def add_metrics(self, n: int, points: list[MetricPoint]) -> None:
+        with self._lock:
+            self.counts["metrics"] += n
+            self.metrics.extend(points)
 
     def add_error(self, message: str) -> None:
         with self._lock:

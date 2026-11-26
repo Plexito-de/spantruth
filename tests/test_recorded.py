@@ -65,3 +65,27 @@ def test_the_responses_scenario_is_a_dropped_connection():
     assert sc.api == "responses" and sc.stream
     t = scenarios.truth(sc)
     assert t.error == "connection dropped" and t.output_tokens is None
+
+
+OLLAMA = recorded.FIXTURES / "ollama-openai" / "truncation.text.json"
+
+
+def test_a_json_body_replays_as_a_body():
+    r = recorded.load(OLLAMA)
+    assert r.body["usage"]["prompt_tokens_details"] == {"cached_tokens": 28}
+    assert r.events is None and r.status == 200 and recorded.tier(OLLAMA) == "recorded"
+
+
+def test_an_abort_end_needs_a_stream(tmp_path):
+    doc = json.loads(OLLAMA.read_text())
+    doc["exchanges"][0]["response"]["end"] = "abort"
+    path = tmp_path / "f.json"
+    path.write_text(json.dumps(doc))
+    with pytest.raises(ValueError, match="abort"):
+        recorded.load(path)
+
+
+def test_the_vendored_ollama_recording_keeps_its_hash_and_licence():
+    doc = json.loads(OLLAMA.read_text())
+    assert doc["tier"] == "recorded" and doc["provenance"]["ci_run"].startswith("https://")
+    assert "MIT License" in (OLLAMA.parent / "NOTICE.md").read_text()

@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Plexito-de/spantruth/blob/main/schema/results.schema.json",
+  "title": "spantruth results document, schema version 1",
+  "description": "What `spantruth run` and `spantruth doctor` write. A reader ignores keys it does not know: a new key is not a breaking change. A key that goes away, changes its type or changes its meaning raises `schema`. See schema/README.md.",
+  "type": "object",
+  "required": ["spantruth", "created", "mode", "python", "semconv_genai", "scenarios", "subjects"],
+  "properties": {
+    "schema": {
+      "description": "The version of this document's shape. Documents written before spantruth 0.3.0 have no key, and have the shape of version 1.",
+      "const": 1
+    },
+    "spantruth": {"description": "The spantruth version that wrote the document.", "type": "string"},
+    "created": {"description": "When the run started, ISO 8601 in UTC.", "type": "string", "format": "date-time"},
+    "mode": {"description": "`pinned`: the subjects' own versions. `latest`: their tracked packages unpinned.", "enum": ["pinned", "latest"]},
+    "python": {"description": "The Python version of the subject environments.", "type": "string"},
+    "semconv_genai": {"description": "The semantic-conventions-genai commit that the checks follow.", "type": "string"},
+    "overrides": {
+      "description": "The `--with` requirements of the run, when it had any.",
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "scenarios": {
+      "description": "Each scenario that ran, by its ID.",
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/scenario"}
+    },
+    "subjects": {
+      "description": "Each subject that ran, by its name.",
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/subject"}
+    }
+  },
+  "$defs": {
+    "verdict": {
+      "description": "Ordered by severity. A cell takes the most severe verdict of its checks.",
+      "enum": ["n/a", "pass", "missing", "wrong", "lost", "broken", "inconclusive"]
+    },
+    "count": {"type": ["integer", "null"], "minimum": 0},
+    "scenario": {
+      "type": "object",
+      "required": ["title", "catches", "provider", "truth"],
+      "properties": {
+        "title": {"type": "string"},
+        "catches": {"type": "string"},
+        "provider": {"type": "string"},
+        "truth": {"$ref": "#/$defs/truth"}
+      }
+    },
+    "truth": {
+      "description": "What a correct instrumentation reports for the call. null: the wire carries no value, so the fact is not graded.",
+      "type": "object",
+      "required": [
+        "request_model",
+        "response_model",
+        "response_id",
+        "finish_reasons",
+        "input_tokens",
+        "output_tokens",
+        "cache_read_tokens",
+        "cache_write_tokens",
+        "reasoning_tokens",
+        "error",
+        "unread_counts",
+        "no_usage"
+      ],
+      "properties": {
+        "request_model": {"type": "string"},
+        "response_model": {"type": ["string", "null"]},
+        "response_id": {"type": ["string", "null"]},
+        "finish_reasons": {"type": ["array", "null"], "items": {"type": "string"}},
+        "input_tokens": {"$ref": "#/$defs/count"},
+        "output_tokens": {"$ref": "#/$defs/count"},
+        "cache_read_tokens": {"$ref": "#/$defs/count"},
+        "cache_write_tokens": {"$ref": "#/$defs/count"},
+        "cache_write_long_tokens": {
+          "description": "Added in spantruth 0.5.0: the part of the cache writes cached for 1 hour.",
+          "$ref": "#/$defs/count"
+        },
+        "reasoning_tokens": {"$ref": "#/$defs/count"},
+        "error": {"type": ["string", "null"]},
+        "unread_counts": {"type": "array", "items": {"type": "integer"}},
+        "no_usage": {"type": "boolean"},
+        "uncounted": {"type": "array", "items": {"type": "string"}},
+        "calls": {"type": "array", "items": {"$ref": "#/$defs/truth"}}
+      }
+    },
+    "subject": {
+      "type": "object",
+      "required": ["title", "homepage", "kind", "notes", "cells"],
+      "properties": {
+        "title": {"type": "string"},
+        "homepage": {"type": "string"},
+        "kind": {"description": "`library`, or `control` for a built-in control.", "type": "string"},
+        "notes": {"type": "string"},
+        "ref": {"description": "How the subject was named: a built-in name, or a directory path.", "type": "string"},
+        "versions": {
+          "description": "The installed version of each package that the subject asked for.",
+          "type": "object",
+          "additionalProperties": {"type": "string"}
+        },
+        "error": {"description": "Why the subject did not run, or why its baseline failed.", "type": "string"},
+        "cells": {
+          "description": "One cell per scenario that applies to the subject.",
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/cell"}
+        }
+      }
+    },
+    "cell": {
+      "type": "object",
+      "required": ["verdict", "checks", "spans", "stderr"],
+      "properties": {
+        "verdict": {"$ref": "#/$defs/verdict"},
+        "checks": {"type": "array", "items": {"$ref": "#/$defs/check"}},
+        "spans": {"type": "array", "items": {"$ref": "#/$defs/span"}},
+        "stderr": {"description": "The end of the subject's stderr, when the cell has no observation.", "type": "string"}
+      }
+    },
+    "check": {
+      "type": "object",
+      "required": ["id", "verdict", "expected", "got", "where", "detail", "rule", "rule_url"],
+      "properties": {
+        "id": {"description": "A check ID. It never changes meaning.", "type": "string"},
+        "verdict": {"$ref": "#/$defs/verdict"},
+        "expected": {"description": "The value that the wire carried."},
+        "got": {"description": "The value that the span reported."},
+        "where": {"description": "The attribute that the value came from.", "type": ["string", "null"]},
+        "detail": {"type": "string"},
+        "rule": {"description": "The rule that the check applies, or an empty string.", "type": "string"},
+        "rule_url": {"description": "A permalink to the rule, or an empty string.", "type": "string"}
+      }
+    },
+    "span": {
+      "type": "object",
+      "required": ["name", "scope", "status", "attributes"],
+      "properties": {
+        "name": {"type": "string"},
+        "scope": {"description": "The instrumentation scope name.", "type": "string"},
+        "status": {"description": "UNSET, OK or ERROR, or the raw code when it is another number.", "type": "string"},
+        "attributes": {"type": "object"}
+      }
+    }
+  }
+}

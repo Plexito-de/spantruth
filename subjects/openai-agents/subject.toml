@@ -1,0 +1,31 @@
+title = "OpenAI Agents SDK (OpenInference)"
+homepage = "https://github.com/openai/openai-agents-python"
+providers = ["openai"]
+packages = [
+  "openai-agents==0.26.0",
+  "openinference-instrumentation-openai-agents==2.8.7",
+]
+track = ["openai-agents", "openinference-instrumentation-openai-agents"]
+detect = ["openai-agents"]
+notes = "A framework: the app runs an Agent with Runner, and the Agents SDK makes the call through OpenAIChatCompletionsModel, or OpenAIResponsesModel for a Responses scenario. The SDK's tracing page lists external processors; the OpenTelemetry one among them is OpenInference's OpenAIAgentsInstrumentor, used here as its README shows first. It replaces the SDK's exporter to the OpenAI backend. A tool scenario gives the agent the two tools and tool_use_behavior=\"stop_on_first_tool\", so the run ends after the first tool call. The SDK streams only from an event loop, so each sync stream scenario makes the same call as its async twin. The request_model cells are debatable: OpenInference records the requested model as llm.model_name, which spantruth reads as the response model, and it names no request model separately. Not run: the early exits (Runner reads the model stream in a background task, run.py's run_loop_task, and queues its events, so how far the SDK reads does not depend on how far the app reads: with the fake provider it reads the whole stream before the app reads its second event, and the scenario's truth, what the app read, does not apply), the OpenAI SDK's with_streaming_response helper and the with-block early exits (no Agents SDK call has either)."
+# Every call an agent run makes for one model answer.
+scenarios = [
+  "openai/basic",
+  "openai/stream",
+  "openai/cache-hit",
+  "openai/stream-cache-hit",
+  "openai/cache-write",
+  "openai/stream-cache-write",
+  "openai/stream-no-usage",
+  "openai/tool-call",
+  "openai/stream-tool-call",
+  "openai/rate-limited",
+  "openai/retry-429",
+  "openai/stream-dropped",
+  "openai/reasoning",
+  "openai/stream-reasoning",
+  "openai/async-basic",
+  "openai/async-stream",
+  "openai/async-stream-dropped",
+  "openai/responses-stream-missing-finish-abort",
+]

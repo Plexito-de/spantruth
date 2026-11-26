@@ -1,0 +1,24 @@
+{
+  "name": "spantruth",
+  "description": "The spantruth skill: check that LLM telemetry reports what the provider sent.",
+  "owner": {
+    "name": "Plexito",
+    "url": "https://plexito.de"
+  },
+  "plugins": [
+    {
+      "name": "spantruth",
+      "source": "./skills/spantruth",
+      "description": "Run spantruth after a change to LLM tracing or token and cost tracking, and read what it finds.",
+      "version": "0.6.0",
+      "author": {
+        "name": "Plexito",
+        "url": "https://plexito.de"
+      },
+      "homepage": "https://github.com/Plexito-de/spantruth",
+      "repository": "https://github.com/Plexito-de/spantruth",
+      "license": "Apache-2.0",
+      "keywords": ["opentelemetry", "llm", "observability", "tokens", "cost"]
+    }
+  ]
+}

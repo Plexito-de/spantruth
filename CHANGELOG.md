@@ -6,13 +6,83 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-26
+
 ### Added
 
+- Google Gemini through `google-genai`. The fake provider serves `generateContent` and
+  `streamGenerateContent?alt=sse`, with a running usage on every stream chunk, as the live API
+  sends it. Thirteen scenarios cover thinking tokens, a context cache hit, 429
+  `RESOURCE_EXHAUSTED`, dropped and abandoned streams, and async calls. The output count includes
+  `thoughtsTokenCount`, as the conventions require. The OpenTelemetry GenAI instrumentation, Logfire,
+  OpenInference, OpenLLMetry, OpenLIT, Sentry, MLflow and ddtrace have Gemini cells.
+- Azure OpenAI through `AzureOpenAI`: the deployment path with an `api-version`, Azure's content
+  filter fields and its empty first stream chunk. Four scenarios: `azure/basic`, `azure/stream` and
+  their async forms.
+- Framework subjects. A subject can bring an `app.py` that makes each call through the framework,
+  and it lists the scenarios it supports. New subjects: LiteLLM, Pydantic AI, the OpenAI Agents SDK,
+  and LangChain with OpenInference and with OpenLLMetry.
+- Seven `openai/compat-*` scenarios for the usage shapes of OpenAI-compatible servers (vLLM,
+  Ollama, LiteLLM, DeepSeek, Groq). A cache or reasoning count is `wrong` ("invented") only when the
+  usage has no field for it.
+- Agent loops and concurrent calls. `openai/agent-loop` and `anthropic/agent-loop` make three calls
+  in one trace, and the `*/async-concurrent-streams` scenarios read two streams side by side. Each
+  call is graded on its own span, placed by its request model, and a value that belongs to another
+  call is named.
+- Content capture checks, graded against each library's own documented switch for prompt and
+  completion text. `content.off_respected` fails when text appears with the switch off.
+  `content.output_matches` fails when the recorded completion differs from what the app read. A
+  subject declares its switch in a `[content]` table.
+- Token usage metrics, graded per call for the libraries that document them
+  (`metric.input_tokens`, `metric.output_tokens`). A subject declares its metrics documentation in a
+  `[metrics]` table, and its `instrument()` can take a `meter_provider`.
+- `doctor` names each LLM library in a project that no subject covers yet, with the issue where you
+  can ask for it. It prints the fix first for a finding that the library has fixed: the upgrade
+  command for the project's tool, or the requirement to set in the file it read.
+- `doctor --base REF` compares the project with its dependency files at a git ref, and fails only on
+  a finding that the change adds. The action runs it with `command: doctor`, for an application
+  repository, and keeps one comment on each pull request.
+- `doctor --fast` answers from the version table that ships with the release, and runs locally only
+  what the table does not cover. `spantruth history` runs the last releases of each library every
+  night and records which release fixed a check.
+- A lock-file checker in the browser (`check.html`): paste a lock file, and the page shows what the
+  nightly table says for those versions. Nothing leaves the browser.
+- The report keeps a dated copy every night, so a link in an upstream issue still resolves after
+  the fix lands. New pages: the fixes upstream with their credits, one page per bug class titled by
+  its symptom, and how we know that a check is right. Each class page has a preview card.
+- A pytest plugin: `spantruth.run("openai/stream").assert_pass()` grades the spans of your own
+  wrapper in your own test suite. Install `spantruth[pytest]`.
+- `spantruth export` writes every scenario as language-neutral JSON, for a driver in another
+  language. `spantruth new subject <name>` writes a subject from a template. `spantruth run
+  --quick` and the action input `quick` run one scenario per bug class and provider.
+- A JSON Schema for the results document (`schema/results.schema.json`).
+- Remedies: what an OpenTelemetry Collector can and cannot fix for each bug class, with recipes
+  that are tested in otelcol-contrib (`docs/remedies/`).
+- Receipts: six bug classes as the wrong numbers they produce in self-hosted Phoenix, MLflow and
+  Jaeger, with screenshots and the commands that repeat them.
+- A weekly mutation test of the checks (`scripts/mutate.py`). Its first run found six untested
+  lines, and each now has a test.
+- The repository is a Claude Code plugin marketplace: `/plugin marketplace add Plexito-de/spantruth`.
+  A container image per release: `ghcr.io/plexito-de/spantruth:<version>`.
 - Pydantic Logfire is a subject (`logfire==5.4.0`), instrumenting the OpenAI and Anthropic SDKs
   with no Logfire account.
 
+### Changed
+
+- The README is a short landing page, with one guide per reader and a recording of
+  `uvx spantruth doctor`.
+- `doctor` lists the bug classes of a library largest cost error first.
+- The action's `subject` input is required only for `command: run`.
+- `known_issues.toml` entries carry the dates, the release that fixes them, and who reported and
+  fixed them.
+
 ### Fixed
 
+- The `sentry` subject runs with Sentry SDK 3.x, so the nightly run of the latest releases grades
+  Sentry again. The pin stays at 2.74.0.
+- `doctor` gives one clear line, not a traceback, when `uv` is missing, and names the subprojects
+  of a monorepo root. Every path and package name it prints is on one line, with no control
+  characters.
 - `doctor` read no pin from a `requirements.txt` compiled with `--generate-hashes`, and graded
   spantruth's own versions instead (#60).
 - `doctor` said "Tracked at" for a finding that the library has already fixed. It now prints the
@@ -247,7 +317,8 @@ All notable changes to this project are documented here. The format follows
 - Subjects: the OpenTelemetry GenAI instrumentation, OpenLLMetry and OpenInference.
 - A Markdown and a static HTML report.
 
-[Unreleased]: https://github.com/Plexito-de/spantruth/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/Plexito-de/spantruth/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/Plexito-de/spantruth/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Plexito-de/spantruth/compare/v0.4.2...v0.5.0
 [0.4.2]: https://github.com/Plexito-de/spantruth/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/Plexito-de/spantruth/compare/v0.4.0...v0.4.1

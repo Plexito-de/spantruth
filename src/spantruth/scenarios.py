@@ -10,16 +10,31 @@ from dataclasses import replace
 
 from . import recorded
 from . import wire_anthropic as an
+from . import wire_azure as az
+from . import wire_gemini as ge
 from . import wire_openai as oa
-from .model import Scenario, Truth
+from .model import Call, Scenario, Truth
 
 OPENAI_MODEL = "gpt-5-mini"
 OPENAI_SERVED = "gpt-5-mini-2026-08-07"
 # GPT-5.6 and later bill a prompt-cache write and report it, so the cache-write scenarios use one.
 OPENAI_CACHE_MODEL = "gpt-5.6-luna"
 OPENAI_CACHE_SERVED = "gpt-5.6-luna-2026-10-14"
+# An open-weights model behind an OpenAI-compatible server, such as vLLM or Ollama.
+COMPAT_MODEL = "qwen3.5-27b"
+COMPAT_SERVED = "Qwen/Qwen3.5-27B-Instruct"
 ANTHROPIC_MODEL = "claude-sonnet-5-5"
+# The second model of the concurrent scenarios. Placeholders too.
+OPENAI_PAIR_MODEL = "gpt-5-nano"
+OPENAI_PAIR_SERVED = "gpt-5-nano-2026-08-07"
+ANTHROPIC_PAIR_MODEL = "claude-haiku-5-5"
+ANTHROPIC_PAIR_SERVED = "claude-haiku-5-5-20261001"
 ANTHROPIC_SERVED = "claude-sonnet-5-5-20260915"
+# The Gemini API answers with `modelVersion` equal to the requested model id.
+GEMINI_MODEL = "gemini-3.5-flash-lite"
+GEMINI_SERVED = GEMINI_MODEL
+# An Azure request names a deployment. The response names the model behind it.
+AZURE_DEPLOYMENT = "wt-chat-deployment"
 PARTS = ("The capital", " of France", " is Paris.")
 WEATHER = ("get_weather", {"city": "Paris"})
 TIME = ("get_time", {"zone": "Europe/Paris"})
@@ -230,9 +245,119 @@ def _openai() -> list[Scenario]:
     ]
 
 
+def _compat() -> list[Scenario]:
+    """OpenAI-compatible servers, called with the openai SDK: vLLM, Ollama, LiteLLM, Together.
+
+    Their usage leaves out the details objects, or sends null for them. The API reference marks
+    both as optional, so the shape is valid, and a library must still report input and output
+    tokens and must not report a cache count that the response does not carry.
+    """
+
+    def sc(name: str, title: str, catches: str, response, **kw) -> Scenario:
+        return Scenario(
+            id=f"openai/compat-{name}",
+            provider="openai",
+            title=title,
+            catches=catches,
+            request_model=COMPAT_MODEL,
+            response=response,
+            **kw,
+        )
+
+    body = dict(model=COMPAT_SERVED, text="The capital of France is Paris.", finish="stop")
+    stream = dict(model=COMPAT_SERVED, parts=PARTS, finish="stop")
+    return [
+        sc(
+            "no-details",
+            "OpenAI-compatible server, usage without details",
+            "a crash or an invented cache count when prompt_tokens_details is absent",
+            oa.completion(
+                id="chatcmpl-wt-cnodet",
+                prompt=1129,
+                completion_tokens=241,
+                details="absent",
+                **body,
+            ),
+        ),
+        sc(
+            "null-details",
+            "OpenAI-compatible server, details sent as null",
+            "a crash or an invented cache count when prompt_tokens_details is null",
+            oa.completion(
+                id="chatcmpl-wt-cnull", prompt=1213, completion_tokens=277, details="null", **body
+            ),
+        ),
+        sc(
+            "stream-no-details",
+            "OpenAI-compatible server, streamed usage without details",
+            "usage lost in a stream whose final chunk has no details",
+            oa.chunks(
+                id="chatcmpl-wt-csnodet",
+                prompt=1361,
+                completion_tokens=293,
+                details="absent",
+                **stream,
+            ),
+            stream=True,
+        ),
+        sc(
+            "stream-usage-on-finish",
+            "Usage on the chunk with the finish reason",
+            "usage lost when it is not in a chunk of its own",
+            oa.chunks(
+                id="chatcmpl-wt-csfinish",
+                prompt=1489,
+                completion_tokens=331,
+                cached=1063,
+                usage_on_finish=True,
+                **stream,
+            ),
+            stream=True,
+        ),
+    ]
+
+
+def _replayed(name: str, path, title: str, catches: str) -> Scenario:
+    """An OpenAI-compatible response replayed from a fixture file, tagged with its tier."""
+    return Scenario(
+        id=f"openai/compat-{name}",
+        provider="openai",
+        title=title,
+        catches=catches,
+        request_model=recorded.requested_model(path),
+        response=recorded.load(path),
+        tags=("recorded", recorded.tier(path)),
+    )
+
+
 def _recorded() -> list[Scenario]:
-    """Scenarios replayed from recorded provider streams, rather than built in code."""
+    """Scenarios replayed from fixture files, rather than built in code.
+
+    A file is the way to send a field that the SDK types do not declare, such as DeepSeek's
+    `prompt_cache_hit_tokens`: its provenance says where the shape comes from, so the fixture
+    check need not accept invented fields in built fixtures.
+    """
     abort = recorded.FIXTURES / "openai-responses" / "stream.missing-finish-abort.json"
+    compat = [
+        _replayed(
+            "partial-details",
+            recorded.FIXTURES / "ollama-openai" / "truncation.text.json",
+            "Ollama, details with a cache count only",
+            "a crash or a lost cache count when the details hold only cached_tokens",
+        ),
+        _replayed(
+            "extra-cache-fields",
+            recorded.FIXTURES / "deepseek" / "usage.cached-tokens.json",
+            "DeepSeek, cache counts in its own fields too",
+            "the standard cache count lost next to provider fields",
+        ),
+        _replayed(
+            "extra-timing-fields",
+            recorded.FIXTURES / "groq" / "usage.timings.json",
+            "Groq, timings in usage and no details",
+            "a crash or an invented count when usage holds timings",
+        ),
+    ]
     return [
         Scenario(
             id="openai/responses-stream-missing-finish-abort",
@@ -244,7 +369,8 @@ def _recorded() -> list[Scenario]:
             response=recorded.load(abort),
             stream=True,
             tags=("recorded",),
-        )
+        ),
+        *compat,
     ]
 
 
@@ -466,12 +592,269 @@ def _anthropic() -> list[Scenario]:
     ]
 
 
+def _plans() -> list[Scenario]:
+    """Scenarios with more than one call in the app's trace. Each call's span has its own counts.
+
+    An agent loop asks for the weather, then for the time, then answers. The second and third
+    calls send the tool results back, and read most of their prompt from the cache, as a loop does.
+    """
+    weather = (("call_wt_w", WEATHER[0], '{"city":"Paris"}'),)
+    time_ = (("call_wt_t", TIME[0], '{"zone":"Europe/Paris"}'),)
+    answer = "It is 18 C and sunny in Paris, and the time is 14:05."
+    stream = dict(model=OPENAI_SERVED, parts=PARTS, finish="stop")
+    astream = dict(model=ANTHROPIC_SERVED, parts=PARTS, stop="end_turn")
+    tool = dict(model=OPENAI_SERVED, text=None, finish="tool_calls")
+    openai_loop = (
+        oa.completion(
+            id="chatcmpl-wt-loop1", prompt=1171, completion_tokens=97, tool_calls=weather, **tool
+        ),
+        oa.completion(
+            id="chatcmpl-wt-loop2",
+            prompt=1307,
+            completion_tokens=89,
+            cached=1093,
+            tool_calls=time_,
+            **tool,
+        ),
+        oa.completion(
+            id="chatcmpl-wt-loop3",
+            model=OPENAI_SERVED,
+            text=answer,
+            finish="stop",
+            prompt=1459,
+            completion_tokens=211,
+            cached=1279,
+        ),
+    )
+    use = dict(model=ANTHROPIC_SERVED, text=None, stop="tool_use")
+    anthropic_loop = (
+        an.message(
+            id="msg_wt_loop1",
+            input_tokens=1171,
+            output_tokens=97,
+            tool_uses=(("toolu_wt_w", *WEATHER),),
+            **use,
+        ),
+        an.message(
+            id="msg_wt_loop2",
+            input_tokens=214,
+            output_tokens=89,
+            cache_read=1093,
+            tool_uses=(("toolu_wt_t", *TIME),),
+            **use,
+        ),
+        an.message(
+            id="msg_wt_loop3",
+            model=ANTHROPIC_SERVED,
+            text=answer,
+            stop="end_turn",
+            input_tokens=180,
+            output_tokens=211,
+            cache_read=1279,
+        ),
+    )
+
+    def loop(provider: str, model: str, responses: tuple) -> Scenario:
+        return Scenario(
+            id=f"{provider}/agent-loop",
+            provider=provider,
+            title="Agent loop: three calls, two with tool results",
+            catches="one call's counts on another call's span, or a call with no span",
+            request_model=model,
+            response=responses[0],
+            tools=True,
+            calls=tuple(Call(model, r) for r in responses),
+        )
+
+    def gather(provider: str, calls: tuple[Call, ...]) -> Scenario:
+        return Scenario(
+            id=f"{provider}/async-concurrent-streams",
+            provider=provider,
+            title="Two streams at once with asyncio.gather (async)",
+            catches="the counts of one concurrent call on the span of the other",
+            request_model=calls[0].request_model,
+            response=calls[0].response,
+            stream=True,
+            asynchronous=True,
+            concurrent=True,
+            calls=calls,
+        )
+
+    # Two models, so each span names its call by its request model, whatever the timing.
+    openai_pair = (
+        Call(
+            OPENAI_MODEL,
+            oa.chunks(
+                id="chatcmpl-wt-par1", prompt=1033, completion_tokens=149, cached=769, **stream
+            ),
+        ),
+        Call(
+            OPENAI_PAIR_MODEL,
+            oa.chunks(
+                id="chatcmpl-wt-par2",
+                prompt=1747,
+                completion_tokens=181,
+                **stream | {"model": OPENAI_PAIR_SERVED},
+            ),
+        ),
+    )
+    anthropic_pair = (
+        Call(
+            ANTHROPIC_MODEL,
+            an.events(
+                id="msg_wt_par1", input_tokens=264, output_tokens=149, cache_read=769, **astream
+            ),
+        ),
+        Call(
+            ANTHROPIC_PAIR_MODEL,
+            an.events(
+                id="msg_wt_par2",
+                input_tokens=1747,
+                output_tokens=181,
+                **astream | {"model": ANTHROPIC_PAIR_SERVED},
+            ),
+        ),
+    )
+    return [
+        loop("openai", OPENAI_MODEL, openai_loop),
+        loop("anthropic", ANTHROPIC_MODEL, anthropic_loop),
+        gather("openai", openai_pair),
+        gather("anthropic", anthropic_pair),
+    ]
+
+
+def _gemini() -> list[Scenario]:
+    def sc(name: str, title: str, catches: str, response, **kw) -> Scenario:
+        return Scenario(
+            id=f"gemini/{name}",
+            provider="gemini",
+            title=title,
+            catches=catches,
+            request_model=GEMINI_MODEL,
+            response=response,
+            **kw,
+        )
+
+    body = dict(model=GEMINI_SERVED, text="The capital of France is Paris.", finish="STOP")
+    stream = dict(model=GEMINI_SERVED, parts=PARTS, finish="STOP")
+    return [
+        sc(
+            "basic",
+            "One call",
+            "model, id, finish reason and tokens",
+            ge.response(id="wt-gemini-basic", prompt=1193, candidates=271, **body),
+        ),
+        sc(
+            "stream",
+            "Stream read to the end",
+            "usage read from the last chunk",
+            ge.chunks(id="wt-gemini-stream", prompt=2333, candidates=431, **stream),
+            stream=True,
+        ),
+        sc(
+            "stream-early-exit",
+            "App closes the stream after two chunks",
+            "a span that never ends, a drained response",
+            ge.chunks(id="wt-gemini-early", prompt=1949, candidates=359, **stream),
+            stream=True,
+            read_events=2,
+        ),
+        sc(
+            "thinking",
+            "Thinking tokens",
+            "thoughtsTokenCount left out of output tokens",
+            ge.response(id="wt-gemini-think", prompt=1609, candidates=241, thoughts=1877, **body),
+        ),
+        sc(
+            "stream-thinking",
+            "Thinking tokens, streamed",
+            "thoughtsTokenCount left out of output tokens in a stream",
+            ge.chunks(id="wt-gemini-sthink", prompt=2083, candidates=317, thoughts=1999, **stream),
+            stream=True,
+        ),
+        sc(
+            "cache-hit",
+            "Context cache hit",
+            "cachedContentTokenCount dropped, or added to input a second time",
+            ge.response(id="wt-gemini-cache", prompt=5417, candidates=383, cached=4099, **body),
+        ),
+        sc(
+            "stream-cache-hit",
+            "Context cache hit, streamed",
+            "cached tokens lost in a stream",
+            ge.chunks(id="wt-gemini-scache", prompt=7229, candidates=523, cached=6151, **stream),
+            stream=True,
+        ),
+        sc(
+            "rate-limited",
+            "HTTP 429 RESOURCE_EXHAUSTED",
+            "a failed call recorded as a success",
+            ge.error(429, "RESOURCE_EXHAUSTED", "Resource has been exhausted (e.g. check quota)."),
+        ),
+        sc(
+            "stream-dropped",
+            "Connection drops mid-stream",
+            "an error swallowed into a cut-off answer",
+            ge.chunks(id="wt-gemini-drop", prompt=1439, candidates=307, drop_after=2, **stream),
+            stream=True,
+        ),
+    ]
+
+
+def _azure() -> list[Scenario]:
+    def sc(name: str, title: str, catches: str, response, **kw) -> Scenario:
+        return Scenario(
+            id=f"azure/{name}",
+            provider="azure",
+            title=title,
+            catches=catches,
+            request_model=AZURE_DEPLOYMENT,
+            response=response,
+            **kw,
+        )
+
+    return [
+        sc(
+            "basic",
+            "One call to a deployment",
+            "the deployment name taken for the model, Azure's filter results in the way",
+            az.completion(
+                id="chatcmpl-wt-azbasic",
+                model=OPENAI_SERVED,
+                text="The capital of France is Paris.",
+                finish="stop",
+                prompt=1213,
+                completion_tokens=277,
+            ),
+        ),
+        sc(
+            "stream",
+            "Stream from a deployment",
+            "the empty id and model of Azure's first chunk recorded",
+            az.chunks(
+                id="chatcmpl-wt-azstream",
+                model=OPENAI_SERVED,
+                parts=PARTS,
+                finish="stop",
+                prompt=2341,
+                completion_tokens=433,
+            ),
+            stream=True,
+        ),
+    ]
+
+
+# The early exit through a `with` block, for the SDKs whose stream is a context manager. The
+# google-genai stream is a plain generator.
+WITH_BLOCK_PROVIDERS = ("openai", "anthropic")
+
+
 def _with_block(scenarios: list[Scenario]) -> list[Scenario]:
     """The early exit again, leaving a `with` block instead of calling `close()`."""
     extra = []
     for s in scenarios:
         provider, name = s.id.split("/", 1)
-        if name == "stream-early-exit":
+        if name == "stream-early-exit" and provider in WITH_BLOCK_PROVIDERS:
             extra.append(
                 replace(
                     s,
@@ -496,8 +879,38 @@ def _with_async(scenarios: list[Scenario]) -> list[Scenario]:
     return scenarios + extra
 
 
+# Content capture: the basic call and the full stream again, with the library's own switch for
+# recording prompt and completion text set off, and set on. The other scenarios leave it alone.
+CONTENT_PATTERNS = {"basic": "content", "stream": "stream-content"}
+
+
+def _with_content(scenarios: list[Scenario]) -> list[Scenario]:
+    extra = []
+    for s in scenarios:
+        provider, name = s.id.split("/", 1)
+        if name in CONTENT_PATTERNS:
+            for mode in ("off", "on"):
+                extra.append(
+                    replace(
+                        s,
+                        id=f"{provider}/{CONTENT_PATTERNS[name]}-{mode}",
+                        content=mode,
+                        title=f"{s.title}, content capture switched {mode}",
+                        catches="prompt and completion text recorded against the switch"
+                        if mode == "off"
+                        else "completion text that differs from what the app read",
+                    )
+                )
+    return scenarios + extra
+
+
 SCENARIOS: dict[str, Scenario] = {
-    s.id: s for s in _with_async(_with_block(_openai() + _anthropic())) + _recorded()
+    s.id: s
+    for s in _with_content(_with_async(_with_block(_openai() + _anthropic())))
+    + _with_async(_with_block(_gemini() + _azure()))
+    + _compat()
+    + _recorded()
+    + _plans()
 }
 
 
@@ -534,8 +947,20 @@ def by_key(key: str) -> Scenario:
 
 
 def truth(scenario: Scenario) -> Truth:
+    if scenario.calls:
+        one = [
+            replace(
+                scenario, calls=(), responses=(), request_model=c.request_model, response=c.response
+            )
+            for c in scenario.calls
+        ]
+        return Truth(request_model=scenario.request_model, calls=tuple(truth(c) for c in one))
     if scenario.api == "responses":
         derive = oa.responses_truth
+    elif scenario.provider == "gemini":
+        derive = ge.truth
+    elif scenario.provider == "azure":
+        derive = az.truth
     else:
         derive = oa.truth if scenario.provider == "openai" else an.truth
     return derive(scenario.request_model, scenario.response, scenario.read_events)

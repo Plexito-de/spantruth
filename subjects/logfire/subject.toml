@@ -1,5 +1,21 @@
 title = "Pydantic Logfire"
 homepage = "https://github.com/pydantic/logfire"
-providers = ["openai", "anthropic"]
-packages = ["logfire==5.4.0"]
+providers = ["openai", "anthropic", "gemini", "azure"]
+notes = "The Gemini cells run google-genai 2.34.0, the newest 2.x release: opentelemetry-instrumentation-google-genai 1.3b0 declares google-genai < 3 and instruments nothing with 3.x (package.py). Its main branch allows < 4, unreleased on 2026-11-26."
+# instrument_google_genai() runs the OpenTelemetry instrumentor that the `google-genai` extra brings.
+# It is listed on its own, so `--latest` keeps it.
+# That instrumentor 1.3b0 declares google-genai >= 1.32.0, < 3 and instruments nothing with a
+# newer SDK, so this subject runs the newest 2.x release.
+packages = [
+  "logfire==5.4.0",
+  "opentelemetry-instrumentation-google-genai==1.3b0",
+  "google-genai==2.34.0",
+]
 track = ["logfire"]
+
+# instrument_openai() and instrument_anthropic() always record the messages.
+[content]
+switch = "none, always on: instrument_openai() and instrument_anthropic() take no content option"
+docs = "https://github.com/pydantic/logfire/blob/723f5d6ba924f63ba44f403d4c9843d73e3e1151/logfire-sdk/logfire/_internal/main.py#L1398-L1407"
+default = "on"
+on = {}

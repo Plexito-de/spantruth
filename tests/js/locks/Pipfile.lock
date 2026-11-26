@@ -1,0 +1,20 @@
+{
+    "_meta": {
+        "hash": {"sha256": "00"},
+        "pipfile-spec": 6,
+        "requires": {"python_version": "3.12"},
+        "sources": [{"name": "pypi", "url": "https://pypi.org/simple", "verify_ssl": true}]
+    },
+    "default": {
+        "sentry-sdk": {
+            "hashes": ["sha256:00"],
+            "markers": "python_version >= '3.6'",
+            "version": "==2.74.0"
+        },
+        "anthropic": {"hashes": [], "version": "==2.4.0"},
+        "editable-thing": {"editable": true, "path": "."}
+    },
+    "develop": {
+        "pytest": {"hashes": [], "version": "==9.0.0"}
+    }
+}

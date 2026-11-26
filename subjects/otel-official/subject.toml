@@ -1,11 +1,29 @@
 title = "OpenTelemetry GenAI instrumentation"
 homepage = "https://github.com/open-telemetry/opentelemetry-python-genai"
-providers = ["openai", "anthropic"]
+providers = ["openai", "anthropic", "gemini", "azure"]
+notes = "The Gemini cells run google-genai 2.34.0, the newest 2.x release: opentelemetry-instrumentation-google-genai 1.3b0 declares google-genai < 3 and instruments nothing with 3.x (package.py). Its main branch allows < 4, unreleased on 2026-11-26."
 packages = [
   "opentelemetry-instrumentation-genai-openai==1.3b0",
   "opentelemetry-instrumentation-genai-anthropic==1.3b0",
+  "opentelemetry-instrumentation-google-genai==1.3b0",
+  # opentelemetry-instrumentation-google-genai 1.3b0 declares google-genai >= 1.32.0, < 3 and
+  # instruments nothing with a newer SDK, so this subject runs the newest 2.x release.
+  "google-genai==2.34.0",
 ]
 track = [
   "opentelemetry-instrumentation-genai-openai",
   "opentelemetry-instrumentation-genai-anthropic",
+  "opentelemetry-instrumentation-google-genai",
 ]
+
+# Off by default. SPAN_AND_EVENT records the text on the span and in the details event.
+[content]
+switch = "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT"
+docs = "https://github.com/open-telemetry/opentelemetry-python-genai/blob/e25770aa361043fc5b4902c82eceb9ce86dc103e/util/opentelemetry-util-genai/README.rst#L182-L189"
+default = "off"
+off = { OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT = "NO_CONTENT" }
+on = { OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT = "SPAN_AND_EVENT" }
+
+# Both instrumentors use TelemetryHandler, which records gen_ai.client.token.usage.
+[metrics]
+docs = "https://github.com/open-telemetry/opentelemetry-python-genai/blob/e25770aa361043fc5b4902c82eceb9ce86dc103e/util/opentelemetry-util-genai/README.rst#L15-L16"

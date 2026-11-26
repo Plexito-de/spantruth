@@ -1,0 +1,408 @@
+[
+ {
+  "name": "phantom-phoenix-trace",
+  "url": "http://127.0.0.1:16106/projects/UHJvamVjdDoy/traces/c6020215829c8721e5807c04fadaaa23",
+  "width": 1600,
+  "steps": [
+   {
+    "click": "anthropic.chat"
+   }
+  ]
+ },
+ {
+  "name": "phantom-phoenix-cost",
+  "url": "http://127.0.0.1:16106/projects/UHJvamVjdDoy/traces/c6020215829c8721e5807c04fadaaa23",
+  "width": 1600,
+  "steps": [
+   {
+    "click": "anthropic.chat"
+   },
+   {
+    "move": [
+     523,
+     136
+    ]
+   }
+  ]
+ },
+ {
+  "name": "phantom-mlflow-traces",
+  "url": "http://127.0.0.1:15100/#/experiments/1/traces",
+  "width": 1600,
+  "steps": [
+   {
+    "click": "Got it",
+    "optional": true
+   },
+   {
+    "css": "button[aria-label='Close']",
+    "optional": true
+   }
+  ]
+ },
+ {
+  "name": "phantom-jaeger-genai",
+  "url": "http://127.0.0.1:16786/trace/67a86a4de5167778026b7aa8f2c5e71b",
+  "steps": [
+   {
+    "xy": [
+     800,
+     294
+    ]
+   },
+   {
+    "click": "GenAI"
+   }
+  ],
+  "full": true
+ },
+ {
+  "name": "phantom-jaeger-details",
+  "url": "http://127.0.0.1:16786/trace/67a86a4de5167778026b7aa8f2c5e71b",
+  "steps": [
+   {
+    "xy": [
+     800,
+     294
+    ]
+   },
+   {
+    "click": "Details"
+   },
+   {
+    "css": "text=Attributes:"
+   }
+  ],
+  "full": true
+ },
+ {
+  "name": "ghost-phoenix-trace",
+  "url": "http://127.0.0.1:16106/projects/UHJvamVjdDoz/traces/85c3f2522e0f8bd7796084aeef1f0186",
+  "width": 1600,
+  "steps": []
+ },
+ {
+  "name": "ghost-mlflow-traces",
+  "url": "http://127.0.0.1:15100/#/experiments/2/traces",
+  "width": 1600,
+  "steps": [
+   {
+    "click": "Got it",
+    "optional": true
+   },
+   {
+    "css": "button[aria-label='Close']",
+    "optional": true
+   }
+  ]
+ },
+ {
+  "name": "ghost-jaeger-trace",
+  "url": "http://127.0.0.1:16786/trace/2acead7dd224e775ff4453d8def941d4",
+  "full": true
+ },
+ {
+  "name": "falseok-phoenix-trace",
+  "url": "http://127.0.0.1:16106/projects/UHJvamVjdDo0/traces/a8d86e03b81722cb95540b34b2d7bfa1",
+  "width": 1600,
+  "steps": [
+   {
+    "click": "openai.chat"
+   }
+  ]
+ },
+ {
+  "name": "falseok-phoenix-cost",
+  "url": "http://127.0.0.1:16106/projects/UHJvamVjdDo0/traces/a8d86e03b81722cb95540b34b2d7bfa1",
+  "width": 1600,
+  "steps": [
+   {
+    "click": "openai.chat"
+   },
+   {
+    "move": [
+     523,
+     136
+    ]
+   }
+  ]
+ },
+ {
+  "name": "falseok-mlflow-traces",
+  "url": "http://127.0.0.1:15100/#/experiments/3/traces",
+  "width": 1600,
+  "steps": [
+   {
+    "click": "Got it",
+    "optional": true
+   },
+   {
+    "css": "button[aria-label='Close']",
+    "optional": true
+   }
+  ]
+ },
+ {
+  "name": "falseok-jaeger-genai",
+  "url": "http://127.0.0.1:16786/trace/3b02de3ec6fb4d5911c5ad8e33dd9dda",
+  "steps": [
+   {
+    "xy": [
+     800,
+     294
+    ]
+   },
+   {
+    "click": "GenAI"
+   }
+  ],
+  "full": true
+ },
+ {
+  "name": "falseok-jaeger-details",
+  "url": "http://127.0.0.1:16786/trace/3b02de3ec6fb4d5911c5ad8e33dd9dda",
+  "steps": [
+   {
+    "xy": [
+     800,
+     294
+    ]
+   },
+   {
+    "click": "Details"
+   },
+   {
+    "css": "text=Attributes:"
+   }
+  ],
+  "full": true
+ },
+ {
+  "name": "double-phoenix-trace",
+  "url": "http://127.0.0.1:16106/projects/UHJvamVjdDo1/traces/d73da24540f4f9b786203e57f4b7ad79",
+  "width": 1600,
+  "steps": [
+   {
+    "click": "anthropic.messages.create"
+   }
+  ]
+ },
+ {
+  "name": "double-phoenix-cost",
+  "url": "http://127.0.0.1:16106/projects/UHJvamVjdDo1/traces/d73da24540f4f9b786203e57f4b7ad79",
+  "width": 1600,
+  "steps": [
+   {
+    "click": "anthropic.messages.create"
+   },
+   {
+    "move": [
+     523,
+     136
+    ]
+   }
+  ]
+ },
+ {
+  "name": "double-mlflow-traces",
+  "url": "http://127.0.0.1:15100/#/experiments/4/traces",
+  "width": 1600,
+  "steps": [
+   {
+    "click": "Got it",
+    "optional": true
+   },
+   {
+    "css": "button[aria-label='Close']",
+    "optional": true
+   }
+  ]
+ },
+ {
+  "name": "double-jaeger-genai",
+  "url": "http://127.0.0.1:16786/trace/8715491af381d8188ed87cbc32508b75",
+  "steps": [
+   {
+    "xy": [
+     800,
+     294
+    ]
+   },
+   {
+    "click": "GenAI"
+   }
+  ],
+  "full": true
+ },
+ {
+  "name": "double-jaeger-details",
+  "url": "http://127.0.0.1:16786/trace/8715491af381d8188ed87cbc32508b75",
+  "steps": [
+   {
+    "xy": [
+     800,
+     294
+    ]
+   },
+   {
+    "click": "Details"
+   },
+   {
+    "css": "text=Attributes:"
+   }
+  ],
+  "full": true
+ },
+ {
+  "name": "cache-phoenix-trace",
+  "url": "http://127.0.0.1:16106/projects/UHJvamVjdDo2/traces/fae0a6f50d525728ab923a1a35e99461",
+  "width": 1600,
+  "steps": [
+   {
+    "click": "chat claude-sonnet-5-5"
+   }
+  ]
+ },
+ {
+  "name": "cache-phoenix-cost",
+  "url": "http://127.0.0.1:16106/projects/UHJvamVjdDo2/traces/fae0a6f50d525728ab923a1a35e99461",
+  "width": 1600,
+  "steps": [
+   {
+    "click": "chat claude-sonnet-5-5"
+   },
+   {
+    "move": [
+     523,
+     136
+    ]
+   }
+  ]
+ },
+ {
+  "name": "cache-mlflow-traces",
+  "url": "http://127.0.0.1:15100/#/experiments/5/traces",
+  "width": 1600,
+  "steps": [
+   {
+    "click": "Got it",
+    "optional": true
+   },
+   {
+    "css": "button[aria-label='Close']",
+    "optional": true
+   }
+  ]
+ },
+ {
+  "name": "cache-jaeger-genai",
+  "url": "http://127.0.0.1:16786/trace/bd934acb32a4888b5d08618052c9f894",
+  "steps": [
+   {
+    "xy": [
+     800,
+     294
+    ]
+   },
+   {
+    "click": "GenAI"
+   }
+  ],
+  "full": true
+ },
+ {
+  "name": "cache-jaeger-details",
+  "url": "http://127.0.0.1:16786/trace/bd934acb32a4888b5d08618052c9f894",
+  "steps": [
+   {
+    "xy": [
+     800,
+     294
+    ]
+   },
+   {
+    "click": "Details"
+   },
+   {
+    "css": "text=Attributes:"
+   }
+  ],
+  "full": true
+ },
+ {
+  "name": "vanish-phoenix-trace",
+  "url": "http://127.0.0.1:16106/projects/UHJvamVjdDo3/traces/41e424d28ee3d369c0f96c2d4faefba5",
+  "width": 1600,
+  "steps": [
+   {
+    "click": "openai.chat"
+   }
+  ]
+ },
+ {
+  "name": "vanish-phoenix-cost",
+  "url": "http://127.0.0.1:16106/projects/UHJvamVjdDo3/traces/41e424d28ee3d369c0f96c2d4faefba5",
+  "width": 1600,
+  "steps": [
+   {
+    "click": "openai.chat"
+   },
+   {
+    "move": [
+     523,
+     136
+    ]
+   }
+  ]
+ },
+ {
+  "name": "vanish-mlflow-traces",
+  "url": "http://127.0.0.1:15100/#/experiments/6/traces",
+  "width": 1600,
+  "steps": [
+   {
+    "click": "Got it",
+    "optional": true
+   },
+   {
+    "css": "button[aria-label='Close']",
+    "optional": true
+   }
+  ]
+ },
+ {
+  "name": "vanish-jaeger-genai",
+  "url": "http://127.0.0.1:16786/trace/66bebab84f1c4643807d39c6656fca3c",
+  "steps": [
+   {
+    "xy": [
+     800,
+     294
+    ]
+   },
+   {
+    "click": "GenAI"
+   }
+  ],
+  "full": true
+ },
+ {
+  "name": "vanish-jaeger-details",
+  "url": "http://127.0.0.1:16786/trace/66bebab84f1c4643807d39c6656fca3c",
+  "steps": [
+   {
+    "xy": [
+     800,
+     294
+    ]
+   },
+   {
+    "click": "Details"
+   },
+   {
+    "css": "text=Attributes:"
+   }
+  ],
+  "full": true
+ }
+]

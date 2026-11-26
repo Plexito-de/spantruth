@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>spantruth bug class preview</title>
+<!-- The template of the 1200x630 link preview of one bug class page. class-preview.py fills the
+     {{...}} fields from bugclasses.py and renders one PNG per class into cards/. -->
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:1200px;height:630px;overflow:hidden}
+body{background:#121417;color:#e8eaed;font:26px/1.4 ui-sans-serif,system-ui,"DejaVu Sans",sans-serif;
+padding:60px 72px 56px;display:flex;flex-direction:column;justify-content:space-between}
+.k{font:24px/1 ui-monospace,"DejaVu Sans Mono",monospace;color:#a7aeb8;letter-spacing:.02em}
+.k b{color:{{accent}};font-weight:700}
+h1{font-size:64px;line-height:1.08;margin:26px 0 0;letter-spacing:-.02em;max-width:1050px}
+.s{font-size:30px;color:#c3c9d1;margin:26px 0 0;max-width:1000px}
+.f{display:flex;justify-content:space-between;align-items:baseline;
+font:26px/1 ui-monospace,"DejaVu Sans Mono",monospace;color:#a7aeb8}
+.f .cmd{color:#7fd49b}
+.bar{position:absolute;left:0;top:0;bottom:0;width:12px;background:{{accent}}}
+</style></head><body>
+<div class="bar"></div>
+<div><div class="k">spantruth · <b>{{id}} {{name}}</b></div>
+<h1>{{symptom}}</h1>
+<p class="s">{{summary}} {{dashboard}}</p></div>
+<div class="f"><span class="cmd">$ uvx spantruth doctor</span><span>plexito-de.github.io/spantruth</span></div>
+</body></html>

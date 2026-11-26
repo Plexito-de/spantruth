@@ -1,6 +1,6 @@
 title = "Datadog ddtrace LLM Observability"
 homepage = "https://github.com/DataDog/dd-trace-py"
-providers = ["openai", "anthropic"]
+providers = ["openai", "anthropic", "gemini", "azure"]
 packages = ["ddtrace==4.16.3"]
 track = ["ddtrace"]
 # Many projects use ddtrace for APM only, so `spantruth doctor` needs a provider SDK as well.
@@ -13,3 +13,9 @@ DD_LLMOBS_AGENTLESS_ENABLED = "false"
 DD_INSTRUMENTATION_TELEMETRY_ENABLED = "false"
 DD_REMOTE_CONFIGURATION_ENABLED = "false"
 DD_TRACE_STARTUP_LOGS = "false"
+
+# The APM span carries no prompt or completion text at this version, and no switch adds it.
+[content]
+switch = "none for the APM span"
+docs = "https://github.com/DataDog/dd-trace-py/blob/3ff8355122736c61a467a5a734bd224d6b9e4d47/releasenotes/notes/remove-io-data-from-apm-span-openai-integration-81f3ae914a5d2faf.yaml"
+default = "off"

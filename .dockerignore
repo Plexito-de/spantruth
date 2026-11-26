@@ -1,0 +1,13 @@
+# The image needs only what the wheel is built from. Everything else stays out of the build context.
+*
+!pyproject.toml
+!uv.lock
+!README.md
+!LICENSE
+!known_issues.toml
+!prices.toml
+!versions.json
+!src/
+!subjects/
+**/__pycache__
+**/*.py[cod]
