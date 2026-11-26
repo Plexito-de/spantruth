@@ -17,7 +17,7 @@ commands name a version, so that a new release cannot change what this skill run
 Run this in the project directory:
 
 ```sh
-uvx spantruth@0.5.0 doctor --json
+uvx spantruth@0.6.0 doctor --json
 ```
 
 It reads the lock file and runs each library it recognizes at the project's versions. It does not run
@@ -44,8 +44,8 @@ a newer release of the library in the `upstream` link. Ask before you change a v
 Follow [the guide](https://github.com/Plexito-de/spantruth/blob/main/docs/test-your-wrapper.md):
 
 1. Add a `spantruth` directory with `subject.toml` and `instrument.py`.
-2. Run `uvx spantruth@0.5.0 run --subject ./spantruth --with . --out results.json`.
-3. Read the findings with `uvx spantruth@0.5.0 report results.json --markdown`.
+2. Run `uvx spantruth@0.6.0 run --subject ./spantruth --with . --out results.json`.
+3. Read the findings with `uvx spantruth@0.6.0 report results.json --markdown`.
 
 ## Reading a finding
 
