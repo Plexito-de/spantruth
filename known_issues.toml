@@ -104,3 +104,39 @@ reported_on = "2026-10-22"
 fixed_on = "2026-10-28"
 fixed_in = ["openinference-instrumentation-anthropic>=3.1.1"]
 note = "With the Anthropic SDK's own tracing on (anthropic 1.14.0 or later), each call reported usage on two spans. Fixed in openinference-instrumentation-anthropic 3.1.1, by https://github.com/Arize-ai/openinference/pull/4121."
+
+[[issue]]
+subject = "openinference"
+scenarios = ["openai/async-stream-helper"]
+check = "response_model"
+status = "reported"
+url = "https://github.com/Arize-ai/openinference/issues/1134"
+reported_on = "2024-11-23"
+note = "The span of an async with_streaming_response stream gets no model, finish reason or token counts. The issue reports the likely cause: on the async path the wrapper calls AsyncAPIResponse.parse() without awaiting it."
+
+[[issue]]
+subject = "openinference"
+scenarios = ["openai/async-stream-helper"]
+check = "finish_reasons"
+status = "reported"
+url = "https://github.com/Arize-ai/openinference/issues/1134"
+reported_on = "2024-11-23"
+note = "The span of an async with_streaming_response stream gets no model, finish reason or token counts. The issue reports the likely cause: on the async path the wrapper calls AsyncAPIResponse.parse() without awaiting it."
+
+[[issue]]
+subject = "openinference"
+scenarios = ["openai/async-stream-helper"]
+check = "input_tokens"
+status = "reported"
+url = "https://github.com/Arize-ai/openinference/issues/1134"
+reported_on = "2024-11-23"
+note = "The span of an async with_streaming_response stream gets no model, finish reason or token counts. The issue reports the likely cause: on the async path the wrapper calls AsyncAPIResponse.parse() without awaiting it."
+
+[[issue]]
+subject = "openinference"
+scenarios = ["openai/async-stream-helper"]
+check = "output_tokens"
+status = "reported"
+url = "https://github.com/Arize-ai/openinference/issues/1134"
+reported_on = "2024-11-23"
+note = "The span of an async with_streaming_response stream gets no model, finish reason or token counts. The issue reports the likely cause: on the async path the wrapper calls AsyncAPIResponse.parse() without awaiting it."
