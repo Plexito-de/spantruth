@@ -366,3 +366,22 @@ def test_pydantic_ai_is_a_framework_subject():
     assert lib.supports("openai/tool-call") and lib.supports("anthropic/stream-tool-call")
     assert not lib.supports("openai/stream-helper")
     assert not lib.supports("openai/stream-early-exit-with")
+
+
+def test_openai_agents_is_a_framework_subject():
+    lib = subjects.load("openai-agents")
+    assert lib.app
+    assert lib.providers == ("openai",)
+    reqs = subjects.requirements(lib, latest=False)
+    assert {"openai-agents==0.26.0", "openinference-instrumentation-openai-agents==2.8.7"} <= set(
+        reqs
+    )
+    assert "openai-agents" in subjects.requirements(lib, latest=True)
+    assert lib.supports("openai/basic") and lib.supports("openai/async-stream")
+    assert lib.supports("openai/responses-stream-missing-finish-abort")
+    # stop_on_first_tool ends the agent loop after the first tool call.
+    assert lib.supports("openai/tool-call") and lib.supports("openai/stream-tool-call")
+    # The SDK reads the model stream in a background task, whatever the app reads.
+    assert not lib.supports("openai/stream-early-exit")
+    # The SDK sends its own traces only with OPENAI_API_KEY set, which no subject process has.
+    assert "OPENAI_API_KEY" not in lib.env
