@@ -80,7 +80,8 @@
         "reasoning_tokens": {"$ref": "#/$defs/count"},
         "error": {"type": ["string", "null"]},
         "unread_counts": {"type": "array", "items": {"type": "integer"}},
-        "no_usage": {"type": "boolean"}
+        "no_usage": {"type": "boolean"},
+        "uncounted": {"type": "array", "items": {"type": "string"}}
       }
     },
     "subject": {

@@ -16,6 +16,7 @@ from . import (
     paths,
     report,
     runner,
+    scaffold,
     scenarios,
     subjects,
     watch,
@@ -306,6 +307,23 @@ def parser() -> argparse.ArgumentParser:
         help="write only the call plans, keyed by scenario ID",
     )
     exp.set_defaults(func=_export)
+    new = sub.add_parser("new", help="start a new subject from a template")
+    kinds = new.add_subparsers(dest="kind", required=True)
+    new_subject = kinds.add_parser(
+        "subject",
+        help="write subject.toml and instrument.py for a new subject",
+        description="Write <dir>/<name>/subject.toml and instrument.py. The template loads as it "
+        "is. Its instrument() attaches nothing, so every cell is missing a span until you add the "
+        "library's setup.",
+    )
+    new_subject.add_argument("name", help="the subject name: lowercase letters, digits, dashes")
+    new_subject.add_argument(
+        "--dir",
+        default=None,
+        help="the directory to create the subject in (default: the built-in subjects in a clone "
+        "of spantruth, the current directory otherwise)",
+    )
+    new_subject.set_defaults(func=_new_subject)
     return parser
 
 
@@ -316,6 +334,32 @@ def _export(args: argparse.Namespace) -> int:
         Path(args.out).write_text(text)
     else:
         sys.stdout.write(text)
+    return 0
+
+
+def _new_subject_dir(given: str | None, builtin: Path | None = None) -> Path:
+    """Where `new subject` writes. An installed spantruth keeps its subjects inside the package,
+    in a cache the user cannot find or keep, so outside a clone the default is the current
+    directory."""
+    builtin = subjects.SUBJECTS if builtin is None else builtin
+    if given is not None:
+        return Path(given)
+    installed = builtin.resolve().is_relative_to(paths.PACKAGE)
+    return Path.cwd() if installed else builtin
+
+
+def _new_subject(args: argparse.Namespace) -> int:
+    try:
+        directory = scaffold.new_subject(args.name, _new_subject_dir(args.dir))
+    except scaffold.ScaffoldError as exc:
+        return _usage(exc)
+    print(f"wrote {directory / 'subject.toml'}")
+    print(f"wrote {directory / 'instrument.py'}")
+    builtin = directory.parent.resolve() == subjects.SUBJECTS.resolve()
+    ref = directory.name if builtin else str(directory)
+    if not builtin and not subjects.is_path(ref):
+        ref = f"./{ref}"
+    print(f"next: fill in both files, then run: spantruth run --subject {ref}")
     return 0
 
 

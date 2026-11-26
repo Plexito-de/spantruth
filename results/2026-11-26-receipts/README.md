@@ -86,7 +86,8 @@ Linux, [uv](https://docs.astral.sh/uv/), Python 3.12, a spantruth clone at this 
 key. Paths assume the repository root as the working directory and an empty `WORK`.
 
 ```bash
-export WORK="$HOME/receipts-work" XDG_CACHE_HOME="$PWD/.xdg-cache"; mkdir -p "$WORK"
+export WORK="$HOME/receipts-work"
+export XDG_CACHE_HOME="$WORK/xdg"; mkdir -p "$WORK"
 RES=results/2026-11-26-receipts
 
 # 1. Backends. Phoenix and MLflow from PyPI, Jaeger from its GitHub release.
