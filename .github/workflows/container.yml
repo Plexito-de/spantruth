@@ -1,0 +1,66 @@
+name: Container
+
+# The image is a second way to run spantruth, next to `uvx spantruth`. It lives in its own workflow,
+# so a failed image build can never hold back the PyPI release in release.yml.
+on:
+  pull_request:
+    paths:
+      - Dockerfile
+      - .dockerignore
+      - .github/workflows/container.yml
+  push:
+    tags: ["v*"]
+
+permissions: {}
+
+concurrency:
+  group: container-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    # A pull request that changes the image builds it and runs it, and pushes nothing.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: docker build --tag spantruth:ci .
+      - name: The image runs spantruth as a user without root
+        run: |
+          docker run --rm spantruth:ci list > /dev/null
+          test "$(docker run --rm --entrypoint id spantruth:ci -u)" != 0
+
+  publish:
+    # A release tag builds the image from the tagged commit and pushes it as
+    # ghcr.io/plexito-de/spantruth:<version>. No other tag is pushed, so a version never moves.
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write # push the image to ghcr.io
+    env:
+      TAG: ${{ github.ref_name }}
+      IMAGE: ghcr.io/plexito-de/spantruth
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: The tag matches the package version
+        run: grep -qx "__version__ = \"${TAG#v}\"" src/spantruth/__init__.py
+      - run: docker build --tag "$IMAGE:${TAG#v}" .
+      - name: The image reports the tagged version
+        run: |
+          docker run --rm --entrypoint python "$IMAGE:${TAG#v}" \
+            -c "import spantruth, sys; sys.exit(spantruth.__version__ != sys.argv[1])" "${TAG#v}"
+      - name: Push
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          echo "$GH_TOKEN" | docker login ghcr.io --username "$ACTOR" --password-stdin
+          docker push "$IMAGE:${TAG#v}"
+          docker logout ghcr.io

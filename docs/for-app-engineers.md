@@ -59,6 +59,24 @@ To check a project in another directory, give its path: `uvx spantruth doctor pa
 If you wrote your own wrapper around the OpenAI or Anthropic SDK, `doctor` has nothing to recognize.
 [Test your wrapper in five minutes](test-your-wrapper.md) instead.
 
+### Run it in a container
+
+Each release from 0.6.0 on is also an image, `ghcr.io/plexito-de/spantruth:<version>`. It has Python
+3.12, uv and spantruth, and runs as a user without root. Use it when you do not want to install uv:
+
+```sh
+docker run --rm -v "$PWD:/work:ro" -v spantruth-cache:/cache ghcr.io/plexito-de/spantruth:0.6.0 doctor
+```
+
+- `-v "$PWD:/work:ro"` gives `doctor` your project, read-only. It reads the lock file there and writes
+  nothing into it.
+- `-v spantruth-cache:/cache` keeps the library environments and the results in a volume. The first run
+  downloads the libraries at your versions from PyPI. The next runs use the volume.
+- Add `--json` after `doctor` for the JSON result. The exit codes are the same.
+
+The image takes every other command too, such as `list` or
+`run --subject openllmetry --out /cache/results.json`.
+
 ## What the bug classes cost
 
 Every finding belongs to one of [ten named bug classes](https://plexito-de.github.io/spantruth/bugs.html),

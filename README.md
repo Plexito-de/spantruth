@@ -11,6 +11,8 @@ no setup. Run this in your project:
 uvx spantruth doctor
 ```
 
+Without [uv](https://docs.astral.sh/uv/), [run it in a container](https://github.com/Plexito-de/spantruth/blob/main/docs/for-app-engineers.md#run-it-in-a-container).
+
 ![uvx spantruth doctor in a project that uses OpenLLMetry: it finds ghost spans, double spans and wrong token counts, each with its cost figure and the upstream issue](https://raw.githubusercontent.com/Plexito-de/spantruth/main/docs/assets/doctor.gif)
 
 <details>
