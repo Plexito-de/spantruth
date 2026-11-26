@@ -285,7 +285,7 @@ def test_pydantic_ai_is_a_framework_subject():
     assert "pydantic-ai-slim" in subjects.requirements(lib, latest=True)
     assert lib.supports("openai/responses-stream-missing-finish-abort")
     assert lib.supports("anthropic/async-stream-early-exit")
-    # The agent would run the tool and ask again; the fake provider repeats the tool call.
-    assert not lib.supports("openai/tool-call") and not lib.supports("anthropic/stream-tool-call")
+    # External tools end the run after the response that calls them.
+    assert lib.supports("openai/tool-call") and lib.supports("anthropic/stream-tool-call")
     assert not lib.supports("openai/stream-helper")
     assert not lib.supports("openai/stream-early-exit-with")

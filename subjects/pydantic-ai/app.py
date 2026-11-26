@@ -4,11 +4,15 @@
 `run_sync` and `run` for one answer, `run_stream_sync` and `run_stream` for a stream. The app reads
 a stream as text deltas without debouncing, so the number of events it sees does not depend on
 timing.
+
+For a tool scenario the agent gets the two tools as an `ExternalToolset`, and `DeferredToolRequests`
+as a possible output, as the docs show for tools that the app runs itself. So the run ends after the
+one response that calls a tool, and the app reads the calls, as calls.py does.
 """
 
 import asyncio
 
-from spantruth.calls import PROMPT
+from spantruth.calls import OPENAI_TOOLS, PROMPT
 
 QUESTION = PROMPT[0]["content"]
 
@@ -31,11 +35,31 @@ def _agent(sc, base_url):
         provider = OpenAIProvider(base_url=base_url, api_key="wt-test")
         kind = OpenAIResponsesModel if sc.api == "responses" else OpenAIChatModel
         model = kind(sc.request_model, provider=provider)
-    return Agent(model, model_settings=settings)
+    if not sc.tools:
+        return Agent(model, model_settings=settings)
+    from pydantic_ai import DeferredToolRequests
+    from pydantic_ai.tools import ToolDefinition
+    from pydantic_ai.toolsets.external import ExternalToolset
+
+    functions = [t["function"] for t in OPENAI_TOOLS]
+    tools = ExternalToolset(
+        [ToolDefinition(name=f["name"], parameters_json_schema=f["parameters"]) for f in functions]
+    )
+    return Agent(
+        model,
+        model_settings=settings,
+        toolsets=[tools],
+        output_type=[str, DeferredToolRequests],
+    )
 
 
-def _finish(result, seen):
-    """What the app reads once the run is over: the id the provider gave, and the usage."""
+def _finish(result, seen, output=None):
+    """What the app reads once the run is over: the tools called, the id the provider gave, and
+    the usage."""
+    from pydantic_ai import DeferredToolRequests
+
+    if isinstance(output, DeferredToolRequests):
+        seen.text += "".join(call.tool_name for call in output.calls)
     seen.response_id = result.response.provider_response_id
     seen.usage = _usage(result.usage)
 
@@ -59,8 +83,8 @@ def run(sc, base_url, seen):
     agent = _agent(sc, base_url)
     if not sc.stream:
         result = agent.run_sync(QUESTION)
-        seen.text = result.output
-        _finish(result, seen)
+        seen.text = result.output if isinstance(result.output, str) else ""
+        _finish(result, seen, result.output)
         return
     # A `with` block, as the documentation of `run_stream_sync` says, so the run is closed here.
     with agent.run_stream_sync(QUESTION) as result:
@@ -69,15 +93,15 @@ def run(sc, base_url, seen):
             seen.text += delta
             if _done(sc, seen):
                 return
-        _finish(result, seen)
+        _finish(result, seen, result.get_output() if sc.tools else None)
 
 
 async def _run_async(sc, base_url, seen):
     agent = _agent(sc, base_url)
     if not sc.stream:
         result = await agent.run(QUESTION)
-        seen.text = result.output
-        _finish(result, seen)
+        seen.text = result.output if isinstance(result.output, str) else ""
+        _finish(result, seen, result.output)
         return
     async with agent.run_stream(QUESTION) as result:
         async for delta in result.stream_text(delta=True, debounce_by=None):
@@ -85,4 +109,4 @@ async def _run_async(sc, base_url, seen):
             seen.text += delta
             if _done(sc, seen):
                 return
-        _finish(result, seen)
+        _finish(result, seen, await result.get_output() if sc.tools else None)
