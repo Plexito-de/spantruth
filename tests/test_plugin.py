@@ -62,8 +62,8 @@ def test_every_field_the_skill_names_is_in_the_doctor_json(monkeypatch):
 
     monkeypatch.setattr(report, "known_issues", lambda: [FIXED, REPORTED])
     summary = doctor.summarize(result_doc())
-    uncovered = doctor.uncovered({"litellm": "1.0"})
-    assert uncovered, "the uncovered table has no litellm entry"
+    uncovered = doctor.uncovered({"crewai": "1.0"})
+    assert uncovered, "the uncovered table has no crewai entry"
     document = {"source": "", "results": "", "exit_code": 1, "subjects": summary}
     printed = set(_keys({**document, "uncovered": uncovered}))
     assert "subjects[].classes[].upstream_issues[].status" in printed
