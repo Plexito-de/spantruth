@@ -7,8 +7,8 @@ import { pathToFileURL } from "node:url";
 import { trace } from "@opentelemetry/api";
 import { BasicTracerProvider, SimpleSpanProcessor } from "@opentelemetry/sdk-trace-base";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-proto";
-import { Resource } from "@opentelemetry/resources";
-import { SEMRESATTRS_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
+import { resourceFromAttributes } from "@opentelemetry/resources";
+import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
 
 import { Seen } from "./seen.mjs";
 import { run } from "./calls.mjs";
@@ -48,12 +48,10 @@ function writeJson(file, data) {
 }
 
 function startWatchdog(outFile, scenarioId) {
-  const timer = setTimeout(() => {
+  return setTimeout(() => {
     writeJson(outFile, { scenario: scenarioId, hang: true });
     process.exit(3);
   }, HANG_MS);
-  timer.unref();
-  return timer;
 }
 
 export async function observe(plan, mockUrl) {
@@ -94,15 +92,14 @@ async function runInstrumented(scenarioId, mockUrl, otlpUrl, subjectDir, outFile
   const plan = resolvePlan(scenarioId, planArg, registry);
   const { spans, processor } = installProbe();
   const provider = new BasicTracerProvider({
-    resource: new Resource({ [SEMRESATTRS_SERVICE_NAME]: "spantruth" }),
+    resource: resourceFromAttributes({ [ATTR_SERVICE_NAME]: "spantruth" }),
+    spanProcessors: [
+      processor,
+      new SimpleSpanProcessor(
+        new OTLPTraceExporter({ url: `${otlpUrl.replace(/\/$/, "")}/v1/traces` })
+      ),
+    ],
   });
-  provider.addSpanProcessor(processor);
-  provider.addSpanProcessor(
-    new SimpleSpanProcessor(
-      new OTLPTraceExporter({ url: `${otlpUrl.replace(/\/$/, "")}/v1/traces` })
-    )
-  );
-  provider.register();
 
   const result = { scenario: scenarioId, hang: false };
   let extra = [];
@@ -122,6 +119,8 @@ async function runInstrumented(scenarioId, mockUrl, otlpUrl, subjectDir, outFile
     writeJson(outFile, result);
     return 2;
   }
+
+  trace.setGlobalTracerProvider(provider);
 
   const timer = startWatchdog(outFile, scenarioId);
   const tracer = trace.getTracer("spantruth.driver");

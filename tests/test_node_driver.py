@@ -5,16 +5,39 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
+from typing import Any
 
 import pytest
 
-from spantruth import scenarios
+from spantruth import driver, scenarios
 from spantruth.mockserver import MockServer
 from spantruth.receiver import Receiver
 
 NODE_AVAILABLE = shutil.which("node") is not None
 NODE_MODULES = Path("drivers/node/node_modules").is_dir()
 SKIP_NODE = not (NODE_AVAILABLE and NODE_MODULES)
+
+# Scenarios where Node.js / undici / JS SDKs raise a different exception class than Python / httpx.
+EXPECTED_EXCEPTION_DIFFS: dict[str, tuple[str, str]] = {
+    "openai/stream-dropped": ("openai.APIConnectionError", "openai.TypeError"),
+    "anthropic/stream-error-event": ("anthropic.APIStatusError", "anthropic.APIError"),
+    "anthropic/stream-dropped": ("httpx2.RemoteProtocolError", "anthropic.TypeError"),
+    "openai/async-stream-dropped": ("openai.APIConnectionError", "openai.TypeError"),
+    "anthropic/async-stream-error-event": ("anthropic.APIStatusError", "anthropic.APIError"),
+    "anthropic/async-stream-dropped": ("httpx2.RemoteProtocolError", "anthropic.TypeError"),
+    "openai/responses-stream-missing-finish-abort": (
+        "openai.APIConnectionError",
+        "openai.TypeError",
+    ),
+}
+
+
+def _strip_nulls(obj: Any) -> Any:
+    if isinstance(obj, dict):
+        return {k: _strip_nulls(v) for k, v in obj.items() if v is not None}
+    if isinstance(obj, list):
+        return [_strip_nulls(v) for v in obj]
+    return obj
 
 
 @pytest.fixture
@@ -45,26 +68,17 @@ def test_scenarios_json_matches_registered_scenarios():
 
 
 @pytest.mark.skipif(SKIP_NODE, reason="node or node_modules not available")
-@pytest.mark.parametrize(
-    "sid",
-    [
-        "openai/basic",
-        "openai/stream",
-        "anthropic/basic",
-        "anthropic/stream",
-    ],
-)
-def test_node_driver_baseline_parity(sid, mock):
-    sc = scenarios.get(sid)
-    with tempfile.NamedTemporaryFile(suffix=".json") as tmp:
+def test_node_driver_baseline_parity():
+    all_ids = list(scenarios.SCENARIOS.keys())
+    with MockServer() as node_mock, tempfile.NamedTemporaryFile(suffix=".json") as tmp:
         proc = subprocess.run(
             [
                 "node",
                 "drivers/node/driver.mjs",
                 "baseline",
-                sid,
+                *all_ids,
                 "--mock",
-                mock.url,
+                node_mock.url,
                 "--out",
                 tmp.name,
             ],
@@ -72,19 +86,23 @@ def test_node_driver_baseline_parity(sid, mock):
             text=True,
         )
         assert proc.returncode == 0, f"Node baseline failed: {proc.stderr}"
-        res = json.loads(Path(tmp.name).read_text())
+        node_results = json.loads(Path(tmp.name).read_text())
 
-    assert sid in res
-    obs = res[sid]
-    assert obs["scenario"] == sid
-    assert obs["exception"] is None
-    seen = obs["seen"]
-    assert seen["text"] == "The capital of France is Paris."
-    if sc.stream:
-        assert seen["events"] > 0
-    else:
-        assert seen["events"] == 0
-    assert seen["response_id"] is not None
+    with MockServer() as py_mock:
+        for sid in all_ids:
+            py_obs = driver.observe(sid, py_mock.url)
+            node_obs = node_results[sid]
+
+            assert node_obs["scenario"] == sid
+            assert _strip_nulls(node_obs["seen"]) == _strip_nulls(py_obs["seen"]), (
+                f"{sid}: seen mismatch"
+            )
+            if sid in EXPECTED_EXCEPTION_DIFFS:
+                assert (py_obs["exception"], node_obs["exception"]) == EXPECTED_EXCEPTION_DIFFS[
+                    sid
+                ], f"{sid}: unexpected exception pair"
+            else:
+                assert node_obs["exception"] == py_obs["exception"], f"{sid}: exception mismatch"
 
 
 @pytest.mark.skipif(SKIP_NODE, reason="node or node_modules not available")
