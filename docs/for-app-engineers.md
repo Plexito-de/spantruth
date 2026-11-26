@@ -26,15 +26,17 @@ uvx spantruth doctor
 
 ```text
 OpenLLMetry  (anthropic 2.4.0, openai 3.42.1, opentelemetry-instrumentation-anthropic 0.62.4, ...)
-  ST01 Ghost span: 5 of 36 scenarios
+  ST01 Ghost span: 5 of 45 scenarios
     The app made the call, and no finished span ever reaches a backend.
     Cost figure for one call: -100%, at list price
     For example, anthropic/stream-early-exit: never ended: anthropic.chat
     Tracked at https://github.com/traceloop/openllmetry/issues/4536
-  ST02 Double span: 11 of 36 scenarios
+    Tracked at https://github.com/traceloop/openllmetry/issues/4643
+  ST02 Double span: 14 of 45 scenarios
     One call reports its token usage on two spans.
     Cost figure for one call: +100% in a backend that sums across spans, at list price
     Today: Let one side report the call: set ANTHROPIC_OPEN_TELEMETRY=false, or pass open_telemetry=False to the client.
+  ...
 ```
 
 `doctor` reads `uv.lock`, `poetry.lock`, `pdm.lock`, `Pipfile.lock`, `requirements*.txt`, `.venv` or

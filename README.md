@@ -13,15 +13,17 @@ uvx spantruth doctor
 
 ```text
 OpenLLMetry  (anthropic 2.4.0, openai 3.42.1, opentelemetry-instrumentation-anthropic 0.62.4, ...)
-  ST01 Ghost span: 5 of 36 scenarios
+  ST01 Ghost span: 5 of 45 scenarios
     The app made the call, and no finished span ever reaches a backend.
     Cost figure for one call: -100%, at list price
     For example, anthropic/stream-early-exit: never ended: anthropic.chat
     Tracked at https://github.com/traceloop/openllmetry/issues/4536
-  ST02 Double span: 11 of 36 scenarios
+    Tracked at https://github.com/traceloop/openllmetry/issues/4643
+  ST02 Double span: 14 of 45 scenarios
     One call reports its token usage on two spans.
     Cost figure for one call: +100% in a backend that sums across spans, at list price
     Today: Let one side report the call: set ANTHROPIC_OPEN_TELEMETRY=false, or pass open_telemetry=False to the client.
+  ...
 ```
 
 [![CI](https://github.com/Plexito-de/spantruth/actions/workflows/ci.yml/badge.svg)](https://github.com/Plexito-de/spantruth/actions/workflows/ci.yml)
@@ -47,7 +49,7 @@ releases shows when a fix lands.
 | OpenLLMetry | A sync Anthropic stream that fails mid-way (a dropped connection, an `overloaded_error` event) never ends its span. The async stream ends it with status `ERROR`, but without `error.type`. | [#4643](https://github.com/traceloop/openllmetry/issues/4643), by @chrikrah |
 | OpenLLMetry | An OpenAI stream that fails mid-way ends its span with status `OK`, sync and async. | [#4535](https://github.com/traceloop/openllmetry/pull/4535), by @feiiiiii5 |
 | OpenLLMetry | An Anthropic stream the app closes early never ends its span. | [#4536](https://github.com/traceloop/openllmetry/issues/4536), by @armanunix |
-| OpenInference | Every scenario passes. The early-exit spans that never ended are fixed in `openinference-instrumentation-openai` 0.1.66 and `openinference-instrumentation-anthropic` 3.1.0. | [#3790](https://github.com/Arize-ai/openinference/issues/3790), by @feiiiiii5; [#3930](https://github.com/Arize-ai/openinference/issues/3930), by @armanunix |
+| OpenInference | 44 of 45 scenarios pass. An async OpenAI stream read through `with_streaming_response` ends its span without the response model, the finish reason and the token counts. The early-exit spans that never ended are fixed in `openinference-instrumentation-openai` 0.1.66 and `openinference-instrumentation-anthropic` 3.1.0. | [#1134](https://github.com/Arize-ai/openinference/issues/1134), by @SiyuanQi; [#3790](https://github.com/Arize-ai/openinference/issues/3790), by @feiiiiii5; [#3930](https://github.com/Arize-ai/openinference/issues/3930), by @armanunix |
 | OpenTelemetry GenAI instrumentation | Every scenario passes. | |
 | Anthropic SDK, built-in tracing | The SDK's own spans get the tokens, the cache counts and the errors right, but record the stop reason as `anthropic.message.stop_reason`, so `gen_ai.response.finish_reasons` is missing. | [#2055](https://github.com/anthropics/anthropic-sdk-python/issues/2055), by @chrikrah |
 | A library on top of anthropic 1.14.0 or later | The SDK creates its own span for every call when a global tracer provider is registered, so a library on top reports each call on two spans, and a backend that sums token counts counts them twice. `otel-official-sdk-on` shows it: 14 of 19 cells. OpenLLMetry 0.62.4 does the same. OpenInference handles it since `openinference-instrumentation-anthropic` 3.1.1. spantruth turns the SDK's spans off for the other library subjects (`ANTHROPIC_OPEN_TELEMETRY=false`). | [opentelemetry-python-genai#971](https://github.com/open-telemetry/opentelemetry-python-genai/issues/971), by @lmolkova; [langfuse#18978](https://github.com/langfuse/langfuse/issues/18978), by @rvndbalaji; fixed in [openinference#4121](https://github.com/Arize-ai/openinference/pull/4121), by @PabloPardoGarcia |
