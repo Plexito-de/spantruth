@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Any
 
 
 @dataclass(frozen=True)
@@ -113,6 +114,23 @@ class Scenario:
     def key(self) -> str:
         """The path-safe form of the id, used in the mock server URL."""
         return self.id.replace("/", "--")
+
+    def call_plan(self) -> dict[str, Any]:
+        """A plain JSON dictionary describing the call the application makes."""
+        return {
+            "id": self.id,
+            "provider": self.provider,
+            "request_model": self.request_model,
+            "stream": self.stream,
+            "stream_usage": self.stream_usage,
+            "tools": self.tools,
+            "read_events": self.read_events,
+            "with_block": self.with_block,
+            "asynchronous": self.asynchronous,
+            "api": self.api,
+            "entrypoint": self.entrypoint,
+            "retries": self.retries,
+        }
 
     @property
     def expects_error(self) -> bool:

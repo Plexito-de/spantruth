@@ -8,6 +8,9 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- Node.js driver foundations for running scenarios against JavaScript instrumentation libraries (#5).
+- Scenario call-plan serialization protocol (`Scenario.call_plan()` and `all_call_plans()`).
+- Support for chunked transfer-encoding requests in `spantruth.receiver`.
 - Pydantic Logfire is a subject (`logfire==5.4.0`), instrumenting the OpenAI and Anthropic SDKs
   with no Logfire account.
 

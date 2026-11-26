@@ -13,3 +13,5 @@ results/*
 !results/2026-11-06-double-spans/
 !results/2026-11-24-dropped-streams/
 .playwright-mcp/
+node_modules/
+.DS_Store
