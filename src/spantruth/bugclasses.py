@@ -174,6 +174,114 @@ CLASSES = (
 
 BY_ID = {c.id: c for c in CLASSES}
 
+
+@dataclass(frozen=True)
+class Page:
+    """The text of a class's own page, for a person who searched for what they saw."""
+
+    symptom: str  # The page title, in the words a user would search for.
+    cause: str
+    fix: str
+    article: str = ""  # A longer write-up on the site, as a path from the site's root.
+
+
+PAGES = {
+    "ST01": Page(
+        "LLM span missing after the stream closes early",
+        "The library ends its span when the stream sends its last chunk. When the app stops "
+        "reading before that, with a break, a close or an exception, or when the connection "
+        "fails mid-way, the code that ends the span does not run. A span that never ends is "
+        "never exported, so the backend gets nothing for the call.",
+        "Upgrade to a release that ends the span when the stream is closed, fails or is left "
+        "unread. Until your library has one, read each stream to its end where you can.",
+    ),
+    "ST02": Page(
+        "Claude calls show twice their cost in the dashboard",
+        "Two spans carry the token usage of one call. Since anthropic 1.14.0, the Anthropic "
+        "Python SDK writes its own span for each call when a tracer provider is registered, and "
+        "an instrumentation library on top writes a second one. A backend that sums usage "
+        "across spans counts the call twice. Your invoice does not change.",
+        "Let one span per call report usage. Set ANTHROPIC_OPEN_TELEMETRY=false before the "
+        "client is created, or pass open_telemetry=False to the client. "
+        "openinference-instrumentation-anthropic 3.1.1 and later turn the SDK's span off for "
+        "the calls they trace.",
+        "double-spans.html",
+    ),
+    "ST03": Page(
+        "Cached tokens missing from LLM token counts",
+        "Anthropic reports cache reads and cache writes apart from input_tokens, and the "
+        "semantic conventions say that the input count includes them. A library that copies "
+        "input_tokens as it is leaves the cached part out. Other libraries drop the cache "
+        "counts, or report them wrong.",
+        "Upgrade to a release that passes the cache scenarios. Until then, do not trust the "
+        "cost of cached calls in your backend: compare it with the provider's usage data.",
+    ),
+    "ST04": Page(
+        "Streamed output tokens too high in LLM traces",
+        "The span reports more tokens than the provider sent. In an Anthropic stream, "
+        "message_start carries a placeholder output count and message_delta carries the final "
+        "count, so a library that adds the two reports too many. A library that estimates "
+        "tokens from the text, when the stream carries no usage, invents a count.",
+        "Upgrade to a release that passes the stream scenarios. For OpenAI streams, pass "
+        'stream_options={"include_usage": True}, so the provider sends a real count.',
+    ),
+    "ST05": Page(
+        "LLM token usage missing or too low in traces",
+        "The span reports fewer tokens than the provider sent, or none. The usual cause is a "
+        "stream: the provider sends usage in the last chunk or in its own event, and the "
+        "library reads it from somewhere else, or not at all.",
+        "Upgrade to a release that passes the scenarios that show it. For OpenAI streams, pass "
+        'stream_options={"include_usage": True}. Without it, the provider sends no usage.',
+    ),
+    "ST06": Page(
+        "Reasoning tokens missing from LLM spans",
+        "The provider reports how many output tokens went to reasoning, and the library does "
+        "not copy that count to the span. The total output count can still be right: only "
+        "the split is gone.",
+        "Upgrade to a release that passes the reasoning scenarios. Until then, read the "
+        "reasoning count from the provider's response in your app, where you need it.",
+    ),
+    "ST07": Page(
+        "Failed LLM stream recorded as a success",
+        "The call failed, with an error response, a dropped connection or an error event in "
+        "the stream, and the library ended the span with status OK or UNSET, or without "
+        "error.type. Often the span ends in a cleanup step before the error is recorded.",
+        "Upgrade to a release that passes the error scenarios. Until then, your error rate "
+        "for streamed calls is too low: count failures in your own code, where the exception "
+        "reaches you.",
+    ),
+    "ST08": Page(
+        "LLM call marked as an error after a successful retry",
+        "The SDK got a 429 or another error that it retries, and the retry succeeded. The "
+        "library records the first failure on the span of a call that succeeded in the end.",
+        "Upgrade to a release that passes the retry scenarios. Until then, an alert on span "
+        "errors also fires for retries that the user never saw.",
+    ),
+    "ST09": Page(
+        "LLM finish reason missing from the span",
+        "The provider says why the answer stopped, such as the end of the answer, the token "
+        "limit or a tool call, and the span does not carry it, or carries another value. "
+        "Streams are the usual case, because the reason arrives in the last chunk.",
+        "Upgrade to a release that passes the scenarios that show it. Until then, check the "
+        "finish reason in your app, where the SDK returns it, before you trust that an "
+        "answer is complete.",
+    ),
+    "ST10": Page(
+        "LLM tracing changes what the app receives",
+        "The library wraps the SDK's response, stream or exception, and the wrapper is not "
+        "faithful: the app gets other chunks or another exception, or the call hangs.",
+        "Upgrade to a release that passes the scenarios that show it. If your app behaves "
+        "differently with tracing on, turn the library off for that path and report it "
+        "upstream with the command that reproduces it.",
+    ),
+}
+
+
+def slug(bug: BugClass) -> str:
+    """The class page's file name stem: `ghost-span` for Ghost span. The name never changes."""
+    return bug.name.lower().replace(" ", "-")
+
+
 # The classes whose findings move a cost figure. The others leave the token counts alone, and a
 # figure from their cell would be another class's.
 COST_CLASSES = frozenset({"ST01", "ST02", "ST03", "ST04", "ST05"})

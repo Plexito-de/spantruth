@@ -59,6 +59,8 @@ section{border-top:1px solid var(--line);padding:18px 0 6px;scroll-margin-top:12
 section:target{outline:2px solid var(--link);outline-offset:6px;border-radius:4px}
 section h2{margin:0 0 6px}.id{color:var(--muted);font-weight:400;font-size:14px;margin-right:8px}
 .num{white-space:nowrap;text-align:right}
+pre{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px;
+overflow-x:auto}pre code{font-size:14px}.libs li{margin:10px 0;overflow-wrap:anywhere}
 """
 
 
@@ -349,24 +351,21 @@ def render_bugs(doc: dict, findings_page: str = "index.html") -> str:
                 for i in c.instances
             )
             facts.append(f"<dt>In public</dt><dd>{links}</dd>")
+        page = bugclasses.PAGES[c.id]
         sections.append(
             f'<section id="{c.id}"><h2><span class="id">{c.id}</span>{escape(c.name)}</h2>'
             f"<p>{escape(c.summary)}</p><p>{escape(c.dashboard)}</p><dl>{''.join(facts)}</dl>"
-            "</section>"
+            f'<p><a href="bugs/{bugclasses.slug(c)}.html">{escape(page.symptom)}</a>: what '
+            "causes it, which versions show it, and how to fix it</p></section>"
         )
     meta = f"spantruth {escape(doc['spantruth'])} · {escape(doc['created'])}"
-    return f"""<!doctype html>
-<html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>LLM telemetry bugs</title>
-{ICON}
-<meta property="og:title" content="The ten ways LLM telemetry goes wrong">
-{SOCIAL}
-<meta name="description" content="Ten ways LLM telemetry goes wrong: ghost spans, double spans,
-phantom tokens and more, each measured against what the provider sent.">
-<style>{CSS}</style></head>
-<body><main>
-<h1>The ten ways LLM telemetry goes wrong</h1>
+    head = _head(
+        "The ten ways LLM telemetry goes wrong",
+        "Ten ways LLM telemetry goes wrong: ghost spans, double spans, phantom tokens and more, "
+        "each measured against what the provider sent.",
+        "bugs.html",
+    )
+    return f"""{head}<h1>The ten ways LLM telemetry goes wrong</h1>
 <p>Your cost dashboard, your token budget and your error rate all read the numbers that an
 instrumentation library writes on a span. When one of those numbers is wrong, nothing fails. The
 dashboard is just wrong, with full confidence. These are the classes of bug that spantruth measures,
@@ -397,21 +396,36 @@ def _day(value: str) -> str:
     return f"{d:%B} {d.day}, {d.year}"
 
 
+def _releases(issue: dict[str, Any]) -> str:
+    """`pkg 3.1.0` for each `pkg>=3.1.0` in `fixed_in`."""
+    return ", ".join(re.sub(r"\s*(>=|==|~=|>)\s*", " ", s) for s in issue["fixed_in"])
+
+
+def _fix_anchor(issue: dict[str, Any]) -> str:
+    return re.sub(r"[^A-Za-z0-9-]", "-", _thread(issue["url"]))
+
+
+def _run_day(created: Any) -> str:
+    """`November 26, 2026` for a run's timestamp, or the value as it is when it is not one."""
+    try:
+        return _day(str(created)[:10])
+    except ValueError:
+        return str(created)
+
+
 def _fix(issue: dict[str, Any]) -> str:
     """One fix: the release that has it, the bug it removes, who reported it and who fixed it."""
-    releases = ", ".join(re.sub(r"\s*(>=|==|~=|>)\s*", " ", s) for s in issue["fixed_in"])
     days = (date.fromisoformat(issue["fixed_on"]) - date.fromisoformat(issue["reported_on"])).days
     bug = bugclasses.classify({"id": issue["check"]})
     chip = (
-        f'<p><a href="bugs.html#{bug.id}">{bug.id} {escape(bug.name)}</a>: '
+        f'<p><a href="bugs/{bugclasses.slug(bug)}.html">{bug.id} {escape(bug.name)}</a>: '
         f"{escape(bug.summary)}</p>"
         if bug
         else ""
     )
     upgrade = " ".join(f'"{s}"' for s in issue["fixed_in"])
-    anchor = re.sub(r"[^A-Za-z0-9-]", "-", _thread(issue["url"]))
     return (
-        f'<section id="{escape(anchor)}"><h2>{escape(releases)}</h2>{chip}<dl>'
+        f'<section id="{escape(_fix_anchor(issue))}"><h2>{escape(_releases(issue))}</h2>{chip}<dl>'
         f"<dt>Reported</dt><dd>{_link(escape(_thread(issue['url'])), issue['url'])} by "
         f"{_person(issue['reported_by'])}, {_day(issue['reported_on'])}</dd>"
         f"<dt>Fixed</dt><dd>{_link(escape(_thread(issue['fix_url'])), issue['fix_url'])} by "
@@ -449,6 +463,139 @@ run <code>uvx spantruth doctor</code> in your project.</p>
 the issue, the fix and the release.</p>
 </main></body></html>
 """
+
+
+def class_description(bug: bugclasses.BugClass) -> str:
+    """The search snippet of a class page: what goes wrong, then what the page answers."""
+    return f"{bug.summary} Which library versions show it, how to check yours, how to fix it."
+
+
+# Packages that every subject runs. A class page names them only as the SDK a finding used.
+_SDKS = ("anthropic", "openai")
+_HARNESS = ("opentelemetry-sdk", "opentelemetry-exporter-otlp-proto-http")
+
+
+def _library_versions(subject: dict, providers: set[str]) -> str:
+    """`pkg 1.0, with anthropic 2.4.0`: the library's own packages, then the SDKs it wrapped."""
+    versions = subject.get("versions", {})
+    own = [f"{k} {v}" for k, v in sorted(versions.items()) if k not in _SDKS + _HARNESS]
+    sdks = [f"{k} {versions[k]}" for k in _SDKS if k in providers and k in versions]
+    if own and sdks:
+        return f"{', '.join(own)}, with {', '.join(sdks)}"
+    return ", ".join(own or sdks)
+
+
+def _shown_by(doc: dict, found: list[dict[str, Any]]) -> str:
+    """Each library that shows the class, in name order, with its versions and its findings."""
+    by_subject: dict[str, dict[str, str]] = {}
+    for f in found:
+        by_subject.setdefault(f["subject"], {}).setdefault(f["scenario"], f["anchor"])
+    items = []
+    for name in sorted(by_subject):
+        cells = by_subject[name]
+        providers = {sid.split("/")[0] for sid in cells}
+        versions = _library_versions(doc["subjects"][name], providers)
+        links = ", ".join(
+            f'<a href="../index.html#{escape(anchor)}"><code>{escape(sid)}</code></a>'
+            for sid, anchor in cells.items()
+        )
+        count = f"{len(cells)} scenario{'' if len(cells) == 1 else 's'}"
+        items.append(
+            f"<li><strong>{escape(name)}</strong> "
+            f'<span class="muted">{escape(versions)}</span><br>{count}: {links}</li>'
+        )
+    return f'<ul class="libs">{"".join(items)}</ul>'
+
+
+def _class_fixes(bug: bugclasses.BugClass, known: list[dict[str, Any]]) -> str:
+    fixes = [
+        k
+        for k in known
+        if k["status"] == "fixed-upstream"
+        and (c := bugclasses.classify({"id": k["check"]}))
+        and c.id == bug.id
+    ]
+    items = "".join(
+        f'<li><a href="../fixes.html#{escape(_fix_anchor(k))}">{escape(_releases(k))}</a>, '
+        f"fixed by {_person(k['fixed_by'])}</li>"
+        for k in sorted(fixes, key=lambda k: k["fixed_on"], reverse=True)
+    )
+    return f"<p>Fixed upstream in these releases:</p><ul>{items}</ul>" if items else ""
+
+
+def render_class(doc: dict, bug: bugclasses.BugClass, known: list[dict[str, Any]]) -> str:
+    """One bug class, titled by what a user sees, with the libraries that show it in this run."""
+    page = bugclasses.PAGES[bug.id]
+    every = [f for f in findings(doc, []) if doc["subjects"][f["subject"]]["kind"] != "control"]
+    found = _seen(every)[bug.id]
+    mode = "latest releases" if doc.get("mode") == "latest" else "pinned versions"
+    run = (
+        f"In the run of {escape(_run_day(doc['created']))}, at the {mode}, with spantruth "
+        f"{escape(doc['spantruth'])}"
+    )
+    if found:
+        shown = (
+            f"<p>{run}. Each scenario links to its finding, with the exported spans and the "
+            'command that reproduces it. The <a href="../latest.html">latest releases</a> can '
+            f"differ.</p>{_shown_by(doc, found)}"
+        )
+    else:
+        shown = (
+            f"<p>{run}, no library shows it. The "
+            '<a href="../latest.html">latest releases</a> can differ.</p>'
+        )
+    reported = "".join(
+        f"<li>{_link(escape(i.label), i.url)}, reported by {escape(i.credit)}</li>"
+        for i in bug.instances
+    )
+    article = (
+        f'<p>The long version, with measurements: <a href="../{escape(page.article)}">'
+        f"the write-up</a>.</p>"
+        if page.article
+        else ""
+    )
+    head = _head(page.symptom, class_description(bug), f"bugs/{bugclasses.slug(bug)}.html")
+    name = f"{bug.id} {escape(bug.name)}"
+    return f"""{head}<p class="muted"><a href="../bugs.html#{bug.id}">{name}</a>, one of
+<a href="../bugs.html">ten ways LLM telemetry goes wrong</a></p>
+<h1>{escape(page.symptom)}</h1>
+<p>{escape(bug.summary)} {escape(bug.dashboard)}</p>
+<h2>What causes it</h2>
+<p>{escape(page.cause)}</p>
+<h2>Which versions show it</h2>
+{shown}
+<h2>How to check your project</h2>
+<p>Run this in your project's directory:</p>
+<pre><code>uvx spantruth doctor</code></pre>
+<p>It reads your lock file, or your requirements if you have no lock file, and tests the
+libraries it recognizes, at your versions, against a local fake provider. It needs no API key and
+does not run your code. A finding of this kind is named <strong>{name}</strong>.</p>
+<h2>How to fix it</h2>
+<p>{escape(page.fix)}</p>
+{_class_fixes(bug, known)}{article}
+{f"<p>Reported in public:</p><ul>{reported}</ul>" if reported else ""}
+<p class="muted"><a href="../index.html">the report</a> · <a href="../fixes.html">fixed
+upstream</a> · <a href="https://github.com/Plexito-de/spantruth">source</a></p>
+</main></body></html>
+"""
+
+
+def sitemap() -> str:
+    """Every page of the site, by its full address. The site lives under one path."""
+    paths = [
+        "index.html",
+        "latest.html",
+        "bugs.html",
+        "fixes.html",
+        "changes.html",
+        "double-spans.html",
+        *(f"bugs/{bugclasses.slug(c)}.html" for c in bugclasses.CLASSES),
+    ]
+    urls = "".join(f"<url><loc>{escape(SITE + p)}</loc></url>\n" for p in paths)
+    return (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        f'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{urls}</urlset>\n'
+    )
 
 
 def render(doc: dict) -> str:
