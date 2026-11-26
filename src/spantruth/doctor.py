@@ -11,6 +11,7 @@ import json
 import os
 import re
 import shlex
+import shutil
 import sys
 import tomllib
 from collections.abc import Mapping
@@ -24,10 +25,15 @@ SELF_TRACING = "ANTHROPIC_OPEN_TELEMETRY"
 EXPORTER = "opentelemetry-exporter-otlp-proto-http"
 GUIDE = "https://github.com/Plexito-de/spantruth/blob/main/docs/test-your-wrapper.md"
 UNCOVERED = Path(__file__).with_name("uncovered.toml")
+UV_INSTALL = "https://docs.astral.sh/uv/getting-started/installation/"
 
 
 class DoctorError(ValueError):
     """Nothing to check, or a dependency file that cannot be read. Never a clean result."""
+
+
+class CannotRun(RuntimeError):
+    """A tool that doctor needs is missing, so nothing was graded (exit 3)."""
 
 
 @dataclass(frozen=True)
@@ -115,15 +121,75 @@ def _pyproject(path: Path) -> dict[str, str | None]:
     return dict(p for p in parsed if p)
 
 
+LOCKS = {
+    "uv.lock": _toml_lock,
+    "poetry.lock": _toml_lock,
+    "pdm.lock": _toml_lock,
+    "Pipfile.lock": _pipfile_lock,
+}
+# Directories whose lock files belong to something other than a subproject of this one.
+NOT_SUBPROJECTS = {"node_modules", "site-packages", "__pypackages__"}
+
+
+def _read_file(path: Path) -> Found:
+    """The versions in one dependency file that the caller named."""
+    if path.name in LOCKS:
+        return Found(path.name, LOCKS[path.name](path))
+    if path.name == "pyproject.toml":
+        return Found(path.name, _pyproject(path))
+    if path.suffix == ".txt":
+        return Found(path.name, _requirements([path]))
+    raise DoctorError(
+        f"cannot read versions from {path.name}: give a lock file, a requirements file, a "
+        "pyproject.toml or a project directory"
+    )
+
+
+def subprojects(directory: Path, depth: int = 3) -> list[tuple[Path, str]]:
+    """The directories below this one with a lock file, and its name. A monorepo has several.
+
+    A hidden directory, a virtual environment or installed packages are not a subproject, and
+    the search stops at the first lock file on each path.
+    """
+    out: list[tuple[Path, str]] = []
+    try:
+        children = sorted(p for p in directory.iterdir() if p.is_dir() and not p.is_symlink())
+    except OSError:
+        return out
+    for child in children:
+        if child.name.startswith(".") or child.name in NOT_SUBPROJECTS:
+            continue
+        if (child / "pyvenv.cfg").is_file():
+            continue
+        lock = next((n for n in LOCKS if (child / n).is_file()), None)
+        if lock:
+            out.append((child, lock))
+        elif depth > 1:
+            out += subprojects(child, depth - 1)
+    return out
+
+
+def _monorepo_error(directory: Path, found: list[tuple[Path, str]]) -> DoctorError:
+    lines = [f"  spantruth doctor {shlex.quote(str(path))}  ({lock})" for path, lock in found]
+    return DoctorError(
+        f"no lock file in {directory.resolve()}, but {len(found)} subprojects have one. "
+        "Run doctor in each:\n" + "\n".join(lines)
+    )
+
+
 def read_versions(directory: Path) -> Found:
-    """The project's versions, from the most exact source it has: a lock file first."""
+    """The project's versions, from the most exact source it has: a lock file first.
+
+    `directory` can also be one dependency file. A directory with no lock file, no requirements
+    file and no .venv, whose subdirectories have lock files, is a monorepo: its pyproject.toml
+    pins nothing, so doctor names the subprojects instead of grading nothing.
+    """
     directory = Path(directory)
-    for name, reader in (
-        ("uv.lock", _toml_lock),
-        ("poetry.lock", _toml_lock),
-        ("pdm.lock", _toml_lock),
-        ("Pipfile.lock", _pipfile_lock),
-    ):
+    if directory.is_file():
+        return _read_file(directory)
+    if not directory.is_dir():
+        raise DoctorError(f"no such directory: {directory}")
+    for name, reader in LOCKS.items():
         if (directory / name).is_file():
             return Found(name, reader(directory / name))
     wanted = sorted(directory.glob("requirements*.txt"))
@@ -134,6 +200,8 @@ def read_versions(directory: Path) -> Found:
     packages = sorted(directory.glob(".venv/lib/python*/site-packages"))
     if packages:
         return Found(".venv", _venv(packages))
+    if found := subprojects(directory):
+        raise _monorepo_error(directory, found)
     if (directory / "pyproject.toml").is_file():
         return Found("pyproject.toml", _pyproject(directory / "pyproject.toml"))
     raise DoctorError(
@@ -378,6 +446,7 @@ def summarize(doc: dict, source: str | None = None) -> list[dict[str, Any]]:
                 }
             )
         classes.sort(key=_cost_order)
+        stuck = [f for f in found if f["verdict"] == "inconclusive"]
         out.append(
             {
                 "name": name,
@@ -387,6 +456,8 @@ def summarize(doc: dict, source: str | None = None) -> list[dict[str, Any]]:
                 "failing": len({f["scenario"] for f in found}),
                 "classes": classes,
                 "other": sorted({f["id"] for f in found if f["bug_class"] is None}),
+                "inconclusive": len({f["scenario"] for f in stuck}),
+                "reason": _last_line(stuck[0]["detail"]) if stuck else None,
                 "error": result.get("error"),
             }
         )
@@ -410,6 +481,13 @@ def render_text(found: Found, summary: list[dict[str, Any]], results: str) -> st
             )
         if s["error"]:
             lines.append(f"  could not run: {_line(s['error'])[:300]}")
+            if s["error"].startswith("environment build failed"):
+                python = subjects.base()["python"]
+                lines.append(
+                    f"    spantruth installs each library in Python {python}, with your pins. "
+                    "uv printed the reason above: a pin that has no build for that Python, or "
+                    "two pins that do not fit together."
+                )
         elif not s["failing"]:
             lines.append(f"  No problem in {s['scenarios']} scenarios.")
         for c in s["classes"]:
@@ -431,6 +509,16 @@ def render_text(found: Found, summary: list[dict[str, Any]], results: str) -> st
             lines.append(f"    More: {report.BUGS_URL}#{c['id']}")
         if s["other"]:
             lines.append(f"  Other failing checks: {_line(', '.join(s['other']))}")
+        if s["inconclusive"]:
+            lines.append(
+                f"  Could not run {s['inconclusive']} of {s['scenarios']} scenarios: "
+                f"{_line(s['reason'])[:200]}"
+            )
+            if added := _added(s, found):
+                lines.append(
+                    "    Your project pins no version of these, so they are at spantruth's own "
+                    f"versions: {_line(added)}. One of them may need newer pins than yours."
+                )
         lines.append("")
     if extra := _uncovered_lines(found.versions):
         lines += [*extra, ""]
@@ -456,6 +544,25 @@ def _upstream_line(issue: dict[str, str]) -> str:
         parts = ["    Fixed upstream:", _line(issue["note"]), _line(issue["url"])]
         return " ".join(p for p in parts if p)
     return f"    Tracked at {_line(issue['url'])}"
+
+
+def _last_line(text: str | None) -> str:
+    """The last line of a traceback is the exception, which is what a reader needs."""
+    rows = [r for r in (text or "").splitlines() if r.strip()]
+    return rows[-1].strip() if rows else "no reason given"
+
+
+def _added(summary: dict[str, Any], found: Found) -> str:
+    """The packages a subject installed at spantruth's pin, because the project gave no version."""
+    applied = {
+        subjects.package_name(spec)
+        for spec in overrides([subjects.load(summary["name"])], found.versions)
+    }
+    return ", ".join(
+        f"{name} {version}"
+        for name, version in sorted(summary["versions"].items())
+        if subjects.package_name(name) not in applied
+    )
 
 
 def _unread(subject_name: str, found: Found) -> list[str]:
@@ -518,6 +625,11 @@ def run(
     for sid in ids:
         if sid not in scenarios.SCENARIOS:
             raise DoctorError(f"unknown scenario {sid}; run `spantruth list`")
+    if shutil.which("uv") is None:
+        raise CannotRun(
+            f"doctor needs uv to build an environment per library, and uv is not on PATH. "
+            f"Install it: {UV_INSTALL}"
+        )
     print(
         f"Read {found.source}. Running {', '.join(s.name for s in selected)}. The first run "
         "builds an environment per library, which takes about a minute.",

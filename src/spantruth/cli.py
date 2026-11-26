@@ -137,6 +137,9 @@ def _doctor(args: argparse.Namespace) -> int:
         )
     except doctor.DoctorError as exc:
         return _usage(exc)
+    except doctor.CannotRun as exc:
+        print(f"spantruth: {exc}", file=sys.stderr)
+        return 3
 
 
 def _watch(args: argparse.Namespace) -> int:
@@ -235,7 +238,12 @@ def parser() -> argparse.ArgumentParser:
         "application. Exit code: 0 no problem found, 1 a problem found, 2 nothing to check, 3 "
         "spantruth could not run something.",
     )
-    doc.add_argument("path", nargs="?", default=".", help="the project directory (default: .)")
+    doc.add_argument(
+        "path",
+        nargs="?",
+        default=".",
+        help="the project directory, or one dependency file (default: .)",
+    )
     doc.add_argument("--json", action="store_true", help="print the result as JSON")
     doc.add_argument("--scenario", action="append", help="scenario id, repeatable")
     doc.add_argument(
