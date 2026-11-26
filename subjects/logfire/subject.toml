@@ -1,7 +1,14 @@
 title = "Pydantic Logfire"
 homepage = "https://github.com/pydantic/logfire"
 providers = ["openai", "anthropic", "gemini"]
+notes = "The Gemini cells run google-genai 2.34.0, the newest 2.x release: opentelemetry-instrumentation-google-genai 1.3b0 declares google-genai < 3 and instruments nothing with 3.x (package.py). Its main branch allows < 4, unreleased on 2026-11-26."
 # instrument_google_genai() runs the OpenTelemetry instrumentor that the `google-genai` extra brings.
 # It is listed on its own, so `--latest` keeps it.
-packages = ["logfire==5.4.0", "opentelemetry-instrumentation-google-genai==1.3b0"]
+# That instrumentor 1.3b0 declares google-genai >= 1.32.0, < 3 and instruments nothing with a
+# newer SDK, so this subject runs the newest 2.x release.
+packages = [
+  "logfire==5.4.0",
+  "opentelemetry-instrumentation-google-genai==1.3b0",
+  "google-genai==2.34.0",
+]
 track = ["logfire"]

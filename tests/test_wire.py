@@ -54,9 +54,12 @@ def test_fixtures_parse_with_sdk_types(sc):
                 parsed.append(RESPONSES_EVENT.validate_python(json.loads(e.data)))
                 assert parsed[-1].type == e.event
         elif sc.provider == "gemini":
-            # extra="forbid" on the SDK's types: an undeclared field raises here.
+            # extra="forbid" on the SDK's types: an undeclared field raises here. The API sends
+            # `usageMetadata.serviceTier`, which the SDK's usage type lacks and its parser drops.
             for data in [r.body] if r.body is not None else [e.data for e in r.events or ()]:
-                parsed.append(google.genai.types.GenerateContentResponse.model_validate(data))
+                usage = {k: v for k, v in data["usageMetadata"].items() if k != "serviceTier"}
+                typed = data | {"usageMetadata": usage}
+                parsed.append(google.genai.types.GenerateContentResponse.model_validate(typed))
         elif sc.provider == "openai":
             if r.body is not None:
                 parsed.append(openai.types.chat.ChatCompletion.model_validate(r.body, strict=False))
@@ -146,7 +149,9 @@ def test_fixture_truth_values_are_distinct(sc):
         # The two parts of a cache write. A library can report one of them alone.
         values += [long_write, t.cache_write_tokens - long_write]
     assert len(values) == len(set(values)), f"{sc.id} repeats a token value: {values}"
-    if t.response_model is not None:
+    if t.response_model is not None and sc.provider != "gemini":
+        # Gemini is exempt: its API returns `modelVersion` equal to the requested model id, and an
+        # invented version would fail libraries that copy the request model, as the API allows.
         assert t.response_model != t.request_model
 
 
@@ -418,10 +423,31 @@ def test_gemini_prompt_tokens_already_include_the_cached_tokens(sid, tokens):
     assert (t.input_tokens, t.cache_read_tokens) == tokens
 
 
-def test_gemini_early_exit_knows_the_prompt_from_the_first_chunks_only():
-    t = scenarios.truth(scenarios.get("gemini/stream-early-exit"))
+def test_gemini_early_exit_grades_the_prompt_but_not_a_running_output_count():
+    sc = scenarios.get("gemini/stream-early-exit")
+    seen = sc.response.events[1].data["usageMetadata"]
+    assert (seen["promptTokenCount"], seen["candidatesTokenCount"]) == (1949, 239)
+    t = scenarios.truth(sc)
     assert (t.input_tokens, t.output_tokens, t.finish_reasons) == (1949, None, None)
     assert t.unread_counts == (359,)
+
+
+def test_a_gemini_stream_carries_running_usage_on_every_chunk():
+    # As recorded from the live API: the prompt on every chunk, candidates counted so far.
+    chunks = scenarios.get("gemini/stream-thinking").response.events
+    usage = [e.data["usageMetadata"] for e in chunks]
+    assert [u["promptTokenCount"] for u in usage] == [2083] * 3
+    assert [u["candidatesTokenCount"] for u in usage] == [105, 211, 317]
+    assert [u["thoughtsTokenCount"] for u in usage] == [1999] * 3
+    assert all(
+        u["totalTokenCount"] == u["promptTokenCount"] + u["candidatesTokenCount"] + 1999
+        for u in usage
+    )
+
+
+def test_a_gemini_response_names_the_requested_model():
+    t = scenarios.truth(scenarios.get("gemini/basic"))
+    assert t.response_model == t.request_model == "gemini-3.5-flash-lite"
 
 
 @pytest.mark.parametrize("sid", ["gemini/stream-dropped", "gemini/async-stream-dropped"])

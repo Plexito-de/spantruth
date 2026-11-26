@@ -168,14 +168,9 @@ def _gemini_usage(call: _Call, u: Any) -> None:
     """`promptTokenCount` holds the cached tokens, `candidatesTokenCount` leaves out thoughts."""
     if u is None or u.prompt_token_count is None:
         return
+    # Every stream chunk carries the counts so far, so each one replaces the last.
     thoughts = u.thoughts_token_count or 0
-    out = u.candidates_token_count
-    if out is None:
-        # A chunk before the last: the prompt side only. Output comes with the last chunk.
-        call.usage_seen = True
-        call.set("gen_ai.usage.input_tokens", u.prompt_token_count)
-        call.set("gen_ai.usage.cache_read.input_tokens", u.cached_content_token_count or None)
-        return
+    out = u.candidates_token_count or 0
     if "gemini-candidates-output" not in call.faults:
         out += thoughts
     cached = u.cached_content_token_count or 0

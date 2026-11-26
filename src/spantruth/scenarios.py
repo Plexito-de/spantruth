@@ -21,9 +21,9 @@ OPENAI_CACHE_MODEL = "gpt-5.6-luna"
 OPENAI_CACHE_SERVED = "gpt-5.6-luna-2026-10-14"
 ANTHROPIC_MODEL = "claude-sonnet-5-5"
 ANTHROPIC_SERVED = "claude-sonnet-5-5-20260915"
-# Model names are placeholders, like the others: Gemini reports the model version it served.
+# The Gemini API answers with `modelVersion` equal to the requested model id.
 GEMINI_MODEL = "gemini-3.5-flash-lite"
-GEMINI_SERVED = "gemini-3.5-flash-lite-001"
+GEMINI_SERVED = GEMINI_MODEL
 PARTS = ("The capital", " of France", " is Paris.")
 WEATHER = ("get_weather", {"city": "Paris"})
 TIME = ("get_time", {"zone": "Europe/Paris"})
