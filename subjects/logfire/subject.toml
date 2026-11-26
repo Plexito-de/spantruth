@@ -1,5 +1,7 @@
 title = "Pydantic Logfire"
 homepage = "https://github.com/pydantic/logfire"
-providers = ["openai", "anthropic"]
-packages = ["logfire==5.4.0"]
+providers = ["openai", "anthropic", "gemini"]
+# instrument_google_genai() runs the OpenTelemetry instrumentor that the `google-genai` extra brings.
+# It is listed on its own, so `--latest` keeps it.
+packages = ["logfire==5.4.0", "opentelemetry-instrumentation-google-genai==1.3b0"]
 track = ["logfire"]

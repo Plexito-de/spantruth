@@ -15,6 +15,13 @@
 "anthropic/stream-early-exit" = { "span.ended" = "lost" }
 "anthropic/stream-early-exit-with" = { "span.ended" = "lost" }
 "anthropic/stream-error-event" = { "error.status" = "wrong", "error.type" = "missing" }
+"gemini/async-stream-dropped" = { "error.status" = "wrong", "error.type" = "missing" }
+"gemini/async-stream-early-exit" = { "span.ended" = "lost" }
+"gemini/rate-limited" = { "error.status" = "wrong", "error.type" = "missing" }
+"gemini/stream-dropped" = { "error.status" = "wrong", "error.type" = "missing" }
+"gemini/stream-early-exit" = { "span.ended" = "lost" }
+"gemini/stream-thinking" = { "output_tokens" = "wrong" }
+"gemini/thinking" = { "output_tokens" = "wrong" }
 "openai/async-stream-dropped" = { "error.status" = "wrong", "error.type" = "missing" }
 "openai/async-stream-early-exit" = { "span.ended" = "lost" }
 "openai/rate-limited" = { "error.status" = "wrong", "error.type" = "missing" }

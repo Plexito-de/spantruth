@@ -3,6 +3,7 @@
 import json
 
 import anthropic.types
+import google.genai.types
 import openai.resources.chat.completions as oc
 import openai.types.chat
 import openai.types.responses
@@ -52,6 +53,10 @@ def test_fixtures_parse_with_sdk_types(sc):
             for e in r.events or ():
                 parsed.append(RESPONSES_EVENT.validate_python(json.loads(e.data)))
                 assert parsed[-1].type == e.event
+        elif sc.provider == "gemini":
+            # extra="forbid" on the SDK's types: an undeclared field raises here.
+            for data in [r.body] if r.body is not None else [e.data for e in r.events or ()]:
+                parsed.append(google.genai.types.GenerateContentResponse.model_validate(data))
         elif sc.provider == "openai":
             if r.body is not None:
                 parsed.append(openai.types.chat.ChatCompletion.model_validate(r.body, strict=False))
@@ -342,7 +347,12 @@ def _billed(response):
 
 @pytest.mark.parametrize("sc", ALL, ids=lambda s: s.id)
 def test_no_fixture_sends_a_field_the_cost_figure_does_not_price(sc):
-    holders = [h for r in sc.responses for h in _billed(r) if isinstance(h.get("usage"), dict)]
+    holders = [
+        h
+        for r in sc.responses
+        for h in _billed(r)
+        if isinstance(impact.usage_of(sc.provider, h), dict)
+    ]
     if scenarios.truth(sc).input_tokens is not None:
         assert holders, f"{sc.id} has token counts, but this test found no usage to read"
     for holder in holders:
@@ -380,3 +390,46 @@ def test_openai_prompt_tokens_include_cache_reads_and_writes(sid, tokens):
 
 def test_an_openai_fixture_without_cache_writes_has_none():
     assert scenarios.truth(scenarios.get("openai/cache-hit")).cache_write_tokens is None
+
+
+@pytest.mark.parametrize(
+    ("sid", "tokens"),
+    [
+        ("gemini/thinking", (1609, 241 + 1877, 1877)),
+        ("gemini/stream-thinking", (2083, 317 + 1999, 1999)),
+    ],
+)
+def test_gemini_output_tokens_add_the_thoughts_to_the_candidates(sid, tokens):
+    # candidatesTokenCount leaves out thoughtsTokenCount; totalTokenCount is their sum with input.
+    t = scenarios.truth(scenarios.get(sid))
+    assert (t.input_tokens, t.output_tokens, t.reasoning_tokens) == tokens
+    usage = scenarios.get(sid).response
+    last = usage.body if usage.body is not None else usage.events[-1].data
+    meta = last["usageMetadata"]
+    assert meta["totalTokenCount"] == t.input_tokens + t.output_tokens
+
+
+@pytest.mark.parametrize(
+    ("sid", "tokens"),
+    [("gemini/cache-hit", (5417, 4099)), ("gemini/stream-cache-hit", (7229, 6151))],
+)
+def test_gemini_prompt_tokens_already_include_the_cached_tokens(sid, tokens):
+    t = scenarios.truth(scenarios.get(sid))
+    assert (t.input_tokens, t.cache_read_tokens) == tokens
+
+
+def test_gemini_early_exit_knows_the_prompt_from_the_first_chunks_only():
+    t = scenarios.truth(scenarios.get("gemini/stream-early-exit"))
+    assert (t.input_tokens, t.output_tokens, t.finish_reasons) == (1949, None, None)
+    assert t.unread_counts == (359,)
+
+
+@pytest.mark.parametrize("sid", ["gemini/stream-dropped", "gemini/async-stream-dropped"])
+def test_gemini_dropped_stream_is_an_error(sid):
+    assert scenarios.truth(scenarios.get(sid)).error == "connection dropped"
+
+
+def test_gemini_has_no_with_block_variant():
+    # The google-genai stream is a plain generator, not a context manager.
+    assert "gemini/stream-early-exit-with" not in scenarios.SCENARIOS
+    assert scenarios.get("gemini/async-stream-early-exit").asynchronous

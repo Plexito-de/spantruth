@@ -3,7 +3,12 @@
 
 def instrument(tracer_provider, otlp_endpoint):
     from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
+    from opentelemetry.instrumentation.google_generativeai import (
+        GoogleGenerativeAiInstrumentor,
+    )
     from opentelemetry.instrumentation.openai import OpenAIInstrumentor
 
     OpenAIInstrumentor().instrument(tracer_provider=tracer_provider)
     AnthropicInstrumentor().instrument(tracer_provider=tracer_provider)
+    # The package instruments google-genai (google.genai.models), not the retired SDK.
+    GoogleGenerativeAiInstrumentor().instrument(tracer_provider=tracer_provider)

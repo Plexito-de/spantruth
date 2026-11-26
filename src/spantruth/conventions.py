@@ -113,6 +113,9 @@ FINISH_ALIASES = {
     "tool_use": "tool_call",
     "tool_calls": "tool_call",
     "max_tokens": "length",
+    # Gemini's FinishReason enum
+    "STOP": "stop",
+    "MAX_TOKENS": "length",
 }
 
 

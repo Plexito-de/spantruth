@@ -10,6 +10,7 @@ from dataclasses import replace
 
 from . import recorded
 from . import wire_anthropic as an
+from . import wire_gemini as ge
 from . import wire_openai as oa
 from .model import Scenario, Truth
 
@@ -20,6 +21,9 @@ OPENAI_CACHE_MODEL = "gpt-5.6-luna"
 OPENAI_CACHE_SERVED = "gpt-5.6-luna-2026-10-14"
 ANTHROPIC_MODEL = "claude-sonnet-5-5"
 ANTHROPIC_SERVED = "claude-sonnet-5-5-20260915"
+# Model names are placeholders, like the others: Gemini reports the model version it served.
+GEMINI_MODEL = "gemini-3.5-flash-lite"
+GEMINI_SERVED = "gemini-3.5-flash-lite-001"
 PARTS = ("The capital", " of France", " is Paris.")
 WEATHER = ("get_weather", {"city": "Paris"})
 TIME = ("get_time", {"zone": "Europe/Paris"})
@@ -466,12 +470,95 @@ def _anthropic() -> list[Scenario]:
     ]
 
 
+def _gemini() -> list[Scenario]:
+    def sc(name: str, title: str, catches: str, response, **kw) -> Scenario:
+        return Scenario(
+            id=f"gemini/{name}",
+            provider="gemini",
+            title=title,
+            catches=catches,
+            request_model=GEMINI_MODEL,
+            response=response,
+            **kw,
+        )
+
+    body = dict(model=GEMINI_SERVED, text="The capital of France is Paris.", finish="STOP")
+    stream = dict(model=GEMINI_SERVED, parts=PARTS, finish="STOP")
+    return [
+        sc(
+            "basic",
+            "One call",
+            "model, id, finish reason and tokens",
+            ge.response(id="wt-gemini-basic", prompt=1193, candidates=271, **body),
+        ),
+        sc(
+            "stream",
+            "Stream read to the end",
+            "usage read from the last chunk",
+            ge.chunks(id="wt-gemini-stream", prompt=2333, candidates=431, **stream),
+            stream=True,
+        ),
+        sc(
+            "stream-early-exit",
+            "App closes the stream after two chunks",
+            "a span that never ends, a drained response",
+            ge.chunks(id="wt-gemini-early", prompt=1949, candidates=359, **stream),
+            stream=True,
+            read_events=2,
+        ),
+        sc(
+            "thinking",
+            "Thinking tokens",
+            "thoughtsTokenCount left out of output tokens",
+            ge.response(id="wt-gemini-think", prompt=1609, candidates=241, thoughts=1877, **body),
+        ),
+        sc(
+            "stream-thinking",
+            "Thinking tokens, streamed",
+            "thoughtsTokenCount left out of output tokens in a stream",
+            ge.chunks(id="wt-gemini-sthink", prompt=2083, candidates=317, thoughts=1999, **stream),
+            stream=True,
+        ),
+        sc(
+            "cache-hit",
+            "Context cache hit",
+            "cachedContentTokenCount dropped, or added to input a second time",
+            ge.response(id="wt-gemini-cache", prompt=5417, candidates=383, cached=4099, **body),
+        ),
+        sc(
+            "stream-cache-hit",
+            "Context cache hit, streamed",
+            "cached tokens lost in a stream",
+            ge.chunks(id="wt-gemini-scache", prompt=7229, candidates=523, cached=6151, **stream),
+            stream=True,
+        ),
+        sc(
+            "rate-limited",
+            "HTTP 429 RESOURCE_EXHAUSTED",
+            "a failed call recorded as a success",
+            ge.error(429, "RESOURCE_EXHAUSTED", "Resource has been exhausted (e.g. check quota)."),
+        ),
+        sc(
+            "stream-dropped",
+            "Connection drops mid-stream",
+            "an error swallowed into a cut-off answer",
+            ge.chunks(id="wt-gemini-drop", prompt=1439, candidates=307, drop_after=2, **stream),
+            stream=True,
+        ),
+    ]
+
+
+# The early exit through a `with` block, for the SDKs whose stream is a context manager. The
+# google-genai stream is a plain generator.
+WITH_BLOCK_PROVIDERS = ("openai", "anthropic")
+
+
 def _with_block(scenarios: list[Scenario]) -> list[Scenario]:
     """The early exit again, leaving a `with` block instead of calling `close()`."""
     extra = []
     for s in scenarios:
         provider, name = s.id.split("/", 1)
-        if name == "stream-early-exit":
+        if name == "stream-early-exit" and provider in WITH_BLOCK_PROVIDERS:
             extra.append(
                 replace(
                     s,
@@ -497,7 +584,7 @@ def _with_async(scenarios: list[Scenario]) -> list[Scenario]:
 
 
 SCENARIOS: dict[str, Scenario] = {
-    s.id: s for s in _with_async(_with_block(_openai() + _anthropic())) + _recorded()
+    s.id: s for s in _with_async(_with_block(_openai() + _anthropic() + _gemini())) + _recorded()
 }
 
 
@@ -536,6 +623,8 @@ def by_key(key: str) -> Scenario:
 def truth(scenario: Scenario) -> Truth:
     if scenario.api == "responses":
         derive = oa.responses_truth
+    elif scenario.provider == "gemini":
+        derive = ge.truth
     else:
         derive = oa.truth if scenario.provider == "openai" else an.truth
     return derive(scenario.request_model, scenario.response, scenario.read_events)

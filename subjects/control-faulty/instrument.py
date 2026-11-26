@@ -7,6 +7,7 @@ FAULTS = {
     "close-leaks-span",
     "errors-as-success",
     "estimate-tokens",
+    "gemini-candidates-output",
     "retry-as-error",
 }
 

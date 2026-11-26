@@ -1,5 +1,5 @@
 title = "Control: reference instrumentation"
 homepage = "https://github.com/Plexito-de/spantruth/blob/main/src/spantruth/reference.py"
 kind = "control"
-providers = ["openai", "anthropic"]
+providers = ["openai", "anthropic", "gemini"]
 notes = "Must pass every check. If it does not, the suite is wrong, not a library."

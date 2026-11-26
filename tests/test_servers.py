@@ -3,6 +3,7 @@
 import anthropic
 import openai
 import pytest
+from google import genai
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
@@ -24,6 +25,19 @@ def mock():
 
 def _consume(sc, mock):
     """Run the scenario through the real SDK. Return (events or response, exception)."""
+    if sc.provider == "gemini":
+        client = genai.Client(
+            api_key="test", http_options=genai.types.HttpOptions(base_url=mock.base_url(sc))
+        )
+        kw = {"model": sc.request_model, "contents": "hi"}
+        call = (
+            client.models.generate_content_stream if sc.stream else client.models.generate_content
+        )
+        try:
+            result = call(**kw)
+            return (list(result) if sc.stream else result), None
+        except Exception as exc:
+            return None, exc
     if sc.api == "responses":
         client = openai.OpenAI(base_url=mock.base_url(sc), api_key="test", max_retries=sc.retries)
         kw = {"model": sc.request_model, "input": "hi", "stream": sc.stream}
@@ -58,13 +72,18 @@ def _consume(sc, mock):
 def test_every_fixture_round_trips_through_the_real_sdk(sc, mock):
     result, exc = _consume(sc, mock)
     if sc.response.status == 429:
-        assert type(exc).__name__ == "RateLimitError"
+        if sc.provider == "gemini":
+            assert type(exc).__name__ == "ClientError" and exc.status == "RESOURCE_EXHAUSTED"
+        else:
+            assert type(exc).__name__ == "RateLimitError"
     elif sc.expects_error:
         assert exc is not None, "a dropped connection or error event must raise"
     elif sc.stream:
         assert exc is None and len(result) == sum(
             isinstance(e.data, dict) for e in sc.response.events
         )
+    elif sc.provider == "gemini":
+        assert exc is None and result.response_id == sc.response.body["responseId"]
     else:
         assert exc is None and result.id == sc.response.body["id"]
 
@@ -144,3 +163,24 @@ def test_mock_server_retries_without_retry_header(mock):
     r2 = mock.next_response(sc)
     assert r1.status == 429
     assert r2.status == 200
+
+
+def test_gemini_requests_reach_the_methods_of_the_real_api(mock):
+    mock.reset()
+    for sid in ("gemini/basic", "gemini/stream"):
+        _consume(scenarios.get(sid), mock)
+    paths = [path for _sid, path, _body in mock.requests]
+    assert paths[0].endswith("/models/gemini-3.5-flash-lite:generateContent")
+    assert paths[1].endswith("/models/gemini-3.5-flash-lite:streamGenerateContent?alt=sse")
+
+
+def test_a_gemini_request_to_the_wrong_method_is_a_404(mock):
+    # A stream scenario asked for a single response: the fake provider refuses it, so a fixture
+    # cannot answer a call the real API would route elsewhere.
+    sc = scenarios.get("gemini/stream")
+    client = genai.Client(
+        api_key="test", http_options=genai.types.HttpOptions(base_url=mock.base_url(sc))
+    )
+    with pytest.raises(genai.errors.ClientError) as caught:
+        client.models.generate_content(model=sc.request_model, contents="hi")
+    assert caught.value.code == 404

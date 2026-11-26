@@ -348,8 +348,8 @@ def test_code_execution_is_named_because_it_bills_by_time():
 
 
 def test_a_provider_with_no_price_rules_is_an_error_that_says_so():
-    with pytest.raises(ValueError, match="gemini"):
-        impact.unpriced("gemini", {"usage": {"promptTokenCount": 5}})
+    with pytest.raises(ValueError, match="mistral"):
+        impact.unpriced("mistral", {"usage": {"prompt_tokens": 5}})
 
 
 def test_an_openai_cache_write_is_priced_at_its_own_rate():

@@ -120,8 +120,65 @@ def _anthropic_event(e: Any, seen: Seen) -> None:
         seen.text += e.delta.text
 
 
+GEMINI_PROMPT = "What is the capital of France?"
+
+
+def _gemini_client(sc: Scenario, base_url: str):
+    """A Gemini API client (not Vertex AI). google-genai retries nothing unless asked to."""
+    from google import genai
+    from google.genai import types
+
+    return genai.Client(
+        api_key="wt-test", http_options=types.HttpOptions(base_url=base_url, timeout=10_000)
+    )
+
+
+def _gemini_result(r: Any, seen: Seen) -> None:
+    seen.text = r.text or ""
+    seen.response_id = r.response_id
+    seen.usage = r.usage_metadata.model_dump(mode="json") if r.usage_metadata else None
+
+
+def _gemini_chunk(c: Any, seen: Seen) -> None:
+    seen.events += 1
+    seen.response_id = c.response_id
+    seen.text += c.text or ""
+    if c.usage_metadata:
+        seen.usage = c.usage_metadata.model_dump(mode="json")
+
+
+def _run_gemini(sc: Scenario, base_url: str, seen: Seen) -> None:
+    client = _gemini_client(sc, base_url)  # held: a client that is collected closes its pool
+    models = client.models
+    kw = {"model": sc.request_model, "contents": GEMINI_PROMPT}
+    if not sc.stream:
+        _gemini_result(models.generate_content(**kw), seen)
+        return
+    stream = models.generate_content_stream(**kw)
+    _read(stream, sc, seen, _gemini_chunk)
+    stream.close()
+
+
+async def _run_gemini_async(sc: Scenario, base_url: str, seen: Seen) -> None:
+    client = _gemini_client(sc, base_url)
+    models = client.aio.models
+    kw = {"model": sc.request_model, "contents": GEMINI_PROMPT}
+    if not sc.stream:
+        _gemini_result(await models.generate_content(**kw), seen)
+        return
+    stream = await models.generate_content_stream(**kw)
+    await _aread(stream, sc, seen, _gemini_chunk)
+    await stream.aclose()
+
+
 def run(sc: Scenario, base_url: str, seen: Seen) -> None:
     """Run one scenario the way an application would. Exceptions propagate to the caller."""
+    if sc.provider == "gemini":
+        if sc.asynchronous:
+            asyncio.run(_run_gemini_async(sc, base_url, seen))
+        else:
+            _run_gemini(sc, base_url, seen)
+        return
     if sc.asynchronous:
         asyncio.run(_run_async(sc, base_url, seen))
         return

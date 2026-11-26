@@ -24,6 +24,21 @@ def _sse(event: Event) -> bytes:
     return f"{head}data: {data}\n\n".encode()
 
 
+def _gemini_route(sc: Scenario, path: str) -> str | None:
+    """Why a Gemini request went to the wrong method, or None when it is the right one.
+
+    A stream is `models/{model}:streamGenerateContent?alt=sse`, a single response
+    `models/{model}:generateContent`, under an API version such as `v1beta`.
+    """
+    route, _, query = path.partition("?")
+    method = "streamGenerateContent" if sc.stream else "generateContent"
+    if not route.endswith(f"/models/{sc.request_model}:{method}"):
+        return f"{sc.id} expects models/{sc.request_model}:{method}, not {route}"
+    if sc.stream and "alt=sse" not in query.split("&"):
+        return f"{sc.id} expects alt=sse on a stream, not ?{query}"
+    return None
+
+
 class _Handler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
     server: MockServer
@@ -42,6 +57,9 @@ class _Handler(BaseHTTPRequestHandler):
             sc = scenarios.by_key(parts[2])
         except KeyError as exc:
             self._json(404, {"error": {"message": str(exc)}})
+            return
+        if sc.provider == "gemini" and (problem := _gemini_route(sc, self.path)):
+            self._json(404, {"error": {"code": 404, "message": problem, "status": "NOT_FOUND"}})
             return
         self.server.record(sc.id, self.path, request)
         retry_header = self.headers.get("x-stainless-retry-count")
@@ -145,6 +163,6 @@ class MockServer(ThreadingHTTPServer):
 
 
 def base_url(server_url: str, sc: Scenario) -> str:
-    """The `base_url` an SDK client needs for this scenario."""
+    """The `base_url` an SDK client needs for this scenario. google-genai adds `v1beta` itself."""
     prefix = f"{server_url}/s/{sc.key}"
     return f"{prefix}/v1" if sc.provider == "openai" else prefix
