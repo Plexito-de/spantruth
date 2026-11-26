@@ -139,11 +139,16 @@ MUTANTS = (
 )
 
 
+SELF_TEST = "tests/test_mutate.py"
+
+
 def _tests(copy: Path, wrap: list[str]) -> tuple[int, float]:
     """Run the fast tests in the copy, stopping at the first failure."""
     env = os.environ | {"PYTHONPATH": str(copy / "src"), "PYTHONDONTWRITEBYTECODE": "1"}
     command = [*wrap, sys.executable, "-m", "pytest", "-x", "-q", "-m", "not slow"]
-    command += ["-p", "no:cacheprovider", "tests"]
+    # test_mutate.py checks that each mutant's text is in its file, so in a mutated copy it always
+    # fails, and it would kill every mutant whatever the other tests do.
+    command += ["-p", "no:cacheprovider", f"--ignore={SELF_TEST}", "tests"]
     start = time.monotonic()
     try:
         proc = subprocess.run(

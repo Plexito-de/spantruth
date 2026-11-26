@@ -29,6 +29,11 @@ def _cache(sc: Scenario, t: Truth) -> bool:
     return bool(t.cache_read_tokens and t.cache_write_tokens)
 
 
+def _cache_read(sc: Scenario, t: Truth) -> bool:
+    # A provider with no cache write, such as Gemini, still shows cache-blind input with a read.
+    return bool(t.cache_read_tokens)
+
+
 def _no_usage(sc: Scenario, t: Truth) -> bool:
     return t.no_usage
 
@@ -69,7 +74,7 @@ def _helper(sc: Scenario, t: Truth) -> bool:
 SHAPES: dict[str, tuple[Shape, ...]] = {
     "ST01": (_early_exit,),
     "ST02": (_plain,),
-    "ST03": (_cache,),
+    "ST03": (_cache, _cache_read),
     "ST04": (_no_usage, _unread),
     "ST05": (_full_stream,),
     "ST06": (_reasoning,),

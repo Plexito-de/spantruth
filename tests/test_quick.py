@@ -70,3 +70,27 @@ def test_the_action_passes_quick_through():
     (run,) = [s for s in action["runs"]["steps"] if s.get("id") == "run"]
     assert run["env"]["QUICK"] == "${{ inputs.quick }}"
     assert 'if [ "${QUICK:-}" = "true" ]; then args+=(--quick); fi' in run["run"]
+
+
+# The bug classes a provider has no scenario for today. A provider that loses a class, or a new
+# scenario that closes a gap, changes this table on purpose.
+GAPS = {
+    "azure": {"ST01", "ST03", "ST04", "ST06", "ST07", "ST08", "ST09", "ST10"},
+    "gemini": {"ST08", "ST09", "ST10"},
+}
+
+
+def test_every_provider_gets_every_class_it_can_show():
+    picks = quick.picks()
+    providers = {sc.provider for sc in scenarios.SCENARIOS.values()}
+    for provider in providers:
+        missing = {c.id for c in bugclasses.CLASSES if provider not in picks[c.id]}
+        assert missing == GAPS.get(provider, set()), provider
+
+
+def test_no_quick_pick_is_a_special_family():
+    # Content and multi-call scenarios grade other things; each class keeps a plain representative.
+    for by_provider in quick.picks().values():
+        for sid in by_provider.values():
+            sc = scenarios.get(sid)
+            assert not (sc.content or sc.calls), sid
