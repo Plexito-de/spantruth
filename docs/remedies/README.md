@@ -20,14 +20,18 @@ Collector the spans that spantruth recorded, and it checks what the file exporte
 | --- | --- | --- |
 | ST01 Ghost span | No. The span never reaches the Collector. | Upgrade the library. |
 | ST02 Double span | Yes, when every call goes through one library on top of the Anthropic SDK. | [Drop the SDK's span](#st02-drop-the-sdks-span), or [strip its usage](#st02-keep-the-sdks-span-without-usage). Better: turn the SDK's tracing off. |
-| ST03 Cache-blind tokens | It can flag the clear case. It cannot correct the count. | Upgrade the library. |
+| ST03 Cache-blind tokens | It can flag the clear case. It cannot correct the count. | [Flag cache tokens above input tokens](#st03-flag-cache-tokens-above-input-tokens), then upgrade. |
 | ST04 Phantom tokens | No. The Collector does not know the true count. | Upgrade the library. |
 | ST05 Vanishing tokens | No. A count that was never recorded cannot be restored. | Upgrade the library. |
 | ST06 Hidden reasoning | No, for the same reason. | Upgrade the library. |
 | ST07 False OK | No. A span that does not say it failed looks like a good span. | Upgrade the library. |
 | ST08 False alarm | No. A recovered retry and a real failure look the same on the span. | Upgrade the library. |
-| ST09 Silent stop | Yes, for the Anthropic SDK's own span. | Upgrade the library. |
+| ST09 Silent stop | Yes, for the Anthropic SDK's own span. | [Copy the SDK's stop reason](#st09-copy-the-anthropic-sdks-stop-reason). |
 | ST10 Observer effect | No. The bug is in the application, not in the span. | Upgrade the library. |
+
+Two more recipes do not fix a bug class. They copy a count to the name that your backend reads:
+[OpenInference names to GenAI names](#alias-openinference-token-counts-to-genai-names) and
+[the cache write count for Phoenix and Opik](#alias-the-cache-write-count-for-phoenix-and-opik).
 
 ## How to use a recipe
 
@@ -91,13 +95,101 @@ processors:
 
 The same warning applies: a call through the SDK alone loses its token counts.
 
+## ST03: flag cache tokens above input tokens
+
+The GenAI conventions say that input tokens include cached tokens. Anthropic's `input_tokens`
+does not, so a library must add the cache reads and writes. When the cache read count on a span
+is larger than its input count, the library did not add it. The input count, and the cost, are
+too low.
+
+This recipe sets `spantruth.bug_class` to `ST03` on such a span. Filter on it in your backend to
+find the calls whose cost is wrong.
+
+```yaml
+# recipe: st03-flag-cache-above-input
+processors:
+  transform/st03_flag_cache_above_input:
+    error_mode: ignore
+    trace_statements:
+      - set(span.attributes["spantruth.bug_class"], "ST03") where span.attributes["gen_ai.usage.cache_read.input_tokens"] != nil and span.attributes["gen_ai.usage.cache_read.input_tokens"] > span.attributes["gen_ai.usage.input_tokens"]
+```
+
+It flags only the clear case. It does not flag a cache read that is smaller than the uncached
+input, or a call that only writes the cache. It reads the GenAI names only. The recipe does not
+correct the count, because the Collector cannot tell which part is missing. Upgrade the library.
+
+## ST09: copy the Anthropic SDK's stop reason
+
+The Anthropic SDK records the stop reason as `anthropic.message.stop_reason`, and not as
+`gen_ai.response.finish_reasons`
+([anthropic-sdk-python#2055](https://github.com/anthropics/anthropic-sdk-python/issues/2055)).
+A backend that reads the GenAI name sees no finish reason. This recipe copies the value:
+
+```yaml
+# recipe: st09-copy-sdk-stop-reason
+processors:
+  transform/st09_copy_sdk_stop_reason:
+    error_mode: ignore
+    trace_statements:
+      - set(span.attributes["gen_ai.response.finish_reasons"], [span.attributes["anthropic.message.stop_reason"]]) where span.attributes["anthropic.message.stop_reason"] != nil and span.attributes["gen_ai.response.finish_reasons"] == nil
+```
+
+It never replaces a finish reason that a span already has.
+
+## Alias: OpenInference token counts to GenAI names
+
+OpenInference writes `llm.token_count.*`. A backend that reads only the GenAI names
+(`gen_ai.usage.*`) shows no tokens and no cost for these spans. This recipe copies each count to
+its GenAI name, and keeps the original:
+
+```yaml
+# recipe: alias-openinference-to-genai
+processors:
+  transform/alias_openinference_to_genai:
+    error_mode: ignore
+    trace_statements:
+      - set(span.attributes["gen_ai.usage.input_tokens"], span.attributes["llm.token_count.prompt"]) where span.attributes["llm.token_count.prompt"] != nil and span.attributes["gen_ai.usage.input_tokens"] == nil
+      - set(span.attributes["gen_ai.usage.output_tokens"], span.attributes["llm.token_count.completion"]) where span.attributes["llm.token_count.completion"] != nil and span.attributes["gen_ai.usage.output_tokens"] == nil
+      - set(span.attributes["gen_ai.usage.cache_read.input_tokens"], span.attributes["llm.token_count.prompt_details.cache_read"]) where span.attributes["llm.token_count.prompt_details.cache_read"] != nil and span.attributes["gen_ai.usage.cache_read.input_tokens"] == nil
+      - set(span.attributes["gen_ai.usage.cache_write.input_tokens"], span.attributes["llm.token_count.prompt_details.cache_write"]) where span.attributes["llm.token_count.prompt_details.cache_write"] != nil and span.attributes["gen_ai.usage.cache_write.input_tokens"] == nil
+      - set(span.attributes["gen_ai.usage.reasoning.output_tokens"], span.attributes["llm.token_count.completion_details.reasoning"]) where span.attributes["llm.token_count.completion_details.reasoning"] != nil and span.attributes["gen_ai.usage.reasoning.output_tokens"] == nil
+```
+
+Both conventions count cached tokens inside the input count, so no arithmetic is needed. Do not
+use this recipe for a backend that reads both names and sums them.
+
+## Alias: the cache write count for Phoenix and Opik
+
+The GenAI conventions name the cache write count `gen_ai.usage.cache_write.input_tokens`. The
+Anthropic SDK and the OpenTelemetry GenAI instrumentation use that name. On 2026-11-06, Phoenix
+21.0.0 and Opik 2.2.143 did not read it, and priced those tokens as plain input: $0.0096 instead
+of $0.0102 for the [measured call](../../results/2026-11-06-double-spans/README.md). Both priced
+OpenLLMetry's `gen_ai.usage.cache_creation.input_tokens` correctly. This recipe adds that name:
+
+```yaml
+# recipe: alias-cache-write-for-phoenix-opik
+processors:
+  transform/alias_cache_write_for_phoenix_opik:
+    error_mode: ignore
+    trace_statements:
+      - set(span.attributes["gen_ai.usage.cache_creation.input_tokens"], span.attributes["gen_ai.usage.cache_write.input_tokens"]) where span.attributes["gen_ai.usage.cache_write.input_tokens"] != nil and span.attributes["gen_ai.usage.cache_creation.input_tokens"] == nil
+```
+
+The test checks the attribute that the Collector writes. It did not send the result to Phoenix or
+Opik again.
+
 ## How the recipes are tested
 
 [`tests/test_remedies.py`](../../tests/test_remedies.py) reads every `# recipe:` block on this
 page. For each one it starts the Collector with an OTLP receiver, the recipe and a file exporter.
-It sends spans as OTLP, and it checks the spans that the file exporter writes. The spans are the
-span records of the [double-span measurement](../../results/2026-11-06-double-spans/README.md), as
-each library exported them (`spans-x2-phoenix.jsonl`).
+It sends spans as OTLP, and it checks the spans that the file exporter writes. The spans come
+from two places:
+
+- The span records of the
+  [double-span measurement](../../results/2026-11-06-double-spans/README.md), as each library
+  exported them (`spans-x2-phoenix.jsonl`).
+- The attributes that a [results document](../../results/2026-11-03-pinned.json) records for
+  each check: the attribute name (`where`) and its value (`got`).
 
 To run the test, download the Collector and check its sha256:
 

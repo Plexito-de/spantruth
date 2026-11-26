@@ -37,6 +37,7 @@ REPO = Path(__file__).resolve().parents[1]
 PAGE = REPO / "docs" / "remedies" / "README.md"
 FETCH = REPO / "docs" / "remedies" / "fetch-otelcol.sh"
 DOUBLE_SPANS = REPO / "results" / "2026-11-06-double-spans" / "spans-x2-phoenix.jsonl"
+PINNED = REPO / "results" / "2026-11-03-pinned.json"
 SDK_SCOPE = "com.anthropic.sdk.python"
 
 
@@ -71,6 +72,28 @@ def recorded(*projects: str) -> list[dict]:
     found = [s for s in spans if s["project"] in projects]
     assert {s["project"] for s in found} == set(projects)
     return found
+
+
+def from_results(scenario: str, *subjects: str) -> list[dict]:
+    """One span per subject, with the attribute that each check of the cell read and its value."""
+    doc = json.loads(PINNED.read_text())
+    out = []
+    for subject in subjects:
+        checks = doc["subjects"][subject]["cells"][scenario]["checks"]
+        attributes = {c["where"]: c["got"] for c in checks if c["where"] and c["got"] is not None}
+        out.append(
+            {
+                "project": subject,
+                "scope": f"spantruth.results/{subject}",
+                "name": scenario,
+                "trace_id": f"{len(out) + 1:032x}",
+                "span_id": f"{len(out) + 1:016x}",
+                "parent": None,
+                "status": "UNSET",
+                "attributes": attributes,
+            }
+        )
+    return out
 
 
 def any_value(v) -> common_pb2.AnyValue:
@@ -237,9 +260,77 @@ def check_st02_strip(out: list[SpanRecord]) -> None:
     assert input_total(by_service(out, "x2-base-C-sdk")) == 0
 
 
+def check_st03(out: list[SpanRecord]) -> None:
+    flagged = {s.resource["service.name"] for s in out if "spantruth.bug_class" in s.attributes}
+    assert flagged == {"control-faulty"}
+    (faulty,) = by_service(out, "control-faulty")
+    assert faulty.attributes["spantruth.bug_class"] == "ST03"
+    assert faulty.attributes["gen_ai.usage.input_tokens"] == 1187  # flagged, not corrected
+
+
+def check_st09(out: list[SpanRecord]) -> None:
+    (sdk,) = by_service(out, "x2-base-C-sdk")
+    assert sdk.attributes["gen_ai.response.finish_reasons"] == ["end_turn"]
+    (library,) = by_service(out, "x2-base-B-ll")
+    assert library.attributes["gen_ai.response.finish_reasons"] == ["stop"]
+
+
+def check_alias_openinference(out: list[SpanRecord]) -> None:
+    (oi,) = by_service(out, "x2-cache-B-oi")
+    assert {k: v for k, v in oi.attributes.items() if k.startswith("gen_ai.usage.")} == {
+        "gen_ai.usage.input_tokens": 5800,
+        "gen_ai.usage.output_tokens": 200,
+        "gen_ai.usage.cache_read.input_tokens": 4000,
+        "gen_ai.usage.cache_write.input_tokens": 800,
+    }
+    assert oi.attributes["llm.token_count.prompt"] == 5800
+    (reasoning,) = by_service(out, "openinference")
+    assert reasoning.attributes["gen_ai.usage.reasoning.output_tokens"] == 1792
+    (genai,) = by_service(out, "x2-cache-B-otel")
+    assert genai.attributes == recorded("x2-cache-B-otel")[0]["attributes"]
+
+
+def check_alias_cache_write(out: list[SpanRecord]) -> None:
+    for project in ("x2-cache-C-sdk", "x2-cache-B-otel"):
+        (span,) = by_service(out, project)
+        assert span.attributes["gen_ai.usage.cache_creation.input_tokens"] == 800
+    (ll,) = by_service(out, "x2-cache-B-ll")
+    assert ll.attributes == recorded("x2-cache-B-ll")[0]["attributes"]
+
+
 CASES: dict[str, tuple[Callable[[], list[dict]], Callable[[list[SpanRecord]], None]]] = {
     "st02-drop-sdk-span": (lambda: recorded(*DOUBLED, "x2-base-C-sdk"), check_st02_drop),
     "st02-strip-sdk-usage": (lambda: recorded(*DOUBLED, "x2-base-C-sdk"), check_st02_strip),
+    "st03-flag-cache-above-input": (
+        lambda: (
+            from_results(
+                "anthropic/cache-hit",
+                "anthropic-sdk",
+                "control-faulty",
+                "control-honest",
+                "openinference",
+                "openllmetry",
+                "otel-official",
+            )
+            + recorded("x2-cache-C-sdk", "x2-cache-B-ll", "x2-cache-B-otel", "x2-cache-B-oi")
+        ),
+        check_st03,
+    ),
+    "st09-copy-sdk-stop-reason": (
+        lambda: recorded("x2-base-C-sdk", "x2-base-B-ll"),
+        check_st09,
+    ),
+    "alias-openinference-to-genai": (
+        lambda: (
+            recorded("x2-cache-B-oi", "x2-cache-B-otel")
+            + from_results("openai/reasoning", "openinference")
+        ),
+        check_alias_openinference,
+    ),
+    "alias-cache-write-for-phoenix-opik": (
+        lambda: recorded("x2-cache-C-sdk", "x2-cache-B-otel", "x2-cache-B-ll"),
+        check_alias_cache_write,
+    ),
 }
 
 
