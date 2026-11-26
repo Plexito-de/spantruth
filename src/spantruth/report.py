@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 import shlex
 import tomllib
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -42,8 +43,45 @@ def _subjects(doc: dict) -> list[str]:
     return sorted(doc["subjects"], key=lambda n: (doc["subjects"][n]["kind"] == "control", n))
 
 
+STATUSES = ("reported", "disputed", "fixed-upstream")
+# A release that has the fix: a package name and one lower bound or pin, such as `pkg>=3.1.0`.
+FIXED_IN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*\s*(>=|==|~=|>)\s*[0-9][A-Za-z0-9.+!-]*")
+ISO_DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+
+def _check_issue(issue: dict[str, Any]) -> None:
+    """Refuse an entry that a reader of `fixed_in` or of the dates would misread."""
+    where = issue.get("url", "an entry")
+    if issue.get("status") not in STATUSES:
+        raise ValueError(f"known issue {where}: status must be one of {', '.join(STATUSES)}")
+    fixed_in = issue.get("fixed_in", [])
+    if not isinstance(fixed_in, list) or not all(
+        isinstance(s, str) and FIXED_IN.fullmatch(s) for s in fixed_in
+    ):
+        raise ValueError(f"known issue {where}: fixed_in must be a list such as ['pkg>=1.2.0']")
+    dates = {}
+    for key in ("reported_on", "fixed_on"):
+        if key not in issue:
+            continue
+        value = issue[key]
+        try:
+            if not (isinstance(value, str) and ISO_DATE.fullmatch(value)):
+                raise ValueError
+            dates[key] = date.fromisoformat(value)
+        except ValueError:
+            raise ValueError(
+                f"known issue {where}: {key} must be a quoted date, YYYY-MM-DD"
+            ) from None
+    if len(dates) == 2 and dates["fixed_on"] < dates["reported_on"]:
+        raise ValueError(f"known issue {where}: fixed_on is before reported_on")
+
+
 def known_issues(path: Path = KNOWN) -> list[dict[str, Any]]:
-    return tomllib.loads(path.read_text()).get("issue", []) if path.exists() else []
+    """The entries of known_issues.toml. `fixed_in`, `reported_on` and `fixed_on` are optional."""
+    issues = tomllib.loads(path.read_text()).get("issue", []) if path.exists() else []
+    for issue in issues:
+        _check_issue(issue)
+    return issues
 
 
 def finding_id(subject: str, scenario: str, check: str) -> str:

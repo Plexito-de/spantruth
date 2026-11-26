@@ -1,6 +1,8 @@
 """The Markdown and HTML renderers, on a small hand-built results document."""
 
-from spantruth import expectations, report
+import pytest
+
+from spantruth import expectations, report, subjects
 
 HOSTILE = "<script>alert(1)</script>"
 
@@ -295,3 +297,55 @@ def test_comment_says_when_the_run_is_incomplete():
     d = doc()
     d["subjects"]["lib"]["error"] = "environment build failed"
     assert "could not run" in report.comment(d, "lib", differences=[])
+
+
+def test_the_shipped_known_issues_carry_dates_and_fixed_versions():
+    for issue in report.known_issues():
+        assert issue["reported_on"], issue["url"]
+        tracked = {subjects.package_name(p) for p in subjects.load(issue["subject"]).track}
+        if issue["status"] == "fixed-upstream":
+            assert issue["fixed_on"] and issue["fixed_in"], issue["url"]
+        else:
+            assert "fixed_on" not in issue and "fixed_in" not in issue, issue["url"]
+        for spec in issue.get("fixed_in", []):
+            assert subjects.package_name(spec) in tracked, spec
+
+
+def _issue_file(tmp_path, extra: str, status: str = "fixed-upstream"):
+    path = tmp_path / "known_issues.toml"
+    path.write_text(
+        '[[issue]]\nsubject = "lib"\nscenarios = ["anthropic/stream"]\ncheck = "output_tokens"\n'
+        f'status = "{status}"\nurl = "https://example.com/1"\n{extra}\n'
+    )
+    return path
+
+
+def test_known_issues_read_the_optional_fix_keys(tmp_path):
+    extra = 'fixed_in = ["lib-x>=3.1.0"]\nreported_on = "2026-10-04"\nfixed_on = "2026-10-12"'
+    (issue,) = report.known_issues(_issue_file(tmp_path, extra))
+    assert issue["fixed_in"] == ["lib-x>=3.1.0"]
+    assert (issue["reported_on"], issue["fixed_on"]) == ("2026-10-04", "2026-10-12")
+    assert "fixed_in" not in report.known_issues(_issue_file(tmp_path, ""))[0]
+
+
+@pytest.mark.parametrize(
+    "extra",
+    [
+        'fixed_in = "lib-x>=3.1.0"',
+        'fixed_in = ["lib-x"]',
+        "fixed_in = [\"lib-x>=3.1.0; os_name == 'nt'\"]",
+        "fixed_in = [3]",
+        'reported_on = "2026-13-01"',
+        'reported_on = "20261001"',
+        "reported_on = 2026-10-01",
+        'reported_on = "2026-10-12"\nfixed_on = "2026-10-04"',
+    ],
+)
+def test_known_issues_reject_a_malformed_fix_key(tmp_path, extra):
+    with pytest.raises(ValueError, match=r"https://example\.com/1"):
+        report.known_issues(_issue_file(tmp_path, extra))
+
+
+def test_known_issues_reject_an_unknown_status(tmp_path):
+    with pytest.raises(ValueError, match="status"):
+        report.known_issues(_issue_file(tmp_path, "", status="fixed"))
