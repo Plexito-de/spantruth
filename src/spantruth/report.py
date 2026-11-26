@@ -44,8 +44,10 @@ def _subjects(doc: dict) -> list[str]:
 
 
 STATUSES = ("reported", "disputed", "fixed-upstream")
-# A release that has the fix: a package name and one lower bound or pin, such as `pkg>=3.1.0`.
-FIXED_IN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*\s*(>=|==|~=|>)\s*[0-9][A-Za-z0-9.+!-]*")
+# The first release that has the fix: a package name and `>=` or `==` that version.
+FIXED_IN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*\s*(>=|==)\s*[0-9][A-Za-z0-9.+!-]*")
+# The keys a fixed-upstream entry has, and any other entry has not.
+FIX_KEYS = ("fixed_on", "fixed_in", "fix_url", "fixed_by")
 ISO_DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
 # A GitHub login: letters, digits and single hyphens, at most 39 characters.
 LOGIN = re.compile(r"[A-Za-z0-9](?:-?[A-Za-z0-9]){0,38}")
@@ -56,6 +58,11 @@ def _check_issue(issue: dict[str, Any]) -> None:
     where = issue.get("url", "an entry")
     if issue.get("status") not in STATUSES:
         raise ValueError(f"known issue {where}: status must be one of {', '.join(STATUSES)}")
+    fixed = issue["status"] == "fixed-upstream"
+    for key in FIX_KEYS:
+        if (key in issue) != fixed:
+            need = "needs" if fixed else "cannot have"
+            raise ValueError(f"known issue {where}: a {issue['status']} entry {need} {key}")
     fixed_in = issue.get("fixed_in", [])
     if not isinstance(fixed_in, list) or not all(
         isinstance(s, str) and FIXED_IN.fullmatch(s) for s in fixed_in
