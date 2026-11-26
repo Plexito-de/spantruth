@@ -465,7 +465,7 @@ def render_fixes(known: list[dict[str, Any]]) -> str:
     )
     return f"""{head}<h1>Fixed upstream</h1>
 <p>Each bug below was fixed by the people who maintain and contribute to an instrumentation
-library. spantruth found or confirmed the bug. They did the work that removed it. Each entry names
+library. spantruth reproduces each bug. They did the work that removed it. Each entry names
 who reported the bug, who wrote the fix, and the first release that has it. Thank you to all of
 them.</p>
 <p>To get a fix, upgrade to the release it names. To see which bugs your own versions still have,
@@ -587,7 +587,8 @@ def render_class(doc: dict, bug: bugclasses.BugClass, known: list[dict[str, Any]
 <pre><code>uvx spantruth doctor</code></pre>
 <p>It reads your lock file, or your requirements if you have no lock file, and tests the
 libraries it recognizes, at your versions, against a local fake provider. It needs no API key and
-does not run your code. A finding of this kind is named <strong>{name}</strong>.</p>
+does not run your code. The first run downloads those library versions into environments of
+its own. A finding of this kind is named <strong>{name}</strong>.</p>
 <h2>How to fix it</h2>
 <p>{escape(page.fix)}</p>
 {_class_fixes(bug, known)}{article}
@@ -747,7 +748,8 @@ you can disagree with them.</p>
 <div class="wrap stack"><table><thead><tr><th scope="col">Check</th><th scope="col">Rule</th>
 <th scope="col">Source</th></tr></thead><tbody>{rule_rows}</tbody></table></div>
 <h2>The fixtures are the provider's wire format</h2>
-<p>Each of the {len(SCENARIOS)} scenarios replays a recorded provider response. A test parses
+<p>Each of the {len(SCENARIOS)} scenarios is a provider response built to the provider's wire
+format, and one is replayed from a recorded stream. A test parses
 every fixture with the provider's own SDK types (the <code>openai</code> and
 <code>anthropic</code> packages) and fails on any field the types do not declare. A fixture value
 is never changed to make a library pass. The token counts in one fixture are all different from

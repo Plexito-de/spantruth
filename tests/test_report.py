@@ -374,3 +374,11 @@ def test_a_fixed_issue_names_its_fix_and_an_open_one_does_not(tmp_path, key):
 def test_known_issues_reject_an_unknown_status(tmp_path):
     with pytest.raises(ValueError, match="status"):
         report.known_issues(_issue_file(tmp_path, "fixed"))
+
+
+@pytest.mark.parametrize("url", ['"nope"', '"javascript:alert(1)"'])
+def test_known_issues_reject_a_url_that_is_not_https(tmp_path, url):
+    path = _issue_file(tmp_path)
+    path.write_text(path.read_text().replace('"https://example.com/1"', url))
+    with pytest.raises(ValueError, match="url must be an https address"):
+        report.known_issues(path)

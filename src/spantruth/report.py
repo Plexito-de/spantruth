@@ -56,6 +56,8 @@ LOGIN = re.compile(r"[A-Za-z0-9](?:-?[A-Za-z0-9]){0,38}")
 def _check_issue(issue: dict[str, Any]) -> None:
     """Refuse an entry that a reader of `fixed_in` or of the dates would misread."""
     where = issue.get("url", "an entry")
+    if not str(issue.get("url", "")).startswith("https://"):
+        raise ValueError(f"known issue {where}: url must be an https address")
     if issue.get("status") not in STATUSES:
         raise ValueError(f"known issue {where}: status must be one of {', '.join(STATUSES)}")
     fixed = issue["status"] == "fixed-upstream"
