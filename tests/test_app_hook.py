@@ -1,0 +1,241 @@
+"""A framework subject brings an app.py: the framework makes the call, not calls.py."""
+
+import json
+import shutil
+from types import SimpleNamespace
+
+import pytest
+
+from spantruth import cli, driver, runner, subjects
+from spantruth.mockserver import MockServer
+
+# A minimal framework: it calls the SDK through calls.py and marks what the app saw, so a test can
+# tell which code made the call.
+APP = """
+from spantruth import calls
+
+
+def run(scenario, base_url, seen):
+    calls.run(scenario, base_url, seen)
+    seen.text = "app:" + seen.text
+"""
+
+
+def _framework(tmp_path, scenarios=("openai/basic", "openai/stream"), app=APP):
+    target = tmp_path / "my-framework"
+    shutil.copytree(subjects.SUBJECTS / "control-honest", target)
+    value = scenarios if isinstance(scenarios, str) else list(scenarios or ())
+    listed = "" if scenarios is None else f"scenarios = {json.dumps(value)}\n"
+    (target / "subject.toml").write_text(
+        'title = "t"\nhomepage = "https://example.org"\nproviders = ["openai"]\n' + listed
+    )
+    if app is not None:
+        (target / "app.py").write_text(app)
+    return target
+
+
+def test_a_framework_subject_lists_its_scenarios(tmp_path):
+    lib = subjects.load(str(_framework(tmp_path)))
+    assert lib.app
+    assert lib.scenarios == ("openai/basic", "openai/stream")
+    assert lib.supports("openai/basic")
+    assert not lib.supports("openai/tool-call")
+    assert not lib.supports("anthropic/basic")
+
+
+def test_a_library_subject_supports_every_scenario_of_its_providers():
+    lib = subjects.load("openinference")
+    assert (lib.app, lib.scenarios) == (False, ())
+    assert lib.supports("openai/tool-call") and lib.supports("anthropic/stream")
+
+
+def test_a_library_subject_is_unchanged_by_the_hook():
+    libraries = [lib for lib in map(subjects.load, subjects.all_names()) if not lib.app]
+    assert {"openinference", "control-honest", "control-faulty"} <= {lib.name for lib in libraries}
+    for lib in libraries:
+        assert lib.scenarios == (), lib.name
+        assert runner.baseline_args(lib, ["openai/basic"], "M", "F") == [
+            "baseline",
+            "openai/basic",
+            "--mock",
+            "M",
+            "--out",
+            "F",
+        ]
+
+
+def test_a_framework_baseline_names_the_subject(tmp_path):
+    lib = subjects.load(str(_framework(tmp_path)))
+    args = runner.baseline_args(lib, ["openai/basic"], "M", "F")
+    assert args[-2:] == ["--subject", str(lib.directory)]
+
+
+def test_a_bad_scenario_list_is_one_clear_error(tmp_path):
+    with pytest.raises(subjects.SubjectError, match="must list its scenarios"):
+        subjects.load(str(_framework(tmp_path / "a", scenarios=None)))
+    with pytest.raises(subjects.SubjectError, match="unknown scenario openai/nope"):
+        subjects.load(str(_framework(tmp_path / "b", scenarios=["openai/nope"])))
+    with pytest.raises(subjects.SubjectError, match="provider not listed"):
+        subjects.load(str(_framework(tmp_path / "c", scenarios=["anthropic/basic"])))
+    # A library that instruments the SDK may not leave a scenario out: that hides a red cell.
+    with pytest.raises(subjects.SubjectError, match=r"only for a subject with an app\.py"):
+        subjects.load(str(_framework(tmp_path / "d", app=None)))
+    with pytest.raises(subjects.SubjectError, match="non-empty list"):
+        subjects.load(str(_framework(tmp_path / "e", scenarios="openai/basic")))
+    with pytest.raises(subjects.SubjectError, match="non-empty list"):
+        subjects.load(str(_framework(tmp_path / "f", scenarios=[])))
+
+
+def test_a_scenario_with_several_calls_is_refused_for_an_app(tmp_path, monkeypatch):
+    """An app must record each call of an agent loop with seen.add(); no app does yet."""
+    real = subjects.scenarios.get
+
+    def get(sid):
+        sc = real(sid)
+        return SimpleNamespace(provider=sc.provider, calls=(1, 2)) if sid == "openai/stream" else sc
+
+    monkeypatch.setattr(subjects.scenarios, "get", get)
+    with pytest.raises(subjects.SubjectError, match="openai/stream makes several calls"):
+        subjects.load(str(_framework(tmp_path)))
+
+
+def test_an_unsupported_scenario_has_no_cell(tmp_path):
+    lib = subjects.load(str(_framework(tmp_path)))
+    result = runner.run_subject(lib, ["openai/tool-call"], None, tmp_path, False, tmp_path)
+    assert result["cells"] == {}
+    assert "error" not in result
+    assert runner.incomplete({"subjects": {lib.name: result}}) == []
+
+
+def test_expect_with_only_unsupported_scenarios_is_a_usage_error(tmp_path, capsys):
+    directory = _framework(tmp_path)
+    code = cli.main(
+        ["run", "--subject", str(directory), "--scenario", "openai/tool-call", "--expect", "x"]
+    )
+    assert code == 2
+    err = capsys.readouterr().err
+    assert "no selected scenario applies" in err
+    assert "runs only the scenarios in its subject.toml: openai/basic, openai/stream" in err
+
+
+def test_the_driver_runs_the_app_instead_of_calls_py(tmp_path):
+    directory = _framework(tmp_path)
+    out = tmp_path / "baseline.json"
+    with MockServer() as mock:
+        argv = ["baseline", "openai/basic", "--mock", mock.url, "--out", str(out)]
+        assert driver.main([*argv, "--subject", str(directory)]) == 0
+        framework = json.loads(out.read_text())["openai/basic"]
+        assert driver.main(argv) == 0
+        plain = json.loads(out.read_text())["openai/basic"]
+    assert framework["exception"] is None
+    assert framework["seen"]["text"] == "app:" + plain["seen"]["text"]
+    assert framework["seen"]["usage"] == plain["seen"]["usage"]
+
+
+def test_a_subject_without_an_app_runs_calls_py(tmp_path):
+    assert driver._load_app(str(subjects.SUBJECTS / "openinference")) is None
+    assert driver._load_app(None) is None
+
+
+@pytest.mark.slow
+@pytest.mark.external
+@pytest.mark.timeout(600)
+def test_a_framework_subject_runs_end_to_end(tmp_path):
+    lib = subjects.load(str(_framework(tmp_path)))
+    doc = runner.run([lib], ["openai/basic", "openai/stream", "openai/tool-call"], tmp_path / "v")
+    cells = doc["subjects"]["my-framework"]["cells"]
+    assert set(cells) == {"openai/basic", "openai/stream"}
+    assert {sid: c["verdict"] for sid, c in cells.items()} == {
+        "openai/basic": "pass",
+        "openai/stream": "pass",
+    }
+    assert runner.incomplete(doc) == []
+
+
+# A framework that ends its span in a background thread after the call returns.
+LATE_APP = """
+import threading
+
+from opentelemetry import trace
+
+from spantruth import calls
+
+PENDING = []
+
+
+def run(scenario, base_url, seen):
+    calls.run(scenario, base_url, seen)
+    span = trace.get_tracer("late-framework").start_span("framework.log")
+    worker = threading.Timer(0.5, span.end)
+    worker.start()
+    PENDING.append(worker)
+
+
+def settle():
+    for worker in PENDING:
+        worker.join()
+"""
+
+
+def test_settle_runs_only_when_the_app_defines_it():
+    calls = []
+    driver._settle(None)
+    driver._settle(type("App", (), {})())
+    driver._settle(type("App", (), {"settle": staticmethod(lambda: calls.append(1))})())
+    assert calls == [1]
+
+
+@pytest.mark.slow
+@pytest.mark.external
+@pytest.mark.timeout(600)
+def test_a_span_the_framework_ends_after_the_call_is_not_lost(tmp_path):
+    late = subjects.load(str(_framework(tmp_path / "a", app=LATE_APP)))
+    doc = runner.run([late], ["openai/basic"], tmp_path / "v")
+    assert doc["subjects"]["my-framework"]["cells"]["openai/basic"]["verdict"] == "pass"
+    # The same app without settle(): the probe is read before the span ends.
+    early = subjects.load(
+        str(_framework(tmp_path / "b", app=LATE_APP.replace("def settle", "def _unused")))
+    )
+    doc = runner.run([early], ["openai/basic"], tmp_path / "v")
+    checks = doc["subjects"]["my-framework"]["cells"]["openai/basic"]["checks"]
+    assert any(c["id"] == "span.ended" and c["verdict"] == "lost" for c in checks)
+
+
+@pytest.mark.slow
+@pytest.mark.external
+@pytest.mark.timeout(600)
+def test_an_app_that_fails_to_load_is_reported_not_a_crash(tmp_path):
+    """An app.py that cannot load is the adapter's bug, so the run is incomplete, with the cause."""
+    lib = subjects.load(str(_framework(tmp_path, app="import no_such_framework\n")))
+    doc = runner.run([lib], ["openai/basic"], tmp_path / "v")
+    result = doc["subjects"]["my-framework"]
+    assert "no_such_framework" in result["error"]
+    assert runner.incomplete(doc)
+
+
+@pytest.mark.slow
+def test_the_instrumented_run_records_an_app_that_fails_to_load(tmp_path):
+    import subprocess
+    import sys
+
+    directory = _framework(tmp_path, app="import no_such_framework\n")
+    out = tmp_path / "obs.json"
+    with MockServer() as mock:
+        args = ["--mock", mock.url, "--otlp", "http://127.0.0.1:9", "--out", str(out)]
+        proc = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "spantruth.driver",
+                "instrumented",
+                "openai/basic",
+                *args,
+                "--subject",
+                str(directory),
+            ],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+    assert proc.returncode == 2, proc.stderr
+    assert "no_such_framework" in json.loads(out.read_text())["instrument_error"]

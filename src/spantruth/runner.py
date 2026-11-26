@@ -90,7 +90,7 @@ def run_subject(
     shim: Path,
     overrides: tuple[str, ...] = (),
 ) -> dict[str, Any]:
-    ids = [i for i in ids if scenarios.get(i).provider in subject.providers]
+    ids = [i for i in ids if subject.supports(i)]
     out: dict[str, Any] = {
         "title": subject.title,
         "homepage": subject.homepage,
@@ -121,7 +121,7 @@ def run_subject(
         try:
             proc = _driver(
                 py,
-                ["baseline", *ids, "--mock", mock.url, "--out", str(base_file)],
+                baseline_args(subject, ids, mock.url, base_file),
                 _env(subject, "http://127.0.0.1:9", shim),
                 Path(tmp),
             )
@@ -134,6 +134,12 @@ def run_subject(
             out["cells"][sid] = _cell(subject, sid, py, mock, Path(tmp), shim, baselines.get(sid))
     _downgrade_unsupported_streams(out["cells"])
     return out
+
+
+def baseline_args(subject: subjects.Subject, ids: list[str], mock: str, out: Path) -> list[str]:
+    """The driver's baseline command. Only a subject with an app.py names its directory."""
+    args = ["baseline", *ids, "--mock", mock, "--out", str(out)]
+    return [*args, "--subject", str(subject.directory)] if subject.app else args
 
 
 def _cell(subject, sid, py, mock, tmp: Path, shim: Path, base: dict | None) -> dict[str, Any]:

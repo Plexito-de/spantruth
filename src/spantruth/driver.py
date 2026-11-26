@@ -1,11 +1,14 @@
 """The process that runs inside a subject's virtual environment.
 
-    python -m spantruth.driver baseline --mock URL --out FILE SCENARIO...
+    python -m spantruth.driver baseline --mock URL --out FILE [--subject DIR] SCENARIO...
     python -m spantruth.driver instrumented --mock URL --otlp URL --subject DIR --out FILE SCENARIO
 
 `baseline` runs scenarios with no instrumentation and records what the app saw.
 `instrumented` runs one scenario, in a fresh process, with the subject attached, inside a parent
 span, and records the same observations plus the parent span's ids and timing.
+
+A subject with an `app.py` makes each call through its framework: the driver calls the app's
+`run(scenario, base_url, seen)` in both modes, instead of `calls.run`.
 """
 
 from __future__ import annotations
@@ -33,13 +36,13 @@ def _exception_name(exc: BaseException) -> str:
     return f"{type(exc).__module__.split('.')[0]}.{type(exc).__name__}"
 
 
-def observe(scenario_id: str, mock: str) -> dict[str, Any]:
+def observe(scenario_id: str, mock: str, app: Any = None) -> dict[str, Any]:
     sc = scenarios.get(scenario_id)
     seen = calls.Seen()
     start = time.time_ns()
     exception = None
     try:
-        calls.run(sc, base_url(mock, sc), seen)
+        (app.run if app is not None else calls.run)(sc, base_url(mock, sc), seen)
     except Exception as exc:  # the observation IS which exception the app received
         exception = _exception_name(exc)
     return {
@@ -73,6 +76,28 @@ def _load_subject(directory: str):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def _load_app(directory: str | None):
+    """The subject's `app.py`, or None when the app calls the SDK the way `calls.py` does."""
+    path = Path(directory) / "app.py" if directory else None
+    if path is None or not path.is_file():
+        return None
+    spec = importlib.util.spec_from_file_location("spantruth_app", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _settle(app: Any) -> None:
+    """Let a framework finish the work it does after the call returns, before the probe is read.
+
+    A framework that ends its spans in a background thread or queue ends them in a process that
+    keeps running. Without this, the probe would report such a span as never ended. Only an
+    `app.py` can define `settle()`, so a subject without one is unchanged.
+    """
+    if app is not None and hasattr(app, "settle"):
+        app.settle()
 
 
 def _install_probe() -> dict[str, dict[str, Any]]:
@@ -188,13 +213,22 @@ def instrumented(scenario_id: str, mock: str, otlp: str, subject: str, out: str)
         trace.set_tracer_provider(provider)
         current = provider
     timer = _watchdog(out, scenario_id)
+    try:
+        # After instrument(), as an app's own code loads after the setup at its start.
+        app = _load_app(subject)
+    except Exception:
+        timer.cancel()
+        result["instrument_error"] = traceback.format_exc(limit=5)
+        _write(out, result)
+        return 2
     with current.get_tracer("spantruth.driver").start_as_current_span("spantruth.scenario") as p:
         ctx = p.get_span_context()
-        result |= observe(scenario_id, mock)
+        result |= observe(scenario_id, mock, app)
         result["parent"] = {
             "trace_id": format(ctx.trace_id, "032x"),
             "span_id": format(ctx.span_id, "016x"),
         }
+    _settle(app)
     timer.cancel()
     gc.collect()
     result["probe"] = {sid: dict(rec) for sid, rec in probe.items()}
@@ -213,7 +247,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--subject")
     args = parser.parse_args(argv)
     if args.mode == "baseline":
-        _write(args.out, {sid: observe(sid, args.mock) for sid in args.scenarios})
+        app = _load_app(args.subject)
+        _write(args.out, {sid: observe(sid, args.mock, app) for sid in args.scenarios})
         return 0
     if len(args.scenarios) != 1 or not (args.otlp and args.subject):
         parser.error("instrumented mode takes one scenario, --otlp and --subject")
