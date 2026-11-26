@@ -11,6 +11,11 @@ no setup. Run this in your project:
 uvx spantruth doctor
 ```
 
+![uvx spantruth doctor in a project that uses OpenLLMetry: it finds ghost spans, double spans and wrong token counts, each with its cost figure and the upstream issue](https://raw.githubusercontent.com/Plexito-de/spantruth/main/docs/assets/doctor.gif)
+
+<details>
+<summary>The start of the output, as text</summary>
+
 ```text
 OpenLLMetry  (anthropic 2.4.0, openai 3.42.1, opentelemetry-instrumentation-anthropic 0.62.4, ...)
   ST01 Ghost span: 5 of 45 scenarios
@@ -25,6 +30,8 @@ OpenLLMetry  (anthropic 2.4.0, openai 3.42.1, opentelemetry-instrumentation-anth
     Today: Let one side report the call: set ANTHROPIC_OPEN_TELEMETRY=false, or pass open_telemetry=False to the client.
   ...
 ```
+
+</details>
 
 [![CI](https://github.com/Plexito-de/spantruth/actions/workflows/ci.yml/badge.svg)](https://github.com/Plexito-de/spantruth/actions/workflows/ci.yml)
 [![Report](https://github.com/Plexito-de/spantruth/actions/workflows/report.yml/badge.svg)](https://plexito-de.github.io/spantruth/)
