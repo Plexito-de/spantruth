@@ -77,6 +77,9 @@ price. The run behind the table is committed as
   on each pull request, and show a badge.
 - **You wrote your own wrapper around the OpenAI or Anthropic SDK.**
   [Test your wrapper in five minutes](https://github.com/Plexito-de/spantruth/blob/main/docs/test-your-wrapper.md).
+- **You want a coding agent to check it.** In Claude Code, run
+  `/plugin marketplace add Plexito-de/spantruth`, then `/plugin install spantruth@spantruth`. The
+  [skill](https://github.com/Plexito-de/spantruth/blob/main/skills/spantruth/SKILL.md) runs `doctor` and reads its result.
 
 [How it works](https://github.com/Plexito-de/spantruth/blob/main/docs/how-it-works.md) explains the fake provider, the checks, the two controls that
 prove the suite, and the verdicts. It needs no API key. The first run downloads each library once,
