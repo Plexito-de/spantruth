@@ -81,5 +81,6 @@ timeout = 120
 markers = [
     "slow: builds a subject virtual environment or runs a subprocess (more than 1 s)",
     "external: downloads packages from PyPI",
+    "collector: runs the otelcol-contrib binary, skipped when it is absent",
 ]
 addopts = "-ra"
