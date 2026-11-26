@@ -280,37 +280,58 @@ def _values(t: Truth, llm: list[SpanRecord]) -> list[Check]:
     return checks
 
 
-def _owner(span: SpanRecord, sc: Scenario, t: Truth, windows: list[list[int]]) -> int | None:
-    """The index of the call that a span belongs to, or None when no call fits.
+def _requested(span: SpanRecord, models: list[str]) -> set[int]:
+    """The calls whose request model the span records, under the convention's name or any other.
 
-    When every call asks for its own model, the span's request model names its call: a library
-    sets it from the request, before any response can be mixed in. Otherwise it is the call whose
-    time window holds the span's start, which is unique for calls made one after the other. Only
-    when the windows overlap and the request model names no call (some libraries record the served
-    model there, or one model name only) does any name or id of a call on the span decide: its
-    response id, or its served model under either model attribute. A concurrent plan gives each
-    call its own.
+    Only request-side evidence counts: a library sets it from the call's arguments, before any
+    response arrives. Some libraries record the served model as `gen_ai.request.model` and keep
+    the requested one under their own name, such as ddtrace's `openai.request.model`.
     """
-    models = [c.request_model for c in sc.calls]
-    if len(set(models)) == len(models):
-        hit = lookup(span.attributes, "request_model")
-        if hit and hit[1] in models:
-            return models.index(hit[1])
-    inside = [i for i, (start, end) in enumerate(windows) if start <= span.start_ns <= end]
-    if len(inside) <= 1:
-        return inside[0] if inside else None
-    named = {
+    hit = lookup(span.attributes, "request_model")
+    values = {hit[1]} if hit else set()
+    values |= {
+        v
+        for k, v in span.attributes.items()
+        if "request" in k.lower() and k.lower().endswith("model") and isinstance(v, str)
+    }
+    return {models.index(v) for v in values if v in models}
+
+
+def _named(span: SpanRecord, t: Truth, among: list[int]) -> set[int]:
+    """The calls among `among` whose response id or served model the span records."""
+    values = {
         hit[1]
         for fact in ("request_model", "response_model", "response_id")
         if (hit := lookup(span.attributes, fact))
     }
-    fits = [i for i in inside if named & {t.calls[i].response_model, t.calls[i].response_id}]
-    return fits[0] if len(fits) == 1 else None
+    return {i for i in among if values & {t.calls[i].response_model, t.calls[i].response_id}}
+
+
+def _owners(span: SpanRecord, sc: Scenario, t: Truth, windows: list[list[int]]) -> set[int]:
+    """The calls a span is graded against. Empty when the span cannot be placed.
+
+    When every call asks for its own model, the request model recorded on the span names its call.
+    Otherwise the call is the one whose time window holds the span's start, which is unique for
+    calls made one after the other. A span of overlapping calls with no request-side evidence is
+    not placed by its response id or served model: those are what crosses when a library mixes up
+    its calls. But a span that names two calls by them has crossed, so it is graded against both.
+    """
+    models = [c.request_model for c in sc.calls]
+    if len(set(models)) == len(models) and len(asked := _requested(span, models)) == 1:
+        return asked
+    inside = [i for i, (start, end) in enumerate(windows) if start <= span.start_ns <= end]
+    if len(inside) <= 1:
+        return set(inside)
+    named = _named(span, t, inside)
+    return named if len(named) > 1 else set()
+
+
+CROSSABLE = (*TOKENS, "response_id", "response_model")
 
 
 def _crossed(c: Check, i: int, t: Truth) -> str:
-    """Name the other call whose count a wrong count is."""
-    if c.verdict != "wrong" or c.id not in TOKENS:
+    """Name the other call whose value a wrong value is."""
+    if c.verdict != "wrong" or c.id not in CROSSABLE:
         return ""
     for j, other in enumerate(t.calls):
         if j != i and getattr(other, c.id) == c.got:
@@ -326,20 +347,34 @@ def _per_call(sc: Scenario, t: Truth, obs: dict, llm: list[SpanRecord]) -> list[
     """
     windows = [c["window"] for c in obs["seen"].get("calls", [])]
     owned: list[list[SpanRecord]] = [[] for _ in sc.calls]
+    unplaced = 0
+    both: dict[int, str] = {}
     for s in llm:
-        if windows and (i := _owner(s, sc, t, windows)) is not None:
+        owners = _owners(s, sc, t, windows) if windows else set()
+        unplaced += not owners
+        if len(owners) > 1:
+            names = sorted(o + 1 for o in owners)
+            note = f"a span names calls {' and '.join(map(str, names))}"
+            both |= dict.fromkeys(owners, note)
+        for i in owners:
             owned[i].append(s)
     worst: dict[str, Check] = {}
     failed: dict[str, list[str]] = {}
     for i, (spans, truth) in enumerate(zip(owned, t.calls, strict=True)):
         label = f"call {i + 1} of {len(sc.calls)}"
-        if not spans:
-            found = [Check("span.recorded", "missing", detail="no LLM span matched this call")]
-        else:
+        if spans:
             found = _values(truth, spans)
+        elif unplaced:
+            why = (
+                f"{unplaced} LLM span(s) record no request model of any call, and the calls ran "
+                "at the same time, so those spans are not graded"
+            )
+            found = [Check("span.recorded", "inconclusive", detail=why)]
+        else:
+            found = [Check("span.recorded", "missing", detail="no LLM span matched this call")]
         for c in found:
             if c.verdict in FAILING:
-                why = _crossed(c, i, t) or c.detail
+                why = "; ".join(w for w in (both.get(i), _crossed(c, i, t) or c.detail) if w)
                 c = replace(c, detail=f"{label}: {why}" if why else label)
                 failed.setdefault(c.id, []).append(str(i + 1))
             kept = worst.get(c.id)
