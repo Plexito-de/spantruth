@@ -7,6 +7,7 @@ imports or runs the project's own code, and it never reads anything but the depe
 
 from __future__ import annotations
 
+import fnmatch
 import json
 import os
 import re
@@ -46,7 +47,7 @@ def _toml_lock(path: Path) -> dict[str, str | None]:
     try:
         data = tomllib.loads(path.read_text())
     except (OSError, UnicodeDecodeError, tomllib.TOMLDecodeError) as exc:
-        raise DoctorError(f"cannot read {path}: {exc}") from None
+        raise DoctorError(f"cannot read {_line(path)}: {_line(exc)}") from None
     return {
         subjects.package_name(p["name"]): p.get("version")
         for p in data.get("package", ())
@@ -58,7 +59,7 @@ def _pipfile_lock(path: Path) -> dict[str, str | None]:
     try:
         data = json.loads(path.read_text())
     except (OSError, UnicodeDecodeError, ValueError) as exc:
-        raise DoctorError(f"cannot read {path}: {exc}") from None
+        raise DoctorError(f"cannot read {_line(path)}: {_line(exc)}") from None
     out: dict[str, str | None] = {}
     for section in ("default", "develop"):
         for name, row in data.get(section, {}).items():
@@ -84,7 +85,7 @@ def _requirements(paths: list[Path]) -> dict[str, str | None]:
         try:
             text = path.read_text()
         except (OSError, UnicodeDecodeError) as exc:
-            raise DoctorError(f"cannot read {path}: {exc}") from None
+            raise DoctorError(f"cannot read {_line(path)}: {_line(exc)}") from None
         # A line ending in a backslash continues on the next, as `--generate-hashes` writes them,
         # and the `--hash` options after a pin are not part of it.
         text = re.sub(r"\\\r?\n", " ", text)
@@ -116,7 +117,7 @@ def _pyproject(path: Path) -> dict[str, str | None]:
     try:
         data = tomllib.loads(path.read_text())
     except (OSError, UnicodeDecodeError, tomllib.TOMLDecodeError) as exc:
-        raise DoctorError(f"cannot read {path}: {exc}") from None
+        raise DoctorError(f"cannot read {_line(path)}: {_line(exc)}") from None
     parsed = map(_requirement, data.get("project", {}).get("dependencies", ()))
     return dict(p for p in parsed if p)
 
@@ -132,15 +133,22 @@ NOT_SUBPROJECTS = {"node_modules", "site-packages", "__pypackages__"}
 
 
 def _read_file(path: Path) -> Found:
-    """The versions in one dependency file that the caller named."""
+    """The versions in one dependency file that the caller named.
+
+    A requirements file is one by its name, or by a directory named `requirements`, so that a
+    README or a notes file is never read as one.
+    """
+    name = _line(path.name)
     if path.name in LOCKS:
-        return Found(path.name, LOCKS[path.name](path))
+        return Found(name, LOCKS[path.name](path))
     if path.name == "pyproject.toml":
-        return Found(path.name, _pyproject(path))
-    if path.suffix == ".txt":
-        return Found(path.name, _requirements([path]))
+        return Found(name, _pyproject(path))
+    if fnmatch.fnmatch(path.name, "requirements*.txt") or (
+        path.suffix == ".txt" and path.parent.name == "requirements"
+    ):
+        return Found(name, _requirements([path]))
     raise DoctorError(
-        f"cannot read versions from {path.name}: give a lock file, a requirements file, a "
+        f"cannot read versions from {name}: give a lock file, a requirements*.txt file, a "
         "pyproject.toml or a project directory"
     )
 
@@ -172,12 +180,31 @@ def subprojects(directory: Path, depth: int = 3) -> list[tuple[Path, str]]:
 def _monorepo_error(directory: Path, found: list[tuple[Path, str]]) -> DoctorError:
     # A directory name is anybody's text: no control sequence of it reaches the terminal.
     lines = [
-        f"  spantruth doctor {_line(shlex.quote(str(path)))}  ({lock})" for path, lock in found
+        f"  spantruth doctor {shlex.quote(_line(path))}  ({_line(lock)})" for path, lock in found
     ]
+    some = "1 subproject has one" if len(found) == 1 else f"{len(found)} subprojects have one"
     return DoctorError(
-        f"no lock file in {_line(directory.resolve())}, but {len(found)} subprojects have one. "
+        f"no lock file in {_line(directory.resolve())}, but {some}. "
         "Run doctor in each:\n" + "\n".join(lines)
     )
+
+
+def _is_workspace_root(directory: Path) -> bool:
+    """True when the root pyproject.toml grades nothing alone, so its subprojects are the answer.
+
+    That is no pyproject.toml, a uv workspace, or one that names no library doctor runs. A single
+    project with a lock file in its test fixtures is read as before.
+    """
+    path = directory / "pyproject.toml"
+    if not path.is_file():
+        return True
+    try:
+        data = tomllib.loads(path.read_text())
+    except (OSError, UnicodeDecodeError, tomllib.TOMLDecodeError):
+        return False  # Read it as before, and say that it cannot be read.
+    if "workspace" in data.get("tool", {}).get("uv", {}):
+        return True
+    return not match(_pyproject(path))
 
 
 def read_versions(directory: Path) -> Found:
@@ -191,7 +218,7 @@ def read_versions(directory: Path) -> Found:
     if directory.is_file():
         return _read_file(directory)
     if not directory.is_dir():
-        raise DoctorError(f"no such directory: {_line(directory)}")
+        raise DoctorError(f"no such file or directory: {_line(directory)}")
     for name, reader in LOCKS.items():
         if (directory / name).is_file():
             return Found(name, reader(directory / name))
@@ -203,7 +230,7 @@ def read_versions(directory: Path) -> Found:
     packages = sorted(directory.glob(".venv/lib/python*/site-packages"))
     if packages:
         return Found(".venv", _venv(packages))
-    if found := subprojects(directory):
+    if _is_workspace_root(directory) and (found := subprojects(directory)):
         raise _monorepo_error(directory, found)
     if (directory / "pyproject.toml").is_file():
         return Found("pyproject.toml", _pyproject(directory / "pyproject.toml"))

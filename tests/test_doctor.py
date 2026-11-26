@@ -624,7 +624,7 @@ def test_doctor_takes_the_path_of_a_lock_file(tmp_path):
 
 
 def test_doctor_says_when_the_path_does_not_exist(tmp_path):
-    with pytest.raises(doctor.DoctorError, match="no such directory"):
+    with pytest.raises(doctor.DoctorError, match="no such file or directory"):
         doctor.read_versions(tmp_path / "nope")
 
 
@@ -667,6 +667,43 @@ def test_a_subproject_name_cannot_send_a_terminal_escape(tmp_path):
     assert "\x1b" not in message and "\x07" not in message
     assert "\nspantruth doctor /fake" not in message
     assert message.count("\n") == 1
+
+
+def test_a_forged_line_in_a_subproject_name_stays_on_its_line(tmp_path):
+    sub = tmp_path / "evil\x1b[31mred\n  spantruth doctor /etc"
+    sub.mkdir(parents=True)
+    (sub / "uv.lock").write_text(UV_LOCK)
+    with pytest.raises(doctor.DoctorError) as exc:
+        doctor.read_versions(tmp_path)
+    message = str(exc.value)
+    assert "\x1b" not in message
+    assert "\n  spantruth doctor /etc" not in message
+    assert "1 subproject has one" in message
+
+
+def test_a_single_project_with_a_lock_file_in_its_fixtures_is_read_as_before(tmp_path):
+    fixture = tmp_path / "tests" / "fixtures" / "proj"
+    fixture.mkdir(parents=True)
+    (fixture / "uv.lock").write_text(UV_LOCK)
+    pyproject = '[project]\nname = "x"\ndependencies = ["openlit==1.45.0"]\n'
+    project(tmp_path, pyproject__toml=pyproject)
+    assert doctor.read_versions(tmp_path).source == "pyproject.toml"
+
+
+def test_a_uv_workspace_root_names_its_members_even_with_dependencies(tmp_path):
+    monorepo(tmp_path)
+    (tmp_path / "pyproject.toml").write_text(
+        '[project]\nname = "x"\ndependencies = ["openlit"]\n'
+        '[tool.uv.workspace]\nmembers = ["s/*"]\n'
+    )
+    with pytest.raises(doctor.DoctorError, match="subprojects have one"):
+        doctor.read_versions(tmp_path)
+
+
+def test_doctor_reads_only_requirements_files_by_name(tmp_path):
+    (tmp_path / "notes.txt").write_text("openai==1.0\n")
+    with pytest.raises(doctor.DoctorError, match=r"cannot read versions from notes\.txt"):
+        doctor.read_versions(tmp_path / "notes.txt")
 
 
 def test_a_root_with_requirements_is_read_and_not_a_monorepo(tmp_path):
