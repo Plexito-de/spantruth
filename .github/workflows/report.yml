@@ -89,7 +89,7 @@ jobs:
         run: |
           mkdir -p snapshots-state
           base="https://plexito-de.github.io/spantruth/snapshots"
-          code=$(curl -sS -L -o snapshots-state/index.json -w '%{http_code}' "$base/index.json")
+          code=$(curl -sS -L --retry 3 -o snapshots-state/index.json -w '%{http_code}' "$base/index.json")
           case "$code" in
             200) ;;
             404) rm -f snapshots-state/index.json; exit 0 ;;
@@ -101,7 +101,7 @@ jobs:
             fi
             mkdir -p "snapshots-state/$copy"
             for page in index.html latest.html bugs.html changes.html; do
-              curl -fsS -L -o "snapshots-state/$copy/$page" "$base/$copy/$page"
+              curl -fsS -L --retry 3 -o "snapshots-state/$copy/$page" "$base/$copy/$page"
             done
           done
       - name: Keep a dated copy

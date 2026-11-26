@@ -3,8 +3,11 @@
 Each nightly run adds `snapshots/<date>/`. A copy of the four pages is about 3.4 MB, so a full copy
 is written only when the results changed. A day with the same results as the last copy gets four
 small pages that forward to that copy, with the finding anchor. The bound: at most MAX_COPIES full
-copies (about 205 MB at today's size, inside the 1 GB of a GitHub Pages site) and MAX_DATES dated
-entries. The oldest go first.
+copies (about 205 MB at today's size), at most MAX_BYTES in all, inside the 1 GB of a GitHub Pages
+site, and MAX_DATES dated entries. The oldest go first.
+
+A date's copy never changes once written: a second run on the same date, such as a push to main,
+keeps the copy the first run wrote, as the banner on the copy promises.
 
 The workflow restores the kept copies from the live site before this runs, the same way it
 restores the history, and this module writes the site's `snapshots/` from them.
@@ -27,6 +30,7 @@ SCHEMA = 1
 PAGES = ("index.html", "latest.html", "bugs.html", "changes.html")
 MAX_COPIES = 60
 MAX_DATES = 730
+MAX_BYTES = 600_000_000
 DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
 
 
@@ -64,13 +68,25 @@ def load_index(path: Path) -> list[dict[str, str]]:
 
 
 def plan(entries: list[dict[str, str]], date: str, print_: str) -> list[dict[str, str]]:
-    """The entries after today's run: today's is a copy, or points at the copy it equals."""
-    entries = [e for e in entries if e["date"] != date]
+    """The entries after today's run: today's is a copy, or points at the copy it equals.
+
+    A date that already has an entry keeps it, so a published copy does not change.
+    """
+    if any(e["date"] == date for e in entries):
+        return entries[-MAX_DATES:]
     last = entries[-1] if entries else None
     copy = last["copy"] if last and last["fingerprint"] == print_ else date
     entries.append({"date": date, "copy": copy, "fingerprint": print_})
     copies = sorted({e["copy"] for e in entries})[-MAX_COPIES:]
     return [e for e in entries if e["copy"] in copies][-MAX_DATES:]
+
+
+def cap(entries: list[dict[str, str]], sizes: dict[str, int]) -> list[dict[str, str]]:
+    """The entries without the oldest copies until the copies fit in MAX_BYTES. The newest stays."""
+    copies = sorted({e["copy"] for e in entries})
+    while len(copies) > 1 and sum(sizes.get(c, 0) for c in copies) > MAX_BYTES:
+        copies.pop(0)
+    return [e for e in entries if e["copy"] in copies]
 
 
 def _banner(html: str, date: str) -> str:
@@ -125,8 +141,9 @@ still shows what it showed on the day.">
 <p>Every night keeps a dated copy of the report. A link to a dated copy shows the finding as it
 was on that day, also after the library fixes it. To link a finding, open its <code>#</code> link
 on a dated copy, such as <code>snapshots/{example}/index.html#...</code>.</p>
-<p class="muted">The site keeps the last {MAX_COPIES} copies with different results and the last
-{MAX_DATES} dates. A date with the same results as the copy before it forwards to that copy.
+<p class="muted">The site keeps the last {MAX_COPIES} copies with different results, at most
+{MAX_BYTES // 1_000_000} MB of them, and the last {MAX_DATES} dates. A date with the same results
+as the copy before it forwards to that copy.
 <a href="../index.html">The current report</a> ·
 <a href="https://github.com/Plexito-de/spantruth">source</a></p>
 <div class="wrap"><table><thead><tr><th scope="col">Date</th><th scope="col">Pages</th></tr>
@@ -142,20 +159,32 @@ def run(site: Path, state: Path, date: str | None = None) -> int:
     date = date or pinned["created"][:10]
     if not DATE.fullmatch(date):
         raise SnapshotError(f"not a date: {date!r}")
-    entries = plan(load_index(state / "index.json"), date, fingerprint(pinned, latest))
+    before = load_index(state / "index.json")
+    fresh = date not in {e["date"] for e in before}
+    entries = plan(before, date, fingerprint(pinned, latest))
+
+    def source(copy: str, name: str) -> Path:
+        return site / name if copy == date and fresh else state / copy / name
+
+    copies = sorted({e["copy"] for e in entries})
+    sizes = {
+        c: sum(source(c, n).stat().st_size for n in PAGES if source(c, n).is_file()) for c in copies
+    }
+    entries = cap(entries, sizes)
     out = site / "snapshots"
     out.mkdir(parents=True, exist_ok=True)
     for copy in sorted({e["copy"] for e in entries}):
         target = out / copy
         target.mkdir(exist_ok=True)
         for name in PAGES:
-            source = site / name if copy == date else state / copy / name
-            if not source.is_file():
-                raise SnapshotError(f"{source} is missing, so the copy of {copy} would be lost")
-            if copy == date:
-                (target / name).write_text(_banner(source.read_text(), date))
+            if not source(copy, name).is_file():
+                raise SnapshotError(
+                    f"{source(copy, name)} is missing, so the copy of {copy} would be lost"
+                )
+            if copy == date and fresh:
+                (target / name).write_text(_banner(source(copy, name).read_text(), date))
             else:
-                shutil.copyfile(source, target / name)
+                shutil.copyfile(source(copy, name), target / name)
     for e in entries:
         if e["copy"] != e["date"]:
             (out / e["date"]).mkdir(exist_ok=True)

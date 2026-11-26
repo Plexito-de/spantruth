@@ -160,3 +160,29 @@ def test_the_nightly_job_restores_the_copies_and_keeps_todays():
     assert "spantruth snapshot --site site --state snapshots-state" in steps[keep]["run"]
     for page in snapshots.PAGES:
         assert page in steps[fetch]["run"]
+
+
+def test_a_second_run_on_the_same_date_keeps_the_published_copy(tmp_path):
+    state = tmp_path / "state"
+    first = site(tmp_path, day="2026-11-26")
+    snapshots.run(first, state)
+    publish(first, state)
+    again = site(tmp_path, verdict="pass", day="2026-11-26-again")
+    pinned = json.loads((again / "pinned.json").read_text())
+    pinned["created"] = "2026-11-26T18:00:00+00:00"  # a push to main, later the same day
+    (again / "pinned.json").write_text(json.dumps(pinned))
+    snapshots.run(again, state)
+    copy = (again / "snapshots" / "2026-11-26" / "index.html").read_text()
+    assert "index.html 2026-11-26</p>" in copy  # the first run's page, not the second's
+    entries = json.loads((again / "snapshots" / "index.json").read_text())["snapshots"]
+    assert [(e["date"], e["copy"]) for e in entries] == [("2026-11-26", "2026-11-26")]
+
+
+def test_the_copies_fit_in_the_byte_cap_and_the_newest_stays(monkeypatch):
+    monkeypatch.setattr(snapshots, "MAX_BYTES", 250)
+    entries = [
+        {"date": d, "copy": d, "fingerprint": d} for d in ("2026-11-01", "2026-11-02", "2026-11-03")
+    ]
+    sizes = {"2026-11-01": 100, "2026-11-02": 100, "2026-11-03": 100}
+    assert [e["copy"] for e in snapshots.cap(entries, sizes)] == ["2026-11-02", "2026-11-03"]
+    assert [e["copy"] for e in snapshots.cap(entries[2:], {"2026-11-03": 999})] == ["2026-11-03"]
