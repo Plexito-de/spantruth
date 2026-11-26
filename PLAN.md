@@ -211,8 +211,10 @@ The recorded output text equals what the app read, and prompts appear only when 
   The Bowtie author wrote most of its early harnesses himself.
 - List the action on GitHub Marketplace. The owner accepts the Marketplace Developer Agreement and
   ticks the box on a release. The name in `action.yml` must be unique there.
-- Present spantruth to the OpenTelemetry GenAI SIG as the complement to Weaver and the reference
-  scenarios: values and failure paths. Ask for a link from `semantic-conventions-genai/reference`.
+- Introduce spantruth to the OpenTelemetry GenAI SIG in writing, as the complement to Weaver and the
+  reference scenarios: values and failure paths. Two routes: a note in the SIG's issue tracker, or a
+  post on the OpenTelemetry blog, which needs a SIG sponsor from another company. No live
+  presentation. Ask for a link from `semantic-conventions-genai/reference`.
 - Invite co-maintainers from at least two libraries.
 - Keep the stable-ID policy: a scenario ID or a check ID never changes meaning.
 - Publish a write-up of the findings in Q4 2026, after Logfire and OpenLIT are on the report. The
@@ -229,7 +231,7 @@ Decisions for the owner, not for this plan:
 | Quarter | Ships |
 | --- | --- |
 | Q4 2026 | E0, E1, the first half of E2, Logfire and OpenLIT, the first write-up, the first wave of E3. Releases 0.3 and 0.4. |
-| Q1 2027 | Gemini, E6 with LiteLLM and Pydantic AI, the second half of E2, the first maintainer CI adoption, the SIG presentation. |
+| Q1 2027 | Gemini, E6 with LiteLLM and Pydantic AI, the second half of E2, the first maintainer CI adoption, the written SIG note or OpenTelemetry blog post. |
 | Q2 2027 | E8, the Vercel AI SDK first, then OpenLLMetry-JS and OpenInference-JS. |
 | Q3 2027 | E7, Bedrock, Azure OpenAI. |
 | Q4 2027 | 1.0: a stable results schema, stable IDs, co-maintainers. |
