@@ -6,6 +6,7 @@
 !LICENSE
 !known_issues.toml
 !prices.toml
+!versions.json
 !src/
 !subjects/
 **/__pycache__

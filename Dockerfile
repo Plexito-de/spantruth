@@ -19,7 +19,7 @@ ENV UV_PYTHON_DOWNLOADS=never \
     UV_PROJECT_ENVIRONMENT=/opt/spantruth \
     PATH=/opt/spantruth/bin:$PATH
 
-COPY pyproject.toml uv.lock README.md LICENSE known_issues.toml prices.toml /src/
+COPY pyproject.toml uv.lock README.md LICENSE known_issues.toml prices.toml versions.json /src/
 COPY src /src/src
 COPY subjects /src/subjects
 RUN uv sync --project /src --locked --no-default-groups --no-editable --no-cache \

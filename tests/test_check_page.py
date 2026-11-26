@@ -37,7 +37,8 @@ def test_the_javascript_tests_pass():
     if NODE is None and not os.environ.get("CI"):
         pytest.skip("node is not installed")
     proc = subprocess.run(
-        [NODE or "node", "--test", "tests/js/check.test.mjs"],
+        # TAP on every Node version: the default reporter differs between them.
+        [NODE or "node", "--test", "--test-reporter=tap", "tests/js/check.test.mjs"],
         capture_output=True,
         text=True,
         timeout=120,
