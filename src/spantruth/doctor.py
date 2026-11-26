@@ -22,6 +22,7 @@ from . import bugclasses, report, runner, scenarios, subjects
 SELF_TRACING = "ANTHROPIC_OPEN_TELEMETRY"
 EXPORTER = "opentelemetry-exporter-otlp-proto-http"
 GUIDE = "https://github.com/Plexito-de/spantruth/blob/main/docs/test-your-wrapper.md"
+UNCOVERED = Path(__file__).with_name("uncovered.toml")
 
 
 class DoctorError(ValueError):
@@ -167,6 +168,42 @@ def match(versions: Mapping[str, str | None]) -> list[subjects.Subject]:
     ):
         found.append(subjects.load("anthropic-sdk"))
     return found
+
+
+def uncovered_table() -> dict[str, dict[str, str]]:
+    """Package name to the title of the library and the issue where a user can ask for it."""
+    return tomllib.loads(UNCOVERED.read_text())
+
+
+def uncovered(versions: Mapping[str, str | None]) -> list[dict[str, Any]]:
+    """The LLM libraries in this project that no subject covers yet, one row per library.
+
+    A package that a library subject detects is covered, so a new subject needs no edit here.
+    """
+    covered = {
+        subjects.package_name(p)
+        for s in map(subjects.load, subjects.all_names())
+        if s.kind == "library"
+        for p in s.detect
+    }
+    rows: dict[str, dict[str, Any]] = {}
+    for name, row in sorted(uncovered_table().items()):
+        if name in versions and name not in covered:
+            entry = rows.setdefault(
+                row["issue"], {"title": row["title"], "packages": [], "issue": row["issue"]}
+            )
+            entry["packages"].append(name)
+    return sorted(rows.values(), key=lambda r: r["title"])
+
+
+def _uncovered_lines(versions: Mapping[str, str | None]) -> list[str]:
+    rows = uncovered(versions)
+    lines = [
+        f"Not covered yet: {_line(r['title'])} ({', '.join(r['packages'])}). "
+        f"Ask for it at {r['issue']}"
+        for r in rows
+    ]
+    return [*lines, f"For a wrapper of your own, see {GUIDE}"] if lines else []
 
 
 def overrides(
@@ -316,6 +353,8 @@ def render_text(found: Found, summary: list[dict[str, Any]], results: str) -> st
         if s["other"]:
             lines.append(f"  Other failing checks: {_line(', '.join(s['other']))}")
         lines.append("")
+    if extra := _uncovered_lines(found.versions):
+        lines += [*extra, ""]
     if len(summary) > 1:
         lines += [
             "Each library was checked alone. If two of them trace the same calls in one app, "
@@ -362,6 +401,19 @@ def _known_packages() -> str:
     return ", ".join(sorted(p for s in names if s.kind == "library" for p in s.detect))
 
 
+def json_doc(
+    found: Found, summary: list[dict[str, Any]], results: str | None, code: int
+) -> dict[str, Any]:
+    """What `--json` prints. `results` is None when nothing ran."""
+    return {
+        "source": found.source,
+        "results": results,
+        "exit_code": code,
+        "subjects": summary,
+        "uncovered": uncovered(found.versions),
+    }
+
+
 def run(
     directory: Path,
     out: Path,
@@ -373,6 +425,12 @@ def run(
     found = read_versions(directory)
     selected = match(found.versions)
     if not selected:
+        if as_json:
+            print(json.dumps(json_doc(found, [], None, 2), indent=1))
+        if extra := _uncovered_lines(found.versions):
+            raise DoctorError(
+                f"no library in {found.source} that spantruth covers yet.\n" + "\n".join(extra)
+            )
         raise DoctorError(
             f"no instrumentation library in {found.source}. spantruth recognizes "
             f"{_known_packages()}. For a wrapper of your own, see {GUIDE}"
@@ -397,17 +455,7 @@ def run(
     out.write_text(json.dumps(doc, indent=1, sort_keys=True) + "\n")
     summary = summarize(doc)
     if as_json:
-        print(
-            json.dumps(
-                {
-                    "source": found.source,
-                    "results": str(out),
-                    "exit_code": exit_code(doc, summary),
-                    "subjects": summary,
-                },
-                indent=1,
-            )
-        )
+        print(json.dumps(json_doc(found, summary, str(out), exit_code(doc, summary)), indent=1))
     else:
         print(render_text(found, summary, str(out)))
     return exit_code(doc, summary)
