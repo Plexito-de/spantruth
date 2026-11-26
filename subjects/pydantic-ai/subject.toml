@@ -1,0 +1,47 @@
+title = "Pydantic AI"
+homepage = "https://github.com/pydantic/pydantic-ai"
+providers = ["openai", "anthropic"]
+packages = ["pydantic-ai-slim[openai,anthropic]==2.75.0", "openai==3.50.0"]
+track = ["pydantic-ai-slim"]
+detect = ["pydantic-ai-slim", "pydantic-ai"]
+notes = "A framework: the app runs a Pydantic AI Agent over OpenAIChatModel (OpenAIResponsesModel for the Responses API) or AnthropicModel, with the provider's base_url at the fake provider. The documented setup for an OpenTelemetry backend other than Logfire: a global tracer provider and Agent.instrument_all(), with the default settings. openai is 3.50.0, the oldest version that pydantic-ai-slim[openai] 2.75.0 accepts (it requires openai>=3.50.0). Not run: the tool-call scenarios, because the agent runs the tool and asks the model again, and the fake provider answers every request of a scenario with the same tool call; the with-block scenarios, because Pydantic AI reads every stream inside its own context manager, so they are the same call as the early-exit scenarios; and the OpenAI SDK's with_streaming_response helper, which is not a Pydantic AI call."
+# Every call that one agent run without tools makes.
+scenarios = [
+  "openai/basic",
+  "openai/stream",
+  "openai/stream-early-exit",
+  "openai/cache-hit",
+  "openai/stream-cache-hit",
+  "openai/cache-write",
+  "openai/stream-cache-write",
+  "openai/stream-no-usage",
+  "openai/rate-limited",
+  "openai/retry-429",
+  "openai/stream-dropped",
+  "openai/reasoning",
+  "openai/stream-reasoning",
+  "openai/async-basic",
+  "openai/async-stream",
+  "openai/async-stream-early-exit",
+  "openai/async-stream-dropped",
+  "openai/responses-stream-missing-finish-abort",
+  "anthropic/basic",
+  "anthropic/stream",
+  "anthropic/stream-early-exit",
+  "anthropic/cache-hit",
+  "anthropic/stream-cache-hit",
+  "anthropic/stream-cache-cumulative",
+  "anthropic/cache-1h",
+  "anthropic/stream-cache-1h",
+  "anthropic/stream-error-event",
+  "anthropic/rate-limited",
+  "anthropic/retry-429",
+  "anthropic/stream-dropped",
+  "anthropic/thinking",
+  "anthropic/stream-thinking",
+  "anthropic/async-basic",
+  "anthropic/async-stream",
+  "anthropic/async-stream-early-exit",
+  "anthropic/async-stream-error-event",
+  "anthropic/async-stream-dropped",
+]

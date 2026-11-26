@@ -273,3 +273,19 @@ def test_the_wrapper_example_loads_as_a_subject():
     assert subject.name == "spantruth"
     assert "acme-llm==0.1.0" in subject.packages
     assert subjects.resolve_override(str(example)).startswith("acme-llm @ file://")
+
+
+def test_pydantic_ai_is_a_framework_subject():
+    lib = subjects.load("pydantic-ai")
+    assert lib.app
+    pinned = subjects.requirements(lib, latest=False)
+    assert "pydantic-ai-slim[openai,anthropic]==2.75.0" in pinned
+    # pydantic-ai-slim[openai] requires openai>=3.50.0, so the base pin is replaced.
+    assert "openai==3.50.0" in pinned and "openai==3.42.1" not in pinned
+    assert "pydantic-ai-slim" in subjects.requirements(lib, latest=True)
+    assert lib.supports("openai/responses-stream-missing-finish-abort")
+    assert lib.supports("anthropic/async-stream-early-exit")
+    # The agent would run the tool and ask again; the fake provider repeats the tool call.
+    assert not lib.supports("openai/tool-call") and not lib.supports("anthropic/stream-tool-call")
+    assert not lib.supports("openai/stream-helper")
+    assert not lib.supports("openai/stream-early-exit-with")
