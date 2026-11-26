@@ -9,7 +9,7 @@ from spantruth import scenarios
 from spantruth.checks import _formula, cell_verdict, grade
 from spantruth.conventions import lookup
 from spantruth.model import Truth
-from spantruth.receiver import LogRecordData, SpanRecord
+from spantruth.receiver import LogRecordData, MetricPoint, SpanRecord
 
 TRACE, PARENT = "a" * 32, "b" * 16
 BASE = {"exception": None, "seen": {"text": "x", "events": 0, "response_id": "r", "usage": None}}
@@ -51,10 +51,24 @@ def honest(sid):
     return t, attrs
 
 
+def point(name, value, count=1, temporality=2, time_ns=5, **attrs):
+    kind = "histogram" if count is not None else "sum"
+    # The exporter sends a histogram's sum as a double.
+    value = float(value) if kind == "histogram" else value
+    return MetricPoint(name, kind, "{token}", attrs, value, count, temporality, 1, time_ns, "lib")
+
+
+def histograms(t, name="gen_ai.client.inference.operation"):
+    return [
+        point(f"{name}.input_tokens", t.input_tokens),
+        point(f"{name}.output_tokens", t.output_tokens),
+    ]
+
+
 def test_correct_span_passes():
     sc = scenarios.get("anthropic/cache-hit")
     t, attrs = honest(sc.id)
-    checks = grade(sc, t, BASE, obs(), [span(attrs)])
+    checks = grade(sc, t, BASE, obs(), [span(attrs)], metrics=histograms(t))
     assert cell_verdict(checks) == "pass", [c for c in checks if c.verdict != "pass"]
 
 
@@ -725,3 +739,102 @@ def test_a_span_that_names_no_call_of_overlapping_calls_is_not_graded():
     sc, t, base, o, spans = _overlapping("openai/async-concurrent-streams", anonymous)
     c = by_id(grade(sc, t, base, o, spans))["span.recorded"]
     assert c.verdict == "inconclusive" and c.detail.endswith("failed on calls 1, 2")
+
+
+# Token usage metrics, per call, against the wire.
+METRIC_DOCS = "https://example.org/docs#token-metrics"
+
+
+def metric(sid, points, attrs=None, docs=METRIC_DOCS):
+    sc = scenarios.get(sid)
+    t, honest_attrs = honest(sid)
+    spans = [span(attrs or honest_attrs)]
+    checks = by_id(grade(sc, t, BASE, obs(), spans, metrics=points, metrics_docs=docs))
+    return checks["metric.input_tokens"], checks["metric.output_tokens"]
+
+
+def token_usage(t):
+    return [
+        point("gen_ai.client.token.usage", t.input_tokens, **{"gen_ai.token.type": "input"}),
+        point("gen_ai.client.token.usage", t.output_tokens, **{"gen_ai.token.type": "output"}),
+    ]
+
+
+@pytest.mark.parametrize(
+    "points",
+    [histograms, lambda t: histograms(t, "gen_ai.client.inference.usage"), token_usage],
+)
+def test_every_token_metric_name_is_read(points):
+    t = scenarios.truth(scenarios.get("openai/cache-hit"))
+    inp, out = metric("openai/cache-hit", points(t))
+    assert (inp.verdict, inp.got, out.verdict, out.got) == ("pass", 5379, "pass", 377)
+
+
+def test_a_counter_split_by_modality_is_summed():
+    t = scenarios.truth(scenarios.get("openai/basic"))
+    name = "gen_ai.client.inference.usage.input_tokens"
+    split = [
+        point(name, 1000, None, **{"gen_ai.token.modality": "text"}),
+        point(name, t.input_tokens - 1000, None, **{"gen_ai.token.modality": "image"}),
+    ]
+    assert metric("openai/basic", split)[0].verdict == "pass"
+
+
+def test_a_cumulative_stream_exported_twice_counts_once():
+    t = scenarios.truth(scenarios.get("openai/basic"))
+    again = [replace(p, time_ns=9) for p in histograms(t)]
+    assert [c.verdict for c in metric("openai/basic", histograms(t) + again)] == ["pass", "pass"]
+
+
+def test_two_recordings_for_one_call_are_wrong():
+    t = scenarios.truth(scenarios.get("openai/basic"))
+    name = "gen_ai.client.inference.operation.output_tokens"
+    halves = [point(name, 200, temporality=1), point(name, t.output_tokens - 200, temporality=1)]
+    out = metric("openai/basic", halves)[1]
+    assert (out.verdict, out.got, out.detail) == ("wrong", 2, "recorded 2 times for one call")
+
+
+def test_cache_left_out_of_the_input_metric_is_wrong_and_named():
+    t = scenarios.truth(scenarios.get("anthropic/cache-hit"))
+    raw = t.input_tokens - t.cache_read_tokens - t.cache_write_tokens
+    name = "gen_ai.client.inference.operation.input_tokens"
+    inp = metric("anthropic/cache-hit", [point(name, raw)])[0]
+    assert (inp.verdict, inp.got, inp.detail) == ("wrong", raw, "cache reads and writes left out")
+
+
+def test_reasoning_left_out_of_the_output_metric_is_wrong_and_named():
+    t = scenarios.truth(scenarios.get("anthropic/thinking"))
+    name = "gen_ai.client.inference.operation.output_tokens"
+    out = metric("anthropic/thinking", [point(name, t.output_tokens - t.reasoning_tokens)])[1]
+    assert out.verdict == "wrong" and out.detail == "reasoning tokens left out of output"
+
+
+def test_an_estimate_on_a_stream_without_usage_is_wrong():
+    attrs = {"gen_ai.request.model": "gpt-5-mini", "gen_ai.operation.name": "chat"}
+    estimate = point("gen_ai.client.token.usage", 16, **{"gen_ai.token.type": "output"})
+    out = metric("openai/stream-no-usage", [estimate], attrs)[1]
+    assert out.verdict == "wrong" and "estimated" in out.detail
+
+
+def test_no_metric_from_a_library_that_documents_them_is_missing():
+    inp, out = metric("openai/basic", [])
+    assert (inp.verdict, out.verdict) == ("missing", "missing")
+    assert inp.detail == "no token usage metric arrived"
+
+
+def test_a_library_that_documents_no_token_metrics_is_not_graded():
+    t = scenarios.truth(scenarios.get("anthropic/cache-hit"))
+    wrong = [point("gen_ai.client.inference.operation.input_tokens", 1)]
+    for points in ([], histograms(t), wrong):
+        checks = metric("anthropic/cache-hit", points, docs=None)
+        assert [(c.verdict, c.detail) for c in checks] == [
+            ("n/a", "the library documents no token metrics")
+        ] * 2
+
+
+def test_metrics_are_not_graded_on_a_failed_call_or_without_a_span():
+    sc = scenarios.get("openai/rate-limited")
+    graded = grade(sc, scenarios.truth(sc), BASE, obs(), [span({"gen_ai.request.model": "m"})])
+    assert not {"metric.input_tokens", "metric.output_tokens"} & by_id(graded).keys()
+    sc = scenarios.get("openai/basic")
+    assert "metric.input_tokens" not in by_id(grade(sc, scenarios.truth(sc), BASE, obs(), []))

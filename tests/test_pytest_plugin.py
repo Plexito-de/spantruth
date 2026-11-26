@@ -80,8 +80,15 @@ def test_the_faulty_reference_fails_exactly_its_planted_faults(spantruth, attach
     exec((faulty / "instrument.py").read_text(), namespace)
     attach(namespace["FAULTS"])
     got = {sid: f for sid in IN_PROCESS if (f := spantruth.run(sid).failing)}
-    expected = expectations.load(faulty / "expected.toml")
-    assert got == {sid: f for sid, f in expected.items() if sid in IN_PROCESS}
+    # The plugin grades spans: token metrics are graded by `spantruth run`, which gives the
+    # subject a meter provider.
+    expected = {
+        sid: spans
+        for sid, checks in expectations.load(faulty / "expected.toml").items()
+        if sid in IN_PROCESS
+        and (spans := {c: v for c, v in checks.items() if not c.startswith("metric.")})
+    }
+    assert got == expected
 
 
 def test_no_wrapper_is_a_ghost_span(spantruth):

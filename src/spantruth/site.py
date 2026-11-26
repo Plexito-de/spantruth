@@ -624,7 +624,7 @@ REPO = "https://github.com/Plexito-de/spantruth"
 FAULTS = {
     "anthropic-raw-input": (
         "Copies Anthropic's input_tokens as it is, without the cache reads and writes.",
-        ("input_tokens",),
+        ("input_tokens", "metric.input_tokens"),
     ),
     "close-leaks-span": (
         "Does not end the span when the app closes a stream or stops reading it early.",
@@ -640,7 +640,7 @@ FAULTS = {
     ),
     "gemini-candidates-output": (
         "Reports Gemini's candidatesTokenCount alone as the output, without the thinking tokens.",
-        ("output_tokens",),
+        ("output_tokens", "metric.output_tokens"),
     ),
     "errors-as-success": (
         "Ends the span of a failed call without status ERROR and without error.type.",
@@ -648,7 +648,11 @@ FAULTS = {
     ),
     "estimate-tokens": (
         "Guesses the output count from the length of the text when a stream carries no usage.",
-        ("output_tokens",),
+        ("output_tokens", "metric.output_tokens"),
+    ),
+    "metric-reasoning-left-out": (
+        "Leaves the reasoning tokens out of the output token metric, while the span counts them.",
+        ("metric.output_tokens",),
     ),
     "retry-as-error": (
         "Marks a call as failed when it succeeded after the SDK retried a 429.",

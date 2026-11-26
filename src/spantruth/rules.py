@@ -120,4 +120,23 @@ RULES: dict[str, tuple[str, str]] = {
         "whole. `gen_ai.output.messages` and the other conventions' output names are read.",
         f"{REQUIREMENT_LEVELS}#L115-L117",
     ),
+    "metric.input_tokens": (
+        "The input token metric is Recommended: it SHOULD be reported when an operation involves "
+        "the usage of tokens and the count is readily available, and the recorded value SHOULD "
+        "match the token count returned by the provider, cached tokens included. Read from "
+        "`gen_ai.client.inference.operation.input_tokens`, `gen_ai.client.inference.usage."
+        "input_tokens`, or the deprecated `gen_ai.client.token.usage` with `gen_ai.token.type` "
+        "`input`. The histograms count tokens per inference operation, so one call is one "
+        "recording. Graded only for a library that documents token metrics (`[metrics]` in "
+        "subject.toml); a documented library that emits none is missing.",
+        f"{GENAI}/model/gen-ai/token-metrics.yaml#L100-L121",
+    ),
+    "metric.output_tokens": (
+        "The output token metric counts the output tokens of the call, reasoning tokens "
+        "included, with the same rules as the input token metric. Read from "
+        "`gen_ai.client.inference.operation.output_tokens`, `gen_ai.client.inference.usage."
+        "output_tokens`, or the deprecated `gen_ai.client.token.usage` with `gen_ai.token.type` "
+        "`output`.",
+        f"{GENAI}/model/gen-ai/token-metrics.yaml#L33-L38",
+    ),
 }

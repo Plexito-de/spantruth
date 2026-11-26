@@ -246,3 +246,22 @@ def leaves(value: Any):
     elif isinstance(value, (list, tuple)):
         for v in value:
             yield from leaves(v)
+
+
+# The token usage metrics, per token direction: (metric, the `gen_ai.token.type` it needs). The
+# pinned conventions split usage into per-direction histograms and counters. The single
+# `gen_ai.client.token.usage` histogram with `gen_ai.token.type` is their deprecated predecessor,
+# which many libraries still emit, so it is read too.
+TOKEN_METRICS: dict[str, tuple[tuple[str, str | None], ...]] = {
+    "input_tokens": (
+        ("gen_ai.client.inference.operation.input_tokens", None),
+        ("gen_ai.client.inference.usage.input_tokens", None),
+        ("gen_ai.client.token.usage", "input"),
+    ),
+    "output_tokens": (
+        ("gen_ai.client.inference.operation.output_tokens", None),
+        ("gen_ai.client.inference.usage.output_tokens", None),
+        ("gen_ai.client.token.usage", "output"),
+    ),
+}
+TOKEN_METRIC_NAMES = frozenset(name for names in TOKEN_METRICS.values() for name, _ in names)

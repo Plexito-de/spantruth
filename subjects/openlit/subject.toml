@@ -11,3 +11,9 @@ docs = "https://github.com/openlit/openlit/blob/fcebb5543846576a061d5aa75dc097e3
 default = "on"
 off = {}
 on = {}
+
+# The OpenAI integration page lists gen_ai.client.token.usage. Anthropic is graded on code: both
+# integrations record through record_completion_metrics (__helpers.py L999-L1004,
+# https://github.com/openlit/openlit/blob/fcebb5543846576a061d5aa75dc097e3c8c69646/sdk/python/src/openlit/__helpers.py#L999-L1004).
+[metrics]
+docs = "https://github.com/openlit/openlit/blob/fcebb5543846576a061d5aa75dc097e3c8c69646/docs/latest/sdk/integrations/openai.mdx#L218"

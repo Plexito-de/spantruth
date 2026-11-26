@@ -309,6 +309,8 @@ UNCLASSIFIED = frozenset(
         "content.off_respected",
         "content.output_matches",
         "harness",
+        "metric.input_tokens",
+        "metric.output_tokens",
         "request_model",
         "response_id",
         "response_model",

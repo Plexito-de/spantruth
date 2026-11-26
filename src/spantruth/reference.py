@@ -8,15 +8,19 @@ Content capture follows OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT, off 
 in the OpenTelemetry GenAI instrumentations: `true`, `span_only` or `span_and_event` records the
 prompt and the completion text as `gen_ai.input.messages` and `gen_ai.output.messages`.
 
+With a meter provider, each call that ends with usage also records the token histograms
+`gen_ai.client.inference.operation.input_tokens` and `...output_tokens`, with the span's counts.
+
 Faults:
-    anthropic-raw-input   report Anthropic's wire `input_tokens`, without cache tokens
-    close-leaks-span      `stream.close()` does not end the span
-    content-first-chunk   a stream's recorded completion text is its first chunk only
-    content-ignores-off   prompt and completion text are recorded with the switch off
-    errors-as-success     exceptions are not recorded on the span
-    estimate-tokens       a stream without usage gets an estimate from the text length
-    gemini-candidates-output  report Gemini's `candidatesTokenCount` as output, without thoughts
-    retry-as-error        a retried operation that succeeds still sets Error status
+    anthropic-raw-input         report Anthropic's wire `input_tokens`, without cache tokens
+    close-leaks-span            `stream.close()` does not end the span
+    content-first-chunk         a stream's recorded completion text is its first chunk only
+    content-ignores-off         prompt and completion text are recorded with the switch off
+    errors-as-success           exceptions are not recorded on the span
+    estimate-tokens             a stream without usage gets an estimate from the text length
+    gemini-candidates-output    report Gemini's `candidatesTokenCount` as output, without thoughts
+    metric-reasoning-left-out   the output token metric leaves out reasoning tokens
+    retry-as-error              a retried operation that succeeds still sets Error status
 """
 
 from __future__ import annotations
@@ -44,6 +48,23 @@ def _message(message: Any) -> dict:
     return dump() if callable(dump) else {}
 
 
+# The bucket boundaries the GenAI conventions advise for the token histograms.
+TOKEN_BUCKETS = [4**i for i in range(14)]
+
+
+class _Meters:
+    def __init__(self, meter_provider: Any) -> None:
+        meter = meter_provider.get_meter("spantruth.reference")
+        self.input, self.output = (
+            meter.create_histogram(
+                f"gen_ai.client.inference.operation.{direction}_tokens",
+                unit="{token}",
+                explicit_bucket_boundaries_advisory=TOKEN_BUCKETS,
+            )
+            for direction in ("input", "output")
+        )
+
+
 class _Call:
     """The span of one call and the facts gathered for it."""
 
@@ -55,6 +76,7 @@ class _Call:
         faults: set[str],
         prompt: Any = None,
         operation: str = "chat",
+        meters: _Meters | None = None,
     ) -> None:
         self.span = tracer.start_span(
             f"{operation} {model}",
@@ -65,7 +87,13 @@ class _Call:
                 "gen_ai.request.model": model,
             },
         )
-        self.provider, self.faults = provider, faults
+        self.provider, self.faults, self.meters = provider, faults, meters
+        self.operation = operation
+        self.reasoning_in_output = True
+        self.model = model
+        # The usage and model values set on the span, which the token metrics repeat.
+        self.tokens: dict[str, Any] = {}
+        self.failed = False
         self.finish: list[str] = []
         self.text = ""
         self.chunks: list[str] = []
@@ -88,6 +116,8 @@ class _Call:
         if value is not None:
             if key == "gen_ai.response.id":
                 self.response_id = str(value)
+            if key.startswith("gen_ai.usage.") or key == "gen_ai.response.model":
+                self.tokens[key] = value
             self.span.set_attribute(key, value)
 
     def usage(
@@ -116,6 +146,7 @@ class _Call:
         self.set("gen_ai.output.messages", json.dumps([message]))
 
     def fail(self, exc: BaseException) -> None:
+        self.failed = True
         if "errors-as-success" not in self.faults:
             self.span.set_status(Status(StatusCode.ERROR, str(exc)[:200]))
             self.set("error.type", type(exc).__name__)
@@ -135,7 +166,35 @@ class _Call:
             self.response_id.endswith("-retry") or self.response_id.endswith("_retry")
         ):
             self.span.set_status(Status(StatusCode.ERROR, "429 Too Many Requests"))
+        if not self.failed:
+            self._record_metrics()
         self.span.end()
+
+    def _record_metrics(self) -> None:
+        """The token histograms, with the counts the span carries."""
+        if self.meters is None:
+            return
+        attributes = {
+            "gen_ai.operation.name": self.operation,
+            "gen_ai.provider.name": self.provider,
+            "gen_ai.request.model": self.model,
+        }
+        if "gen_ai.response.model" in self.tokens:
+            attributes["gen_ai.response.model"] = self.tokens["gen_ai.response.model"]
+        inp = self.tokens.get("gen_ai.usage.input_tokens")
+        out = self.tokens.get("gen_ai.usage.output_tokens")
+        # The fault takes the reasoning tokens out of a count that holds them. A span count that
+        # already leaves them out (gemini-candidates-output) goes to the metric as it is.
+        if (
+            out is not None
+            and "metric-reasoning-left-out" in self.faults
+            and self.reasoning_in_output
+        ):
+            out -= self.tokens.get("gen_ai.usage.reasoning.output_tokens") or 0
+        if inp is not None:
+            self.meters.input.record(inp, attributes)
+        if out is not None:
+            self.meters.output.record(out, attributes)
 
 
 def _openai_response(call: _Call, r: Any) -> None:
@@ -232,7 +291,9 @@ def _gemini_usage(call: _Call, u: Any) -> None:
     # Every stream chunk carries the counts so far, so each one replaces the last.
     thoughts = u.thoughts_token_count or 0
     out = u.candidates_token_count or 0
-    if "gemini-candidates-output" not in call.faults:
+    if "gemini-candidates-output" in call.faults:
+        call.reasoning_in_output = False
+    else:
         out += thoughts
     cached = u.cached_content_token_count or 0
     call.usage(u.prompt_token_count, out, read=cached, reasoning=thoughts)
@@ -287,7 +348,7 @@ class _GeminiStream:
         self._call.end()
 
 
-def _instrument_gemini(tracer: Tracer, faults: set[str]) -> None:
+def _instrument_gemini(tracer: Tracer, faults: set[str], meters: _Meters | None = None) -> None:
     """Wrap `Models` and `AsyncModels` of google-genai, for the Gemini API.
 
     The conventions name the provider `gcp.gemini` for the generativelanguage.googleapis.com
@@ -297,9 +358,9 @@ def _instrument_gemini(tracer: Tracer, faults: set[str]) -> None:
     import google.genai.models as gm
 
     def begin(kwargs: dict) -> _Call:
-        return _Call(
-            tracer, "gcp.gemini", kwargs.get("model", ""), faults, operation="generate_content"
-        )
+        model = kwargs.get("model", "")
+        operation = "generate_content"
+        return _Call(tracer, "gcp.gemini", model, faults, operation=operation, meters=meters)
 
     def plain(create):
         @functools.wraps(create)
@@ -444,11 +505,20 @@ def _provider(resource: Any, provider: str) -> str:
     return "azure.ai.openai" if isinstance(resource._client, BaseAzureClient) else provider
 
 
-def _wrap(tracer: Tracer, provider: str, faults: set[str], on_result, on_event, create, is_async):
+def _wrap(
+    tracer: Tracer,
+    provider: str,
+    faults: set[str],
+    on_result,
+    on_event,
+    create,
+    is_async,
+    meters: _Meters | None = None,
+):
     def begin(resource: Any, kwargs: dict) -> _Call:
         name = _provider(resource, provider) if provider == "openai" else provider
         prompt = kwargs.get("messages", kwargs.get("input"))
-        return _Call(tracer, name, kwargs.get("model", ""), faults, prompt)
+        return _Call(tracer, name, kwargs.get("model", ""), faults, prompt, meters=meters)
 
     # Decided by class, not by inspection: the SDKs wrap async methods in sync decorators.
     if is_async:
@@ -486,16 +556,24 @@ def _finish(call: _Call, result: Any, kwargs: dict, on_result, on_event) -> Any:
     return result
 
 
-def instrument(tracer_provider, faults: set[str] = frozenset()) -> None:
+def instrument(tracer_provider, faults: set[str] = frozenset(), meter_provider=None) -> None:
     tracer = tracer_provider.get_tracer("spantruth.reference")
-    _instrument_gemini(tracer, set(faults))
+    meters = _Meters(meter_provider) if meter_provider is not None else None
+    _instrument_gemini(tracer, set(faults), meters)
     import anthropic.resources.messages as am
     import openai.resources.chat.completions as oc
     import openai.resources.responses as orr
 
     for cls, is_async in ((oc.Completions, False), (oc.AsyncCompletions, True)):
         cls.create = _wrap(
-            tracer, "openai", set(faults), _openai_response, _openai_chunk, cls.create, is_async
+            tracer,
+            "openai",
+            set(faults),
+            _openai_response,
+            _openai_chunk,
+            cls.create,
+            is_async,
+            meters,
         )
     for cls, is_async in ((orr.Responses, False), (orr.AsyncResponses, True)):
         # Only streams are exercised so far, so a plain response is not read.
@@ -507,6 +585,7 @@ def instrument(tracer_provider, faults: set[str] = frozenset()) -> None:
             _responses_event,
             cls.create,
             is_async,
+            meters,
         )
     for cls, is_async in ((am.Messages, False), (am.AsyncMessages, True)):
         cls.create = _wrap(
@@ -517,4 +596,5 @@ def instrument(tracer_provider, faults: set[str] = frozenset()) -> None:
             _anthropic_event,
             cls.create,
             is_async,
+            meters,
         )

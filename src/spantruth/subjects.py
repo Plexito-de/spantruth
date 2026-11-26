@@ -49,6 +49,9 @@ class Subject:
     ref: str = ""
     # The library's documented switch for recording prompt and completion text. See `_content`.
     content: dict = field(default_factory=dict)
+    # A pinned link to where the library documents its token usage metrics. Only a subject with one
+    # has its metrics graded. Empty: the library never claimed token metrics.
+    metrics_docs: str = ""
 
     def content_env(self, mode: str) -> dict[str, str] | None:
         """The variables that set the content switch to `mode`, or None when it cannot be set."""
@@ -89,6 +92,16 @@ def _content(config: Path, data: dict) -> dict:
         if not isinstance(env, dict) or not all(isinstance(v, str) for v in env.values()):
             raise SubjectError(f"{config}: [content] {mode} must be a table of strings")
     return table
+
+
+def _metrics(config: Path, data: dict) -> str:
+    """The `[metrics]` table: `docs`, a pinned link to where the library documents token metrics."""
+    table = data.get("metrics")
+    if table is None:
+        return ""
+    if not isinstance(table, dict) or not str(table.get("docs", "")).startswith("https://"):
+        raise SubjectError(f"{config}: [metrics] needs docs, an https address")
+    return table["docs"]
 
 
 def is_path(ref: str) -> bool:
@@ -138,6 +151,7 @@ def load(ref: str) -> Subject:
         detect_with=tuple(data.get("detect_with", ())),
         ref=ref if is_path(ref) else directory.name,
         content=_content(config, data),
+        metrics_docs=_metrics(config, data),
     )
 
 

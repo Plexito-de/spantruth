@@ -13,6 +13,8 @@ from .calls import PROMPT
 from .conventions import (
     LLM_MARKERS,
     OUTPUT_EVENTS,
+    TOKEN_METRIC_NAMES,
+    TOKEN_METRICS,
     defined_for,
     langfuse_only,
     leaves,
@@ -23,7 +25,7 @@ from .conventions import (
     text_of,
 )
 from .model import Scenario, Truth
-from .receiver import LogRecordData, SpanRecord
+from .receiver import LogRecordData, MetricPoint, SpanRecord
 from .rules import RULES
 
 # Ordered by severity. The cell takes the most severe verdict of its checks.
@@ -242,6 +244,59 @@ def _content_on(spans, logs, completion: str, switch: str | None) -> Check:
     return Check(check, "pass", completion, found[0][1], found[0][0])
 
 
+def _latest(points: list[MetricPoint]) -> list[MetricPoint]:
+    """Each cumulative stream once, at its last export. Delta points each count once."""
+    streams: dict[tuple, MetricPoint] = {}
+    for i, p in enumerate(points):
+        key = (
+            (p.name, p.scope, p.start_ns, json.dumps(p.attributes, sort_keys=True, default=str))
+            if p.temporality == 2
+            else (i,)
+        )
+        if key not in streams or p.time_ns >= streams[key].time_ns:
+            streams[key] = p
+    return list(streams.values())
+
+
+def _whole(value: float) -> int | float:
+    """A histogram's OTLP sum is a double, so 1187 arrives as 1187.0. A whole count is an int."""
+    return int(value) if isinstance(value, float) and value.is_integer() else value
+
+
+def _metric(fact: str, t: Truth, points: list[MetricPoint], documented: bool) -> Check:
+    """The token count one call recorded on the usage metrics, against the wire.
+
+    Only a library that documents token metrics is graded. One that does not never claimed them.
+    """
+    check = f"metric.{fact}"
+    if not documented:
+        return Check(check, "n/a", detail="the library documents no token metrics")
+    found, recordings = [], {}
+    for name, token_type in TOKEN_METRICS[fact]:
+        mine = [
+            p
+            for p in points
+            if p.name == name
+            and (token_type is None or p.attributes.get("gen_ai.token.type") == token_type)
+        ]
+        if mine:
+            found.append((None, name, _whole(sum(p.value for p in mine))))
+            if all(p.count is not None for p in mine):
+                recordings[name] = sum(p.count for p in mine)
+    if not found:
+        if getattr(t, fact) is None:
+            return Check(check, "n/a")
+        if not any(p.name in TOKEN_METRIC_NAMES for p in points):
+            return Check(check, "missing", getattr(t, fact), detail="no token usage metric arrived")
+        return Check(check, "missing", getattr(t, fact), detail="no metric for this count")
+    graded = _value(fact, getattr(t, fact), found, t)
+    twice = {name: n for name, n in recordings.items() if n > 1}
+    if graded.verdict == "pass" and twice:
+        name, n = next(iter(twice.items()))
+        return Check(check, "wrong", 1, n, name, f"recorded {n} times for one call")
+    return replace(graded, id=check)
+
+
 def grade(
     sc: Scenario,
     t: Truth,
@@ -250,10 +305,20 @@ def grade(
     spans: list[SpanRecord],
     logs: list[LogRecordData] = (),
     content_switch: str | None = None,
+    metrics: list[MetricPoint] = (),
+    metrics_docs: str | None = None,
 ) -> list[Check]:
-    """Every check of one cell. `content_switch` names the library's switch for the scenario's
-    content mode, or None when the subject declares no such switch."""
+    """Every check of one cell: the span checks, the token usage metrics, and content capture.
+
+    `content_switch` names the library's switch for the scenario's content mode, or None when the
+    subject declares no such switch. `metrics_docs` links the library's documentation of its token
+    metrics, or is None when the subject declares none.
+    """
     checks = _grade(sc, t, base, obs, spans)
+    if t.error is None and any(c.id == "span.parented" for c in checks):
+        # A failed call, or no span to grade: the metrics are not graded either.
+        points = _latest(list(metrics))
+        checks += [_metric(fact, t, points, metrics_docs is not None) for fact in TOKEN_METRICS]
     if not sc.content or any(c.id in ("harness", "subject.instrument") for c in checks):
         return checks
     if obs.get("hang"):
