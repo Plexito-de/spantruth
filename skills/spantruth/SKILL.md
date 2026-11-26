@@ -37,7 +37,8 @@ application.
 
 `uncovered` lists the LLM libraries in the project that spantruth does not cover yet, each with a
 `title`, its `packages` and the `issue` where the user can ask for it. Say that spantruth did not check
-them, and give the issue link. It is there for every exit code.
+them, and give the issue link. It is in every document that `--json` prints. With exit code 2 there may
+be no document, such as for a lock file that cannot be read: then read the message on stderr.
 
 When `remedy` has a value, the project can act today. When an upstream issue has the status
 `fixed-upstream`, the library has fixed it: suggest the upgrade that its `note` names. Otherwise check for
