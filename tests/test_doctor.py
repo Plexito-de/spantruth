@@ -540,6 +540,102 @@ def test_requirements_with_hashes_keep_their_pins(tmp_path):
     assert doctor._requirements([req]) == {"anthropic": "1.13.0", "opentelemetry-sdk": "1.45.2"}
 
 
+def test_a_setup_that_raised_says_why_and_names_the_versions_spantruth_added():
+    # A project on an older OpenTelemetry pins the SDK, and the subject's other instrumentor comes
+    # at spantruth's pin, which needs a newer one. The text must say so, not only a check ID.
+    doc = result_doc()
+    subject = doc["subjects"]["openinference"]
+    subject["versions"] = {"anthropic": "2.5.0", "openinference-instrumentation-openai": "0.1.69"}
+    subject["cells"]["anthropic/basic"] = {
+        "verdict": "inconclusive",
+        "checks": [
+            {
+                "id": "subject.instrument",
+                "verdict": "inconclusive",
+                "expected": None,
+                "got": None,
+                "where": None,
+                "detail": "Traceback:\n  File x\nModuleNotFoundError: No module named 'a.b'\n",
+            }
+        ],
+    }
+    found = doctor.Found("requirements.txt", {"anthropic": "2.5.0"})
+    text = doctor.render_text(found, doctor.summarize(doc), "x")
+    assert "Could not run 1 of 2 scenarios: ModuleNotFoundError: No module named 'a.b'" in text
+    assert "spantruth's own versions: openinference-instrumentation-openai 0.1.69" in text
+
+
+def test_a_failed_environment_build_says_where_the_reason_is():
+    doc = result_doc()
+    doc["subjects"]["openinference"]["error"] = "environment build failed: Command [uv] returned 1"
+    text = doctor.render_text(doctor.Found("uv.lock", {}), doctor.summarize(doc), "x")
+    assert "Python 3.12" in text and "uv printed" in text
+
+
+def test_a_missing_uv_is_one_line_with_the_install_link_and_exit_3(tmp_path, capsys, monkeypatch):
+    project(tmp_path, uv__lock=UV_LOCK)
+    monkeypatch.setattr(doctor.shutil, "which", lambda name: None)
+    assert cli.main(["doctor", str(tmp_path)]) == 3
+    err = capsys.readouterr().err
+    assert "Traceback" not in err
+    assert err.count("\n") == 1
+    assert "needs uv" in err and "https://docs.astral.sh/uv/getting-started/installation/" in err
+
+
+def test_doctor_reads_a_subdirectory(tmp_path, monkeypatch):
+    sub = tmp_path / "services" / "api"
+    sub.mkdir(parents=True)
+    project(sub, uv__lock=UV_LOCK)
+    monkeypatch.chdir(tmp_path)
+    assert doctor.read_versions("services/api").source == "uv.lock"
+
+
+def test_doctor_takes_the_path_of_a_lock_file(tmp_path):
+    project(tmp_path, uv__lock=UV_LOCK, requirements__txt="openai==1.0\n")
+    assert doctor.read_versions(tmp_path / "uv.lock").source == "uv.lock"
+    found = doctor.read_versions(tmp_path / "requirements.txt")
+    assert (found.source, found.versions) == ("requirements.txt", {"openai": "1.0"})
+
+
+def test_doctor_says_when_the_path_does_not_exist(tmp_path):
+    with pytest.raises(doctor.DoctorError, match="no such directory"):
+        doctor.read_versions(tmp_path / "nope")
+
+
+def monorepo(root):
+    for sub, name in (("services/api", "uv.lock"), ("services/worker", "poetry.lock")):
+        (root / sub).mkdir(parents=True)
+        (root / sub / name).write_text(UV_LOCK)
+    # Lock files of installed packages and of other tools are not subprojects.
+    (root / "node_modules" / "x").mkdir(parents=True)
+    (root / "node_modules" / "x" / "uv.lock").write_text(UV_LOCK)
+    (root / ".venv" / "src").mkdir(parents=True)
+    (root / ".venv" / "src" / "uv.lock").write_text(UV_LOCK)
+    (root / "pyproject.toml").write_text('[tool.uv.workspace]\nmembers = ["services/*"]\n')
+    return root
+
+
+def test_a_monorepo_root_names_each_subproject_and_how_to_run_it(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(monorepo(tmp_path))
+    assert cli.main(["doctor"]) == 2
+    err = capsys.readouterr().err
+    assert "spantruth doctor services/api" in err
+    assert "spantruth doctor services/worker" in err
+    assert "node_modules" not in err and ".venv" not in err
+
+
+def test_a_monorepo_command_starts_from_the_path_given(tmp_path):
+    with pytest.raises(doctor.DoctorError) as exc:
+        doctor.read_versions(monorepo(tmp_path / "repo"))
+    assert f"spantruth doctor {tmp_path / 'repo' / 'services' / 'api'}" in str(exc.value)
+
+
+def test_a_root_with_requirements_is_read_and_not_a_monorepo(tmp_path):
+    monorepo(tmp_path)
+    project(tmp_path, requirements__txt="openai==1.0\n")
+    assert doctor.read_versions(tmp_path).source == "requirements.txt"
+
+
 TABLE = {
     "langchain": {"title": "LangChain", "issue": "https://example.com/issues/77"},
     "langchain-openai": {"title": "LangChain", "issue": "https://example.com/issues/77"},
