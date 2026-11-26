@@ -380,3 +380,43 @@ def test_openai_prompt_tokens_include_cache_reads_and_writes(sid, tokens):
 
 def test_an_openai_fixture_without_cache_writes_has_none():
     assert scenarios.truth(scenarios.get("openai/cache-hit")).cache_write_tokens is None
+
+
+PLANS = [s for s in ALL if s.calls]
+
+
+@pytest.mark.parametrize("sc", PLANS, ids=lambda s: s.id)
+def test_every_count_of_a_plan_is_distinct_across_its_calls(sc):
+    # A count that crossed from one call's span to another's then shows as a wrong number.
+    t = scenarios.truth(sc)
+    assert len(t.calls) == len(sc.calls) and t.input_tokens is None
+    values = [
+        getattr(c, fact)
+        for c in t.calls
+        for fact in ("input_tokens", "output_tokens", "cache_read_tokens", "cache_write_tokens")
+        if getattr(c, fact) is not None
+    ]
+    assert len(values) == len(set(values)), values
+    assert len({c.response_id for c in t.calls}) == len(t.calls)
+
+
+@pytest.mark.parametrize("sid", ["openai/agent-loop", "anthropic/agent-loop"])
+def test_the_agent_loop_sends_each_call_the_tool_results_before_it(sid):
+    sc = scenarios.get(sid)
+    seen = calls.Seen()
+    with MockServer() as mock:
+        calls.run(sc, mock.base_url(sc), seen)
+        bodies = [json.loads(body) for _, _, body in mock.requests]
+    assert seen.response_id == [c.response_id for c in scenarios.truth(sc).calls]
+    assert [len(b["messages"]) for b in bodies] == [1, 3, 5]
+    results = [m for m in bodies[2]["messages"] if m["role"] in ("tool", "user")]
+    assert len(results) == 3  # the prompt and one tool result per earlier call
+    assert len(seen.calls) == 3 and all(a <= b for a, b in (c["window"] for c in seen.calls))
+
+
+def test_the_mock_refuses_a_request_that_no_planned_call_fits():
+    sc = scenarios.get("openai/agent-loop")
+    with MockServer() as mock:
+        client = openai.OpenAI(base_url=mock.base_url(sc), api_key="t", max_retries=0)
+        with pytest.raises(openai.NotFoundError):
+            client.chat.completions.create(model="gpt-5-nano", messages=calls.PROMPT)

@@ -1,13 +1,14 @@
 """Every verdict the checks can return, on hand-built records. No subprocess, no network."""
 
 import json
+from dataclasses import replace
 
 import pytest
 
 from spantruth import scenarios
 from spantruth.checks import _formula, cell_verdict, grade
 from spantruth.conventions import lookup
-from spantruth.model import Truth
+from spantruth.model import Call, Truth
 from spantruth.receiver import SpanRecord
 
 TRACE, PARENT = "a" * 32, "b" * 16
@@ -377,3 +378,123 @@ def test_a_cache_scenario_without_a_ttl_breakdown_gets_no_new_guess():
     t = scenarios.truth(scenarios.get("anthropic/cache-hit"))
     assert _formula("cache_write_tokens", 2 * t.cache_write_tokens, t) == ""
     assert _formula("input_tokens", t.input_tokens + t.cache_write_tokens, t) == ""
+
+
+def _call_spans(sid, mutate=lambda i, attrs: None):
+    """One honest span per call of a plan, each starting inside its call's window."""
+    sc = scenarios.get(sid)
+    t = scenarios.truth(sc)
+    spans, windows = [], []
+    for i, ct in enumerate(t.calls):
+        windows.append({"window": [100 * i + 10, 100 * i + 90]})
+        attrs = {"gen_ai.operation.name": "chat", "gen_ai.request.model": ct.request_model}
+        attrs |= {
+            "gen_ai.response.model": ct.response_model,
+            "gen_ai.response.id": ct.response_id,
+            "gen_ai.response.finish_reasons": list(ct.finish_reasons),
+            "gen_ai.usage.input_tokens": ct.input_tokens,
+            "gen_ai.usage.output_tokens": ct.output_tokens,
+        }
+        if ct.cache_read_tokens:
+            attrs["gen_ai.usage.cache_read.input_tokens"] = ct.cache_read_tokens
+        mutate(i, attrs)
+        start = 100 * i + 20
+        spans.append(
+            SpanRecord(
+                TRACE,
+                f"{i:016x}",
+                PARENT,
+                "chat",
+                3,
+                start,
+                start + 5,
+                "UNSET",
+                "",
+                attrs,
+                {},
+                "lib",
+                (),
+            )
+        )
+    seen = {"response_id": [c.response_id for c in t.calls], "calls": windows}
+    o = obs(**seen)
+    base = {"exception": None, "seen": o["seen"]}
+    return sc, t, base, o, spans
+
+
+@pytest.mark.parametrize("sid", ["openai/agent-loop", "anthropic/agent-loop"])
+def test_each_call_of_an_agent_loop_on_its_own_span_passes(sid):
+    sc, t, base, o, spans = _call_spans(sid)
+    checks = grade(sc, t, base, o, spans)
+    assert cell_verdict(checks) == "pass", [c for c in checks if c.verdict != "pass"]
+    assert len([c for c in checks if c.id == "input_tokens"]) == 1
+
+
+def test_three_spans_with_usage_are_not_one_call_reported_three_times():
+    # Each call reports once, so the single-report check does not fire on the plan.
+    sc, t, base, o, spans = _call_spans("openai/agent-loop")
+    assert "tokens.single-report" not in by_id(grade(sc, t, base, o, spans))
+
+
+def test_a_count_of_another_call_is_named():
+    def cross(i, attrs):
+        if i == 1:
+            attrs["gen_ai.usage.input_tokens"] = 1171  # the input tokens of call 1
+
+    sc, t, base, o, spans = _call_spans("openai/agent-loop", cross)
+    c = by_id(grade(sc, t, base, o, spans))["input_tokens"]
+    assert (c.verdict, c.expected, c.got) == ("wrong", 1307, 1171)
+    assert c.detail == "call 2 of 3: the input tokens of call 1"
+
+
+def test_every_call_that_fails_is_named():
+    def raw(i, attrs):
+        attrs["gen_ai.usage.input_tokens"] -= attrs.get("gen_ai.usage.cache_read.input_tokens", 0)
+
+    sc, t, base, o, spans = _call_spans("anthropic/agent-loop", raw)
+    c = by_id(grade(sc, t, base, o, spans))["input_tokens"]
+    assert c.verdict == "wrong" and c.detail.startswith("call 2 of 3: cache reads")
+    assert c.detail.endswith("; failed on calls 2, 3")
+
+
+def test_a_call_with_no_span_is_missing():
+    sc, t, base, o, spans = _call_spans("openai/agent-loop")
+    c = by_id(grade(sc, t, base, o, spans[:2]))["span.recorded"]
+    assert (c.verdict, c.detail) == ("missing", "call 3 of 3: no LLM span matched this call")
+
+
+def test_a_span_outside_every_call_window_belongs_to_no_call():
+    sc, t, base, o, spans = _call_spans("openai/agent-loop")
+    late = replace(spans[0], span_id="f" * 16, start_ns=10_000, attributes=spans[0].attributes)
+    checks = grade(sc, t, base, o, [*spans, late])
+    assert cell_verdict(checks) == "pass"
+
+
+def test_all_usage_on_the_first_call_span_is_wrong_for_the_others():
+    def all_on_first(i, attrs):
+        if i:
+            del attrs["gen_ai.usage.input_tokens"], attrs["gen_ai.usage.output_tokens"]
+
+    sc, t, base, o, spans = _call_spans("openai/agent-loop", all_on_first)
+    assert by_id(grade(sc, t, base, o, spans))["input_tokens"].verdict == "missing"
+
+
+def test_calls_to_different_models_are_matched_by_request_model():
+    # Concurrent calls overlap in time, so their spans are told apart by the model they ask for.
+    loop = scenarios.get("openai/agent-loop")
+    calls = (
+        Call("gpt-5-mini", loop.calls[0].response),
+        Call("gpt-5-nano", loop.calls[2].response),
+    )
+    sc = replace(loop, id="openai/probe", calls=calls)
+    t = scenarios.truth(sc)
+    _, _, base, o, spans = _call_spans("openai/agent-loop")
+    first = replace(
+        spans[0], attributes=spans[0].attributes | {"gen_ai.request.model": "gpt-5-mini"}
+    )
+    third = spans[2].attributes | {"gen_ai.request.model": "gpt-5-nano"}
+    # Both spans start in the first window: only the model can tell them apart.
+    third_span = replace(spans[2], start_ns=first.start_ns, attributes=third)
+    o["seen"]["calls"] = [{"window": [0, 1000]}, {"window": [0, 1000]}]
+    checks = grade(sc, t, base, o, [third_span, first])
+    assert cell_verdict(checks) == "pass", [c for c in checks if c.verdict != "pass"]
