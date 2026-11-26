@@ -45,7 +45,7 @@ jobs:
         run: |
           mkdir -p state
           for file in latest.json history.jsonl changes.jsonl versions.json; do
-            code=$(curl -sS -L -o "state/$file" -w '%{http_code}' "https://plexito-de.github.io/spantruth/$file")
+            code=$(curl -sS -L --retry 3 -o "state/$file" -w '%{http_code}' "https://plexito-de.github.io/spantruth/$file")
             case "$code" in
               200) ;;
               404) rm -f "state/$file" ;;
@@ -73,6 +73,8 @@ jobs:
         run: |
           if [ ! -f site/versions.json ] && [ -f state/versions.json ]; then
             cp state/versions.json site/versions.json
+          elif [ ! -f site/versions.json ] && [ -f versions.json ]; then
+            cp versions.json site/versions.json
           fi
       - name: Render
         run: |

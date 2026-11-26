@@ -123,20 +123,36 @@ def suite(subject: subjects.Subject) -> str:
     return digest.hexdigest()[:16]
 
 
+def sdk_pins(subject: subjects.Subject) -> dict[str, str]:
+    """The provider SDK versions the subject runs with when its own packages vary."""
+    sdks = {subjects.package_name(t) for t in subjects.base().get("track", ())}
+    pins = {}
+    for r in subjects.requirements(subject, False):
+        if subjects.package_name(r) in sdks and "==" in r:
+            pins[subjects.package_name(r)] = r.split("==", 1)[1]
+    return pins
+
+
 def entry(result: dict[str, Any], version: str, released: str, run: str) -> dict[str, Any]:
     """One version's line: the failing checks per scenario with their bug class, and the gaps.
 
-    A cell whose grading stopped early (the setup raised, the call hung, no LLM span arrived) has
-    no `span.parented` check. Its other checks were not graded, which is not a pass, so `partial`
-    keeps the checks such a cell did grade.
+    A cell the harness could not run is `unknown`. A cell whose setup raised (`subject.instrument`)
+    is `setup_failed`: the subject's documented setup does not run on this version, often because
+    the version is older than the subject's adapter, so it says nothing about the library's
+    telemetry and is not a failing check here. A cell whose grading stopped early for another
+    reason (the call hung, no LLM span arrived) has no `span.parented` check. Its other checks
+    were not graded, which is not a pass, so `partial` keeps the checks such a cell did grade.
     """
     failing: dict[str, dict[str, str]] = {}
     partial: dict[str, list[str]] = {}
-    unknown = []
+    unknown, setup_failed = [], []
     for sid, cell in sorted(result.get("cells", {}).items()):
         ids = [c["id"] for c in cell["checks"]]
         if "harness" in ids:
             unknown.append(sid)
+            continue
+        if "subject.instrument" in ids:
+            setup_failed.append(sid)
             continue
         if "span.parented" not in ids:
             partial[sid] = sorted(ids)
@@ -154,6 +170,7 @@ def entry(result: dict[str, Any], version: str, released: str, run: str) -> dict
         "failing": failing,
         "partial": partial,
         "unknown": unknown,
+        "setup_failed": setup_failed,
         "error": (result.get("error") or "")[:300],
     }
 
@@ -177,6 +194,7 @@ def first_fixed(versions: list[dict[str, Any]]) -> list[dict[str, str]]:
             for v in versions
             if not v["error"]
             and sid not in v["unknown"]
+            and sid not in v.get("setup_failed", ())
             and check in v.get("partial", {}).get(sid, (check,))
         ]
         fails = [check in v["failing"].get(sid, {}) for v in ran]
@@ -243,6 +261,7 @@ def build(
             "providers": list(s.providers),
             "detect": [subjects.package_name(p) for p in s.detect],
             "detect_with": [subjects.package_name(p) for p in s.detect_with],
+            "sdks": sdk_pins(s),
             "packages": packages,
         }
     print(f"history: {len(work)} release(s) to run, the rest reused", file=sys.stderr)
@@ -342,6 +361,26 @@ FAST_NOTE = (
     "Anthropic SDK's own tracing off. For your exact set of versions together, run "
     "spantruth doctor without --fast."
 )
+SETUP_NOTE = "spantruth's setup does not run on this version"
+
+
+def setup_failed(hit: dict[str, Any]) -> set[str]:
+    """The scenarios whose setup raised. A table from before `setup_failed` lists them as failing
+    `subject.instrument`, so those count too."""
+    old = {sid for sid, checks in hit["failing"].items() if "subject.instrument" in checks}
+    return set(hit.get("setup_failed", ())) | old
+
+
+def _sdk_notes(s: subjects.Subject, versions: dict[str, str | None]) -> list[str]:
+    """A line per provider SDK whose version in the project differs from the one the table ran."""
+    notes = []
+    for sdk, pin in sorted(sdk_pins(s).items()):
+        mine = versions.get(sdk)
+        if sdk in s.providers and mine and version_key(mine) != version_key(pin):
+            notes.append(
+                f"The table ran {s.title} with {sdk} {pin}, and your project has {sdk} {mine}."
+            )
+    return notes
 
 
 def answer(
@@ -349,13 +388,25 @@ def answer(
     selected: list[subjects.Subject],
     versions: dict[str, str | None],
     ids: list[str],
-) -> tuple[list[dict[str, Any]], list[str]]:
-    """The table's answer per subject it covers at the project's versions, and the subjects it
-    cannot answer: a version it did not run, a package with no pin, or a scenario it could not run.
+) -> tuple[list[dict[str, Any]], list[str], list[str]]:
+    """The table's answer per subject it covers at the project's versions, the subjects it cannot
+    answer, and notes for the reader.
+
+    A subject goes to the local run when the table has no line for its version, the package has no
+    pin, the run of that version failed or could not run a scenario, or this spantruth grades the
+    subject differently from the one that made the table (a stale table).
     """
-    answered, missing = [], []
+    answered, missing, notes = [], [], []
     for s in selected:
         packages = table.get("subjects", {}).get(s.name, {}).get("packages", {})
+        stale = [p for p, d in packages.items() if p in versions and d.get("suite") != suite(s)]
+        if stale:
+            missing.append(s.name)
+            notes.append(
+                f"The table was made by spantruth {table.get('spantruth')}, which grades "
+                f"{s.title} differently from this spantruth {__version__}, so it runs locally."
+            )
+            continue
         rows = []
         for package, data in packages.items():
             if package not in versions:
@@ -365,6 +416,7 @@ def answer(
             if hit is None or hit["error"] or set(hit["unknown"]) & set(ids):
                 rows = None
                 break
+            setup = setup_failed(hit) & set(ids)
             later = version_key(version)
             rows.append(
                 {
@@ -372,22 +424,30 @@ def answer(
                     "version": version,
                     "run": hit["run"],
                     "scenarios": len([i for i in data["scenarios"] if i in ids]),
-                    "failing": {sid: c for sid, c in sorted(hit["failing"].items()) if sid in ids},
+                    "setup_failed": len(setup),
+                    "failing": {
+                        sid: c
+                        for sid, c in sorted(hit["failing"].items())
+                        if sid in ids and sid not in setup
+                    },
                     "fixed_in": {
                         f"{f['scenario']} {f['check']}": f["version"]
                         for f in data.get("first_fixed", ())
-                        if version_key(f["version"]) > later
+                        if version_key(f["version"]) > later and f["check"] != "subject.instrument"
                     },
                 }
             )
         if rows:
             answered.append({"name": s.name, "title": s.title, "packages": rows})
+            notes += _sdk_notes(s, versions)
         else:
             missing.append(s.name)
-    return answered, missing
+    return answered, missing, notes
 
 
-def render_answer(table: dict[str, Any], answered: list[dict[str, Any]]) -> str:
+def render_answer(
+    table: dict[str, Any], answered: list[dict[str, Any]], notes: list[str] = ()
+) -> str:
     lines = [
         f"From the version table of {table['created'][:10]} (spantruth {table['spantruth']}), "
         "with no run:",
@@ -396,8 +456,14 @@ def render_answer(table: dict[str, Any], answered: list[dict[str, Any]]) -> str:
     for s in answered:
         for p in s["packages"]:
             lines.append(f"{s['title']}  ({p['package']} {p['version']})")
+            if p["setup_failed"]:
+                lines.append(
+                    f"  {SETUP_NOTE}: {p['setup_failed']} of {p['scenarios']} scenarios have no "
+                    "answer."
+                )
             if not p["failing"]:
-                lines.append(f"  No problem in {p['scenarios']} scenarios.")
+                if not p["setup_failed"]:
+                    lines.append(f"  No problem in {p['scenarios']} scenarios.")
                 continue
             lines.append(f"  {len(p['failing'])} of {p['scenarios']} scenarios fail:")
             for sid, checks in p["failing"].items():
@@ -407,12 +473,16 @@ def render_answer(table: dict[str, Any], answered: list[dict[str, Any]]) -> str:
                     tail = f", fixed in {fixed}" if fixed else ""
                     lines.append(f"    {sid}: {check}{f' ({name})' if name else ''}{tail}")
         lines.append("")
-    lines.append(FAST_NOTE)
+    lines += [*notes, FAST_NOTE]
     return "\n".join(lines)
 
 
 def fast(directory: Path, out: Path, cache: Path, jobs: int = 4, scenario=None) -> int:
-    """`doctor --fast`: answer from the shipped table, and run locally only what it lacks."""
+    """`doctor --fast`: answer from the shipped table, and run locally only what it lacks.
+
+    Exit code as doctor's: 3 when spantruth could not run something (here: its setup does not run
+    on a version), else 1 on a failing check, else 0.
+    """
     from . import doctor
 
     found = doctor.read_versions(directory)
@@ -426,13 +496,18 @@ def fast(directory: Path, out: Path, cache: Path, jobs: int = 4, scenario=None) 
             )
         return doctor.run(directory, out, cache, jobs=jobs, scenario=scenario)
     ids = scenario or doctor.scenario_ids(found.versions)
-    answered, missing = answer(table, selected, found.versions, ids)
+    answered, missing, notes = answer(table, selected, found.versions, ids)
     print(f"Read {found.source}.")
     if answered:
-        print(render_answer(table, answered))
-    code = 1 if any(p["failing"] for s in answered for p in s["packages"]) else 0
+        print(render_answer(table, answered, notes))
+    elif notes:
+        print("\n".join(notes))
+    rows = [p for s in answered for p in s["packages"]]
+    code = (
+        3 if any(p["setup_failed"] for p in rows) else 1 if any(p["failing"] for p in rows) else 0
+    )
     if not missing:
         return code
     print(f"\nNot in the table at your versions: {', '.join(missing)}. Running them now.\n")
     local = doctor.run(directory, out, cache, jobs=jobs, scenario=scenario, only=missing)
-    return local if local == 3 else max(code, local)
+    return 3 if 3 in (code, local) else max(code, local)

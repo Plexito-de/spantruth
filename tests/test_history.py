@@ -93,9 +93,10 @@ def test_an_entry_keeps_failing_checks_with_their_class_and_the_cells_it_could_n
         }
     }
     e = history.entry(result, "3.3.0", "2026-10-01", "2026-11-26")
-    assert e["failing"] == {"a/w": {"subject.instrument": ""}, "a/x": {"span.ended": "ST01"}}
+    assert e["failing"] == {"a/x": {"span.ended": "ST01"}}
     assert e["unknown"] == ["a/z"]
-    assert e["partial"] == {"a/w": ["subject.instrument"]}  # the setup raised: nothing else graded
+    assert e["setup_failed"] == ["a/w"]  # the setup raised: not run, and not a failing check
+    assert e["partial"] == {}
     assert e["error"] == ""
 
 
@@ -117,8 +118,6 @@ def test_first_fixed_is_the_first_version_that_passes_and_keeps_passing(states, 
     versions = []
     for n, s in enumerate(states, 2):
         failing = {"a/x": {"span.ended": "ST01"}} if s == "f" else {}
-        if s == "setup":
-            failing = {"a/x": {"subject.instrument": ""}}
         v = line(
             str(n),
             failing,
@@ -126,9 +125,9 @@ def test_first_fixed_is_the_first_version_that_passes_and_keeps_passing(states, 
             error="build failed" if s == "error" else "",
         )
         if s == "setup":
-            v["partial"] = {"a/x": ["subject.instrument"]}
+            v["setup_failed"] = ["a/x"]
         versions.append(v)
-    got = [f for f in history.first_fixed(versions) if f["check"] == "span.ended"]
+    got = history.first_fixed(versions)
     if fixed is None:
         assert got == []
     else:
@@ -254,9 +253,9 @@ def test_the_nightly_job_publishes_the_table_and_keeps_the_last_one():
     assert "spantruth history --out site/versions.json" in nightly["run"]
     assert nightly["if"] == "github.event_name != 'push'"
     assert nightly["continue-on-error"] is True
-    assert (
-        "cp state/versions.json site/versions.json" in steps["Keep the last version table"]["run"]
-    )
+    keep = steps["Keep the last version table"]["run"]
+    assert "cp state/versions.json site/versions.json" in keep
+    assert "cp versions.json site/versions.json" in keep  # the committed table, on the first run
 
 
 # `doctor --fast`
@@ -272,6 +271,7 @@ def fast_table():
             "openinference": {
                 "packages": {
                     "openinference-instrumentation-anthropic": {
+                        "suite": history.suite(subjects.load("openinference")),
                         "scenarios": ["anthropic/basic", "anthropic/stream-early-exit"],
                         "versions": [
                             line("3.2.0", {"anthropic/stream-early-exit": {"span.ended": "ST01"}}),
@@ -287,6 +287,7 @@ def fast_table():
                         ],
                     },
                     "openinference-instrumentation-openai": {
+                        "suite": history.suite(subjects.load("openinference")),
                         "scenarios": ["openai/basic"],
                         "versions": [line("0.1.69")],
                         "first_fixed": [],
@@ -303,7 +304,8 @@ IDS = ["anthropic/basic", "anthropic/stream-early-exit"]
 def test_the_table_answers_a_version_it_ran_and_names_the_fix():
     oi = subjects.load("openinference")
     versions = {"openinference-instrumentation-anthropic": "3.2.0", "anthropic": "2.4.0"}
-    answered, missing = history.answer(fast_table(), [oi], versions, IDS)
+    answered, missing, notes = history.answer(fast_table(), [oi], versions, IDS)
+    assert notes == []  # anthropic 2.4.0 is the pin the table ran
     assert missing == []
     (row,) = answered[0]["packages"]
     assert row["failing"] == {"anthropic/stream-early-exit": {"span.ended": "ST01"}}
@@ -317,12 +319,13 @@ def test_the_table_answers_a_version_it_ran_and_names_the_fix():
 def test_a_version_the_table_did_not_run_goes_to_a_local_run(version):
     oi = subjects.load("openinference")
     versions = {"openinference-instrumentation-anthropic": version}
-    assert history.answer(fast_table(), [oi], versions, IDS) == ([], ["openinference"])
+    assert history.answer(fast_table(), [oi], versions, IDS)[:2] == ([], ["openinference"])
 
 
 def test_a_subject_the_table_lacks_goes_to_a_local_run():
     logfire = subjects.load("logfire")
-    assert history.answer(fast_table(), [logfire], {"logfire": "5.4.0"}, IDS) == ([], ["logfire"])
+    got = history.answer(fast_table(), [logfire], {"logfire": "5.4.0"}, IDS)
+    assert got[:2] == ([], ["logfire"])
 
 
 def test_fast_runs_locally_only_what_the_table_lacks(tmp_path, monkeypatch, capsys):
@@ -352,3 +355,77 @@ def test_fast_with_every_answer_in_the_table_runs_nothing(tmp_path, monkeypatch,
     monkeypatch.setattr(doctor, "run", lambda *a, **k: pytest.fail("ran locally"))
     assert cli.main(["doctor", "--fast", str(tmp_path)]) == 0
     assert "No problem in 2 scenarios" in capsys.readouterr().out
+
+
+def mlflow_versions():
+    """The shape the first table run had: the setup raised on every release before 3.18.0."""
+    setup = {
+        "cells": {"a/x": {"checks": [{"id": "subject.instrument", "verdict": "inconclusive"}]}}
+    }
+    graded = {
+        "cells": {
+            "a/x": {
+                "checks": [
+                    {"id": "span.parented", "verdict": "pass"},
+                    {"id": "finish_reasons", "verdict": "missing"},
+                ]
+            }
+        }
+    }
+    return [history.entry(setup, v, "", "") for v in ("3.16.1", "3.17.0", "3.17.1", "3.17.2")] + [
+        history.entry(graded, "3.18.0", "", "")
+    ]
+
+
+def test_a_setup_that_raises_is_not_a_failing_check_and_never_a_fix():
+    versions = mlflow_versions()
+    assert [v["failing"] for v in versions[:4]] == [{}] * 4
+    assert versions[0]["setup_failed"] == ["a/x"]
+    assert history.first_fixed(versions) == []
+
+
+def test_fast_says_when_spantruths_setup_does_not_run_on_a_version():
+    table = fast_table()
+    package = table["subjects"]["openinference"]["packages"][
+        "openinference-instrumentation-anthropic"
+    ]
+    package["versions"][0]["setup_failed"] = ["anthropic/basic"]
+    oi = subjects.load("openinference")
+    versions = {"openinference-instrumentation-anthropic": "3.2.0"}
+    answered, _, _ = history.answer(table, [oi], versions, IDS)
+    assert answered[0]["packages"][0]["setup_failed"] == 1
+    text = history.render_answer(table, answered)
+    assert "spantruth's setup does not run on this version: 1 of 2 scenarios" in text
+
+
+def test_an_older_table_that_lists_a_setup_failure_as_failing_reads_the_same():
+    hit = {"failing": {"a/x": {"subject.instrument": ""}, "a/y": {"span.ended": "ST01"}}}
+    assert history.setup_failed(hit) == {"a/x"}
+
+
+def test_a_table_made_by_other_grading_goes_to_a_local_run_and_says_so():
+    table = fast_table()
+    for p in table["subjects"]["openinference"]["packages"].values():
+        p["suite"] = "older"
+    oi = subjects.load("openinference")
+    versions = {"openinference-instrumentation-anthropic": "3.3.0"}
+    answered, missing, notes = history.answer(table, [oi], versions, IDS)
+    assert (answered, missing) == ([], ["openinference"])
+    assert "made by spantruth 0.5.0" in notes[0] and "runs locally" in notes[0]
+
+
+def test_fast_says_when_the_projects_sdk_differs_from_the_tables():
+    oi = subjects.load("openinference")
+    versions = {"openinference-instrumentation-anthropic": "3.3.0", "anthropic": "2.12.0"}
+    _, _, notes = history.answer(fast_table(), [oi], versions, IDS)
+    assert notes == [
+        "The table ran OpenInference with anthropic 2.4.0, and your project has anthropic 2.12.0."
+    ]
+
+
+def test_the_table_names_the_sdk_versions_each_subject_ran_with():
+    assert history.sdk_pins(subjects.load("openlit")) == {
+        "anthropic": "0.125.0",
+        "openai": "2.54.0",
+    }
+    assert history.sdk_pins(subjects.load("logfire")) == {"anthropic": "2.4.0", "openai": "3.42.1"}
