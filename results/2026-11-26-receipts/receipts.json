@@ -1,0 +1,520 @@
+[
+  {
+    "app_exception": null,
+    "class": "ST01",
+    "class_name": "Ghost span",
+    "failing_checks": [
+      {
+        "detail": "never ended: anthropic.chat",
+        "expected": null,
+        "got": null,
+        "id": "span.ended",
+        "verdict": "lost"
+      }
+    ],
+    "jaeger": [
+      {
+        "name": "spantruth.scenario",
+        "tags": {}
+      }
+    ],
+    "list_cost_usd": 0.003826,
+    "mlflow": [
+      {
+        "state": "OK",
+        "token_usage": null
+      }
+    ],
+    "phoenix": {
+      "cost_total": null,
+      "span_status": {
+        "spantruth.scenario": "UNSET"
+      },
+      "tokens_completion": 0.0,
+      "tokens_prompt": 0.0,
+      "tokens_total": 0.0,
+      "traces": 1
+    },
+    "receipt": "ghost",
+    "scenario": "anthropic/stream-early-exit",
+    "spans": [],
+    "subject": "openllmetry",
+    "versions": {
+      "anthropic": "2.4.0",
+      "openai": "3.42.1",
+      "opentelemetry-instrumentation-anthropic": "0.62.4",
+      "opentelemetry-instrumentation-openai": "0.62.4"
+    },
+    "wire": {
+      "input_tokens": 1913,
+      "request_model": "claude-sonnet-5-5",
+      "response_id": "msg_wt_early",
+      "response_model": "claude-sonnet-5-5-20260915",
+      "unread_counts": [
+        347
+      ]
+    }
+  },
+  {
+    "app_exception": null,
+    "class": "ST02",
+    "class_name": "Double span",
+    "failing_checks": [
+      {
+        "detail": "usage on 2 spans: anthropic.messages.create, chat claude-sonnet-5-5",
+        "expected": 1,
+        "got": 2,
+        "id": "tokens.single-report",
+        "verdict": "wrong"
+      }
+    ],
+    "jaeger": [
+      {
+        "name": "anthropic.messages.create",
+        "tags": {
+          "gen_ai.request.max_tokens": 1024,
+          "gen_ai.usage.cache_read.input_tokens": 0,
+          "gen_ai.usage.cache_write.input_tokens": 0,
+          "gen_ai.usage.input_tokens": 1187,
+          "gen_ai.usage.output_tokens": 263,
+          "otel.status_code": "OK"
+        }
+      },
+      {
+        "name": "chat claude-sonnet-5-5",
+        "tags": {
+          "gen_ai.request.max_tokens": 1024,
+          "gen_ai.usage.input_tokens": 1187,
+          "gen_ai.usage.output_tokens": 263
+        }
+      },
+      {
+        "name": "spantruth.scenario",
+        "tags": {}
+      }
+    ],
+    "list_cost_usd": 0.005004,
+    "mlflow": [
+      {
+        "state": "OK",
+        "token_usage": {
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "input_tokens": 1187,
+          "output_tokens": 263,
+          "total_tokens": 1450
+        }
+      }
+    ],
+    "phoenix": {
+      "cost_total": 0.010008,
+      "span_status": {
+        "anthropic.messages.create": "OK",
+        "chat claude-sonnet-5-5": "UNSET",
+        "spantruth.scenario": "UNSET"
+      },
+      "tokens_completion": 263.0,
+      "tokens_prompt": 1187.0,
+      "tokens_total": 1450.0,
+      "traces": 1
+    },
+    "receipt": "double",
+    "scenario": "anthropic/basic",
+    "spans": [
+      {
+        "name": "anthropic.messages.create",
+        "status": "OK",
+        "usage": {
+          "gen_ai.usage.cache_read.input_tokens": 0,
+          "gen_ai.usage.cache_write.input_tokens": 0,
+          "gen_ai.usage.input_tokens": 1187,
+          "gen_ai.usage.output_tokens": 263
+        }
+      },
+      {
+        "name": "chat claude-sonnet-5-5",
+        "status": "UNSET",
+        "usage": {
+          "gen_ai.usage.input_tokens": 1187,
+          "gen_ai.usage.output_tokens": 263
+        }
+      }
+    ],
+    "subject": "otel-official-sdk-on",
+    "versions": {
+      "anthropic": "2.4.0",
+      "openai": "3.42.1",
+      "opentelemetry-instrumentation-genai-anthropic": "1.3b0"
+    },
+    "wire": {
+      "finish_reasons": [
+        "end_turn"
+      ],
+      "input_tokens": 1187,
+      "output_tokens": 263,
+      "request_model": "claude-sonnet-5-5",
+      "response_id": "msg_wt_basic",
+      "response_model": "claude-sonnet-5-5-20260915"
+    }
+  },
+  {
+    "app_exception": null,
+    "class": "ST03",
+    "class_name": "Cache-blind tokens",
+    "failing_checks": [
+      {
+        "detail": "cache reads and writes left out",
+        "expected": 5802,
+        "got": 1187,
+        "id": "input_tokens",
+        "verdict": "wrong"
+      }
+    ],
+    "jaeger": [
+      {
+        "name": "POST",
+        "tags": {}
+      },
+      {
+        "name": "chat claude-sonnet-5-5",
+        "tags": {
+          "gen_ai.client.token.usage": 1564,
+          "gen_ai.request.max_tokens": 1024,
+          "gen_ai.server.time_per_output_token": 0,
+          "gen_ai.server.time_to_first_token": 0.04147601127624512,
+          "gen_ai.usage.cache_creation.input_tokens": 519,
+          "gen_ai.usage.cache_read.input_tokens": 4096,
+          "gen_ai.usage.input_tokens": 1187,
+          "gen_ai.usage.output_tokens": 377,
+          "otel.status_code": "OK"
+        }
+      },
+      {
+        "name": "spantruth.scenario",
+        "tags": {}
+      }
+    ],
+    "list_cost_usd": 0.0078511,
+    "mlflow": [
+      {
+        "state": "OK",
+        "token_usage": {
+          "cache_creation_input_tokens": 519,
+          "cache_read_input_tokens": 4096,
+          "input_tokens": 1187,
+          "output_tokens": 377,
+          "total_tokens": 1564
+        }
+      }
+    ],
+    "phoenix": {
+      "cost_total": 0.0054771,
+      "span_status": {
+        "POST": "UNSET",
+        "chat claude-sonnet-5-5": "OK",
+        "spantruth.scenario": "UNSET"
+      },
+      "tokens_completion": 377.0,
+      "tokens_prompt": 1187.0,
+      "tokens_total": 1564.0,
+      "traces": 1
+    },
+    "receipt": "cache",
+    "scenario": "anthropic/cache-hit",
+    "spans": [
+      {
+        "name": "POST",
+        "status": "UNSET",
+        "usage": {}
+      },
+      {
+        "name": "chat claude-sonnet-5-5",
+        "status": "OK",
+        "usage": {
+          "gen_ai.usage.cache_creation.input_tokens": 519,
+          "gen_ai.usage.cache_read.input_tokens": 4096,
+          "gen_ai.usage.cost": 0,
+          "gen_ai.usage.input_tokens": 1187,
+          "gen_ai.usage.output_tokens": 377
+        }
+      }
+    ],
+    "subject": "openlit",
+    "versions": {
+      "anthropic": "0.125.0",
+      "openai": "2.54.0",
+      "openlit": "1.45.0"
+    },
+    "wire": {
+      "cache_read_tokens": 4096,
+      "cache_write_tokens": 519,
+      "finish_reasons": [
+        "end_turn"
+      ],
+      "input_tokens": 5802,
+      "output_tokens": 377,
+      "request_model": "claude-sonnet-5-5",
+      "response_id": "msg_wt_cache",
+      "response_model": "claude-sonnet-5-5-20260915"
+    }
+  },
+  {
+    "app_exception": null,
+    "class": "ST04",
+    "class_name": "Phantom tokens",
+    "failing_checks": [
+      {
+        "detail": "",
+        "expected": 419,
+        "got": 420,
+        "id": "output_tokens",
+        "verdict": "wrong"
+      }
+    ],
+    "jaeger": [
+      {
+        "name": "anthropic.chat",
+        "tags": {
+          "gen_ai.request.max_tokens": 1024,
+          "gen_ai.usage.cache_creation.input_tokens": 0,
+          "gen_ai.usage.cache_read.input_tokens": 0,
+          "gen_ai.usage.input_tokens": 2311,
+          "gen_ai.usage.output_tokens": 420,
+          "gen_ai.usage.total_tokens": 2731,
+          "otel.status_code": "OK"
+        }
+      },
+      {
+        "name": "spantruth.scenario",
+        "tags": {}
+      }
+    ],
+    "list_cost_usd": 0.008812,
+    "mlflow": [
+      {
+        "state": "OK",
+        "token_usage": {
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "input_tokens": 2311,
+          "output_tokens": 420,
+          "total_tokens": 2731
+        }
+      }
+    ],
+    "phoenix": {
+      "cost_total": 0.008822,
+      "span_status": {
+        "anthropic.chat": "OK",
+        "spantruth.scenario": "UNSET"
+      },
+      "tokens_completion": 420.0,
+      "tokens_prompt": 2311.0,
+      "tokens_total": 2731.0,
+      "traces": 1
+    },
+    "receipt": "phantom",
+    "scenario": "anthropic/stream",
+    "spans": [
+      {
+        "name": "anthropic.chat",
+        "status": "OK",
+        "usage": {
+          "gen_ai.usage.cache_creation.input_tokens": 0,
+          "gen_ai.usage.cache_read.input_tokens": 0,
+          "gen_ai.usage.input_tokens": 2311,
+          "gen_ai.usage.output_tokens": 420,
+          "gen_ai.usage.total_tokens": 2731
+        }
+      }
+    ],
+    "subject": "openllmetry",
+    "versions": {
+      "anthropic": "2.4.0",
+      "openai": "3.42.1",
+      "opentelemetry-instrumentation-anthropic": "0.62.4",
+      "opentelemetry-instrumentation-openai": "0.62.4"
+    },
+    "wire": {
+      "finish_reasons": [
+        "end_turn"
+      ],
+      "input_tokens": 2311,
+      "output_tokens": 419,
+      "request_model": "claude-sonnet-5-5",
+      "response_id": "msg_wt_stream",
+      "response_model": "claude-sonnet-5-5-20260915"
+    }
+  },
+  {
+    "app_exception": null,
+    "class": "ST05",
+    "class_name": "Vanishing tokens",
+    "failing_checks": [
+      {
+        "detail": "",
+        "expected": "gpt-5-mini-2026-08-07",
+        "got": null,
+        "id": "response_model",
+        "verdict": "missing"
+      },
+      {
+        "detail": "",
+        "expected": "chatcmpl-wt-shelper",
+        "got": null,
+        "id": "response_id",
+        "verdict": "missing"
+      },
+      {
+        "detail": "",
+        "expected": [
+          "stop"
+        ],
+        "got": null,
+        "id": "finish_reasons",
+        "verdict": "missing"
+      },
+      {
+        "detail": "",
+        "expected": 2137,
+        "got": null,
+        "id": "input_tokens",
+        "verdict": "missing"
+      },
+      {
+        "detail": "",
+        "expected": 313,
+        "got": null,
+        "id": "output_tokens",
+        "verdict": "missing"
+      }
+    ],
+    "jaeger": [
+      {
+        "name": "openai.chat",
+        "tags": {}
+      },
+      {
+        "name": "spantruth.scenario",
+        "tags": {}
+      }
+    ],
+    "list_cost_usd": 0.00116025,
+    "mlflow": [
+      {
+        "state": "OK",
+        "token_usage": null
+      }
+    ],
+    "phoenix": {
+      "cost_total": null,
+      "span_status": {
+        "openai.chat": "UNSET",
+        "spantruth.scenario": "UNSET"
+      },
+      "tokens_completion": 0.0,
+      "tokens_prompt": 0.0,
+      "tokens_total": 0.0,
+      "traces": 1
+    },
+    "receipt": "vanish",
+    "scenario": "openai/stream-helper",
+    "spans": [
+      {
+        "name": "openai.chat",
+        "status": "UNSET",
+        "usage": {}
+      }
+    ],
+    "subject": "openllmetry",
+    "versions": {
+      "anthropic": "2.4.0",
+      "openai": "3.42.1",
+      "opentelemetry-instrumentation-anthropic": "0.62.4",
+      "opentelemetry-instrumentation-openai": "0.62.4"
+    },
+    "wire": {
+      "finish_reasons": [
+        "stop"
+      ],
+      "input_tokens": 2137,
+      "output_tokens": 313,
+      "request_model": "gpt-5-mini",
+      "response_id": "chatcmpl-wt-shelper",
+      "response_model": "gpt-5-mini-2026-08-07"
+    }
+  },
+  {
+    "app_exception": "openai.APIConnectionError",
+    "class": "ST07",
+    "class_name": "False OK",
+    "failing_checks": [
+      {
+        "detail": "",
+        "expected": "ERROR",
+        "got": [
+          "OK"
+        ],
+        "id": "error.status",
+        "verdict": "wrong"
+      },
+      {
+        "detail": "",
+        "expected": null,
+        "got": null,
+        "id": "error.type",
+        "verdict": "missing"
+      }
+    ],
+    "jaeger": [
+      {
+        "name": "openai.chat",
+        "tags": {
+          "otel.status_code": "OK"
+        }
+      },
+      {
+        "name": "spantruth.scenario",
+        "tags": {}
+      }
+    ],
+    "list_cost_usd": null,
+    "mlflow": [
+      {
+        "state": "OK",
+        "token_usage": null
+      }
+    ],
+    "phoenix": {
+      "cost_total": null,
+      "span_status": {
+        "openai.chat": "OK",
+        "spantruth.scenario": "UNSET"
+      },
+      "tokens_completion": 0.0,
+      "tokens_prompt": 0.0,
+      "tokens_total": 0.0,
+      "traces": 1
+    },
+    "receipt": "falseok",
+    "scenario": "openai/stream-dropped",
+    "spans": [
+      {
+        "name": "openai.chat",
+        "status": "OK",
+        "usage": {}
+      }
+    ],
+    "subject": "openllmetry",
+    "versions": {
+      "anthropic": "2.4.0",
+      "openai": "3.42.1",
+      "opentelemetry-instrumentation-anthropic": "0.62.4",
+      "opentelemetry-instrumentation-openai": "0.62.4"
+    },
+    "wire": {
+      "error": "connection dropped",
+      "request_model": "gpt-5-mini"
+    }
+  }
+]

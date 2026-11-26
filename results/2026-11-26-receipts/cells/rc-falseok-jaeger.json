@@ -1,0 +1,129 @@
+{
+  "app_exception": "openai.APIConnectionError",
+  "app_seen": {
+    "events": 3,
+    "response_id": "chatcmpl-wt-drop",
+    "text": "The capital of France",
+    "usage": null
+  },
+  "backend": "jaeger",
+  "checks": [
+    {
+      "detail": "",
+      "expected": null,
+      "got": null,
+      "id": "app.unchanged",
+      "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+      "rule_url": "",
+      "verdict": "pass",
+      "where": null
+    },
+    {
+      "detail": "",
+      "expected": null,
+      "got": null,
+      "id": "span.parented",
+      "rule": "The span belongs to the trace that was active when the application made the call.",
+      "rule_url": "https://opentelemetry.io/docs/specs/otel/trace/api/#context-interaction",
+      "verdict": "pass",
+      "where": null
+    },
+    {
+      "detail": "",
+      "expected": "ERROR",
+      "got": [
+        "OK"
+      ],
+      "id": "error.status",
+      "rule": "Span status SHOULD follow Recording Errors: an operation that ended in an error sets the status to Error.",
+      "rule_url": "https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/docs/general/recording-errors.md",
+      "verdict": "wrong",
+      "where": null
+    },
+    {
+      "detail": "",
+      "expected": null,
+      "got": null,
+      "id": "error.type",
+      "rule": "`error.type` is conditionally required if the operation ended in an error. Any low-cardinality identifier is allowed, so only its presence is graded.",
+      "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/model/gen-ai/spans.yaml#L3-L12",
+      "verdict": "missing",
+      "where": null
+    }
+  ],
+  "driver_returncode": 0,
+  "driver_stderr": "",
+  "forwarded": [
+    {
+      "backend_status": 200,
+      "path": "/v1/traces"
+    },
+    {
+      "backend_status": 200,
+      "path": "/v1/traces"
+    }
+  ],
+  "project": "rc-falseok-jaeger",
+  "provider_requests": [
+    {
+      "path": "/s/openai--stream-dropped/v1/chat/completions",
+      "scenario": "openai/stream-dropped"
+    }
+  ],
+  "scenario": "openai/stream-dropped",
+  "spans": [
+    {
+      "attributes": {
+        "gen_ai.input.messages": "[{\"role\": \"user\", \"parts\": [{\"content\": \"What is the capital of France?\", \"type\": \"text\"}]}]",
+        "gen_ai.is_streaming": true,
+        "gen_ai.openai.api_base": "http://127.0.0.1:33225/s/openai--stream-dropped/v1/",
+        "gen_ai.operation.name": "chat",
+        "gen_ai.output.messages": "[{\"role\": \"assistant\", \"parts\": [{\"content\": \"The capital of France\", \"type\": \"text\"}], \"finish_reason\": \"\"}]",
+        "gen_ai.provider.name": "openai",
+        "gen_ai.request.model": "gpt-5-mini",
+        "gen_ai.response.id": "chatcmpl-wt-drop",
+        "gen_ai.response.model": "gpt-5-mini-2026-08-07"
+      },
+      "name": "openai.chat",
+      "parent_span_id": "ca03abb9f56c6126",
+      "scope": "opentelemetry.instrumentation.openai.v1",
+      "span_id": "d2f7ea86ad294acc",
+      "status": "OK",
+      "trace_id": "3b02de3ec6fb4d5911c5ad8e33dd9dda"
+    },
+    {
+      "attributes": {},
+      "name": "spantruth.scenario",
+      "parent_span_id": "",
+      "scope": "spantruth.driver",
+      "span_id": "ca03abb9f56c6126",
+      "status": "UNSET",
+      "trace_id": "3b02de3ec6fb4d5911c5ad8e33dd9dda"
+    }
+  ],
+  "subject": "openllmetry",
+  "truth": {
+    "cache_read_tokens": null,
+    "cache_write_long_tokens": null,
+    "cache_write_tokens": null,
+    "error": "connection dropped",
+    "finish_reasons": null,
+    "input_tokens": null,
+    "no_usage": false,
+    "output_tokens": null,
+    "reasoning_tokens": null,
+    "request_model": "gpt-5-mini",
+    "response_id": null,
+    "response_model": null,
+    "unread_counts": []
+  },
+  "verdict": "wrong",
+  "versions": {
+    "anthropic": "2.4.0",
+    "openai": "3.42.1",
+    "opentelemetry-exporter-otlp-proto-http": "1.45.2",
+    "opentelemetry-instrumentation-anthropic": "0.62.4",
+    "opentelemetry-instrumentation-openai": "0.62.4",
+    "opentelemetry-sdk": "1.45.2"
+  }
+}

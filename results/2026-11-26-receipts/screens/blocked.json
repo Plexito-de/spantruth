@@ -1,0 +1,57 @@
+{
+  "cache-phoenix-cost": [
+    "api.github.com",
+    "fonts.googleapis.com",
+    "pypi.org"
+  ],
+  "cache-phoenix-trace": [
+    "api.github.com",
+    "fonts.googleapis.com",
+    "pypi.org"
+  ],
+  "double-phoenix-cost": [
+    "api.github.com",
+    "fonts.googleapis.com",
+    "pypi.org"
+  ],
+  "double-phoenix-trace": [
+    "api.github.com",
+    "fonts.googleapis.com",
+    "pypi.org"
+  ],
+  "falseok-phoenix-cost": [
+    "api.github.com",
+    "fonts.googleapis.com",
+    "pypi.org"
+  ],
+  "falseok-phoenix-trace": [
+    "api.github.com",
+    "fonts.googleapis.com",
+    "pypi.org"
+  ],
+  "ghost-phoenix-trace": [
+    "api.github.com",
+    "fonts.googleapis.com",
+    "pypi.org"
+  ],
+  "phantom-phoenix-cost": [
+    "api.github.com",
+    "fonts.googleapis.com",
+    "pypi.org"
+  ],
+  "phantom-phoenix-trace": [
+    "api.github.com",
+    "fonts.googleapis.com",
+    "pypi.org"
+  ],
+  "vanish-phoenix-cost": [
+    "api.github.com",
+    "fonts.googleapis.com",
+    "pypi.org"
+  ],
+  "vanish-phoenix-trace": [
+    "api.github.com",
+    "fonts.googleapis.com",
+    "pypi.org"
+  ]
+}

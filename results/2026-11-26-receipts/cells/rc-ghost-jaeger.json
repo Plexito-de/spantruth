@@ -1,0 +1,86 @@
+{
+  "app_exception": null,
+  "app_seen": {
+    "events": 2,
+    "response_id": "msg_wt_early",
+    "text": "",
+    "usage": null
+  },
+  "backend": "jaeger",
+  "checks": [
+    {
+      "detail": "",
+      "expected": null,
+      "got": null,
+      "id": "app.unchanged",
+      "rule": "spantruth rule: instrumentation does not change what the application receives: the same return values, the same chunks, the same exceptions, and no hang.",
+      "rule_url": "",
+      "verdict": "pass",
+      "where": null
+    },
+    {
+      "detail": "never ended: anthropic.chat",
+      "expected": null,
+      "got": null,
+      "id": "span.ended",
+      "rule": "GenAI spans SHOULD end when the response is fully received or the operation is terminated due to an error or cancellation.",
+      "rule_url": "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/docs/gen-ai/gen-ai-spans.md#L29-L31",
+      "verdict": "lost",
+      "where": null
+    }
+  ],
+  "driver_returncode": 0,
+  "driver_stderr": "",
+  "forwarded": [
+    {
+      "backend_status": 200,
+      "path": "/v1/traces"
+    }
+  ],
+  "project": "rc-ghost-jaeger",
+  "provider_requests": [
+    {
+      "path": "/s/anthropic--stream-early-exit/v1/messages",
+      "scenario": "anthropic/stream-early-exit"
+    }
+  ],
+  "scenario": "anthropic/stream-early-exit",
+  "spans": [
+    {
+      "attributes": {},
+      "name": "spantruth.scenario",
+      "parent_span_id": "",
+      "scope": "spantruth.driver",
+      "span_id": "0f8ec06652274866",
+      "status": "UNSET",
+      "trace_id": "2acead7dd224e775ff4453d8def941d4"
+    }
+  ],
+  "subject": "openllmetry",
+  "truth": {
+    "cache_read_tokens": null,
+    "cache_write_long_tokens": null,
+    "cache_write_tokens": null,
+    "error": null,
+    "finish_reasons": null,
+    "input_tokens": 1913,
+    "no_usage": false,
+    "output_tokens": null,
+    "reasoning_tokens": null,
+    "request_model": "claude-sonnet-5-5",
+    "response_id": "msg_wt_early",
+    "response_model": "claude-sonnet-5-5-20260915",
+    "unread_counts": [
+      347
+    ]
+  },
+  "verdict": "lost",
+  "versions": {
+    "anthropic": "2.4.0",
+    "openai": "3.42.1",
+    "opentelemetry-exporter-otlp-proto-http": "1.45.2",
+    "opentelemetry-instrumentation-anthropic": "0.62.4",
+    "opentelemetry-instrumentation-openai": "0.62.4",
+    "opentelemetry-sdk": "1.45.2"
+  }
+}
