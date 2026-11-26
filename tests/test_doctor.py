@@ -386,6 +386,9 @@ status = "fixed-upstream"
 url = "https://example.com/issues/1"
 note = "Fixed in openinference-instrumentation-anthropic 3.1.0."
 fixed_in = ["openinference-instrumentation-anthropic>=3.1.0"]
+fixed_on = "2026-10-12"
+fix_url = "https://example.com/pull/3"
+fixed_by = "a-maintainer"
 
 [[issue]]
 subject = "openinference"
