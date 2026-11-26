@@ -11,7 +11,7 @@ notes = "Sentry spans are not OpenTelemetry spans, and the SDK has no OTLP expor
 # include_prompts is True by default.
 [content]
 switch = "sentry_sdk.init(send_default_pii=...)"
-docs = "https://github.com/getsentry/sentry-python/blob/14c7fd5338e455112bbdf4d75cbc0864c7e97d31/sentry_sdk/integrations/openai.py#L123-L128"
+docs = "https://github.com/getsentry/sentry-python/blob/14c7fd5338e455112bbdf4d75cbc0864c7e97d31/sentry_sdk/integrations/openai.py#L431-L435"
 default = "off"
 off = {}
 on = {}

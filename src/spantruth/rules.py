@@ -104,15 +104,17 @@ RULES: dict[str, tuple[str, str]] = {
     ),
     "content.off_respected": (
         "Prompt and completion text are Opt-In: instrumentations SHOULD populate them if and only "
-        "if the user configures the instrumentation to do so. Graded against the library's own "
-        "documented switch: with it set to off, no prompt or completion text appears in the "
-        "exported spans, span events or log records. A library that records content by default "
-        "is not wrong for that.",
-        f"{REQUIREMENT_LEVELS}#L113-L122",
+        "if the user configures the instrumentation to do so. spantruth grades the documented off "
+        "switch, not the library's default: with the switch set to off, no prompt or completion "
+        "text appears in the exported spans, span events or log records.",
+        f"{REQUIREMENT_LEVELS}#L115-L117",
     ),
     "content.output_matches": (
-        "`gen_ai.output.messages` holds the messages the model returned. With the library's "
-        "content switch on, the recorded completion text equals the text the application read.",
-        f"{GENAI}/docs/gen-ai/client-inference.md#L274-L297",
+        "Opt-In content SHOULD be populated if the user configures the instrumentation to do "
+        "so, so with the library's content switch on, the completion text is recorded, and it "
+        "equals the text the application read. Instrumentations MAY give users a way to filter "
+        "or truncate output messages; no scenario sets such an option, so the text is compared "
+        "whole. `gen_ai.output.messages` and the other conventions' output names are read.",
+        f"{REQUIREMENT_LEVELS}#L115-L117",
     ),
 }
