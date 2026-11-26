@@ -77,6 +77,10 @@ The driver calls it in the baseline run and in the instrumented run, so `app.unc
 compares the two. Keep the instrumentation in `instrument.py`, not in `app.py`: the baseline run
 must not trace. Exceptions propagate, as in `calls.py`.
 
+A framework that ends its spans after the call returns, in a thread or a queue, can also define
+`settle()` in `app.py`. The instrumented run calls it after the call and before it reads which
+spans ended, so a span that the framework ends later is not reported as lost.
+
 List the scenarios that the framework can make in `subject.toml`, such as
 `scenarios = ["openai/basic", "openai/stream"]`. The other scenarios are not run and have no cell.
 Only a subject with an `app.py` can list scenarios: a library that instruments the SDK meets every

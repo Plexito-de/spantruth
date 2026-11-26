@@ -88,6 +88,17 @@ def _load_app(directory: str | None):
     return module
 
 
+def _settle(app: Any) -> None:
+    """Let a framework finish the work it does after the call returns, before the probe is read.
+
+    A framework that ends its spans in a background thread or queue ends them in a process that
+    keeps running. Without this, the probe would report such a span as never ended. Only an
+    `app.py` can define `settle()`, so a subject without one is unchanged.
+    """
+    if app is not None and hasattr(app, "settle"):
+        app.settle()
+
+
 def _install_probe() -> dict[str, dict[str, Any]]:
     """Record every SDK span's start and end in this process, whichever provider made it.
 
@@ -155,6 +166,7 @@ def instrumented(scenario_id: str, mock: str, otlp: str, subject: str, out: str)
             "trace_id": format(ctx.trace_id, "032x"),
             "span_id": format(ctx.span_id, "016x"),
         }
+    _settle(app)
     timer.cancel()
     gc.collect()
     result["probe"] = {sid: dict(rec) for sid, rec in probe.items()}

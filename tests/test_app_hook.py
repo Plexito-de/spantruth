@@ -129,3 +129,52 @@ def test_a_framework_subject_runs_end_to_end(tmp_path):
         "openai/stream": "pass",
     }
     assert runner.incomplete(doc) == []
+
+
+# A framework that ends its span in a background thread after the call returns.
+LATE_APP = """
+import threading
+
+from opentelemetry import trace
+
+from spantruth import calls
+
+PENDING = []
+
+
+def run(scenario, base_url, seen):
+    calls.run(scenario, base_url, seen)
+    span = trace.get_tracer("late-framework").start_span("framework.log")
+    worker = threading.Timer(0.5, span.end)
+    worker.start()
+    PENDING.append(worker)
+
+
+def settle():
+    for worker in PENDING:
+        worker.join()
+"""
+
+
+def test_settle_runs_only_when_the_app_defines_it():
+    calls = []
+    driver._settle(None)
+    driver._settle(type("App", (), {})())
+    driver._settle(type("App", (), {"settle": staticmethod(lambda: calls.append(1))})())
+    assert calls == [1]
+
+
+@pytest.mark.slow
+@pytest.mark.external
+@pytest.mark.timeout(600)
+def test_a_span_the_framework_ends_after_the_call_is_not_lost(tmp_path):
+    late = subjects.load(str(_framework(tmp_path / "a", app=LATE_APP)))
+    doc = runner.run([late], ["openai/basic"], tmp_path / "v")
+    assert doc["subjects"]["my-framework"]["cells"]["openai/basic"]["verdict"] == "pass"
+    # The same app without settle(): the probe is read before the span ends.
+    early = subjects.load(
+        str(_framework(tmp_path / "b", app=LATE_APP.replace("def settle", "def _unused")))
+    )
+    doc = runner.run([early], ["openai/basic"], tmp_path / "v")
+    checks = doc["subjects"]["my-framework"]["cells"]["openai/basic"]["checks"]
+    assert any(c["id"] == "span.ended" and c["verdict"] == "lost" for c in checks)
