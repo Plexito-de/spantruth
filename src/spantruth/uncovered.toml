@@ -45,14 +45,6 @@ issue = "https://github.com/Plexito-de/spantruth/issues/79"
 title = "OpenAI Agents SDK"
 issue = "https://github.com/Plexito-de/spantruth/issues/80"
 
-[google-genai]
-title = "Google Gemini"
-issue = "https://github.com/Plexito-de/spantruth/issues/81"
-
-[google-generativeai]
-title = "Google Gemini"
-issue = "https://github.com/Plexito-de/spantruth/issues/81"
-
 [mistralai]
 title = "Mistral"
 issue = "https://github.com/Plexito-de/spantruth/issues/82"

@@ -11,6 +11,7 @@ from pathlib import Path
 from . import (
     __version__,
     doctor,
+    doctor_base,
     expectations,
     pack,
     paths,
@@ -139,6 +140,19 @@ def _run(args: argparse.Namespace) -> int:
 
 def _doctor(args: argparse.Namespace) -> int:
     try:
+        if args.base or args.comment or args.summary:
+            return doctor_base.run(
+                Path(args.path),
+                Path(args.out),
+                Path(args.cache),
+                args.base,
+                jobs=args.jobs,
+                scenario=args.scenario,
+                as_json=args.json,
+                comment_file=Path(args.comment) if args.comment else None,
+                summary_file=Path(args.summary) if args.summary else None,
+                link=args.comment_link or "",
+            )
         return doctor.run(
             Path(args.path),
             Path(args.out),
@@ -149,6 +163,9 @@ def _doctor(args: argparse.Namespace) -> int:
         )
     except doctor.DoctorError as exc:
         return _usage(exc)
+    except doctor.CannotRun as exc:
+        print(f"spantruth: {exc}", file=sys.stderr)
+        return 3
 
 
 def _watch(args: argparse.Namespace) -> int:
@@ -252,7 +269,12 @@ def parser() -> argparse.ArgumentParser:
         "application. Exit code: 0 no problem found, 1 a problem found, 2 nothing to check, 3 "
         "spantruth could not run something.",
     )
-    doc.add_argument("path", nargs="?", default=".", help="the project directory (default: .)")
+    doc.add_argument(
+        "path",
+        nargs="?",
+        default=".",
+        help="the project directory, or one dependency file (default: .)",
+    )
     doc.add_argument("--json", action="store_true", help="print the result as JSON")
     doc.add_argument("--scenario", action="append", help="scenario id, repeatable")
     doc.add_argument(
@@ -266,6 +288,21 @@ def parser() -> argparse.ArgumentParser:
         help="where to keep the subject environments (default: %(default)s)",
     )
     doc.add_argument("--jobs", type=int, default=4)
+    doc.add_argument(
+        "--base",
+        metavar="REF",
+        help="compare with the project's dependency files at this git ref, such as origin/main; "
+        "exit 1 only when the change adds a finding",
+    )
+    doc.add_argument(
+        "--comment", metavar="FILE", help="write a short pull request comment to this file"
+    )
+    doc.add_argument("--comment-link", metavar="URL", help="the page the comment links to")
+    doc.add_argument(
+        "--summary",
+        metavar="FILE",
+        help="append the comment to this file, such as $GITHUB_STEP_SUMMARY",
+    )
     doc.set_defaults(func=_doctor)
     wat = sub.add_parser(
         "watch",

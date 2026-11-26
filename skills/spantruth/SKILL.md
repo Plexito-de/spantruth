@@ -27,7 +27,7 @@ the project's code.
 | --- | --- | --- |
 | 0 | No problem found. | Say which libraries and versions were checked. |
 | 1 | A problem found. | Read `subjects[].classes`, and report each class. |
-| 2 | Nothing to check, such as no known library. | For a wrapper of the project's own, go to the next section. |
+| 2 | Nothing to check, such as no known library. | When the message names subprojects (a monorepo), run the command it gives for each. For a wrapper of the project's own, go to the next section. |
 | 3 | spantruth could not run something. | This is not a result. Read the message, and do not report a pass. |
 
 Each class has an `id`, a `name`, a `summary`, a `remedy`, a `largest_cost_error` in percent, an `example`,
