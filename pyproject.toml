@@ -30,8 +30,20 @@ Homepage = "https://github.com/Plexito-de/spantruth"
 Issues = "https://github.com/Plexito-de/spantruth/issues"
 Report = "https://plexito-de.github.io/spantruth/"
 
+[project.optional-dependencies]
+# The pytest plugin sends the spans of the test process to its receiver over OTLP.
+pytest = [
+    "pytest>=8",
+    "opentelemetry-sdk>=1.30",
+    "opentelemetry-exporter-otlp-proto-http>=1.30",
+]
+
 [project.scripts]
 spantruth = "spantruth.cli:main"
+
+# pytest loads the plugin when spantruth is installed. `-p no:spantruth` turns it off.
+[project.entry-points.pytest11]
+spantruth = "spantruth.pytest_plugin"
 
 [dependency-groups]
 test = [
