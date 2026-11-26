@@ -8,7 +8,18 @@ import sys
 import traceback
 from pathlib import Path
 
-from . import __version__, doctor, expectations, paths, report, runner, scenarios, subjects, watch
+from . import (
+    __version__,
+    doctor,
+    expectations,
+    history,
+    paths,
+    report,
+    runner,
+    scenarios,
+    subjects,
+    watch,
+)
 
 # GitHub caps a step summary at 1 MiB. Stay below it, and say where the rest is.
 SUMMARY_LIMIT = 1_000_000
@@ -264,6 +275,16 @@ def parser() -> argparse.ArgumentParser:
     )
     wat.add_argument("--out", required=True, help="where to write the files")
     wat.set_defaults(func=_watch)
+    his = sub.add_parser(
+        "history",
+        help="run the last releases of each library and write the version table",
+        description="Run the last K releases of each tracked package, one package at a time, and "
+        "write a table of the failing checks per version, with the first version that fixed each "
+        "one. It reads the list of releases from PyPI, so it needs the network. The nightly job "
+        "runs it. doctor reads the table and stays offline.",
+    )
+    history.arguments(his)
+    his.set_defaults(func=history.main)
     rep = sub.add_parser("report", help="render a results document")
     rep.add_argument("results")
     rep.add_argument("--html", help="write a static HTML report to this path")
