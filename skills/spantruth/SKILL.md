@@ -35,6 +35,10 @@ Each class has an `id`, a `name`, a `summary`, a `remedy`, a `largest_cost_error
 cost figure is for the token mix of one scenario at list price, so do not apply it to the whole
 application.
 
+`uncovered` lists the LLM libraries in the project that spantruth does not cover yet, each with a
+`title`, its `packages` and the `issue` where the user can ask for it. Say that spantruth did not check
+them, and give the issue link. It is there for every exit code.
+
 When `remedy` has a value, the project can act today. When an upstream issue has the status
 `fixed-upstream`, the library has fixed it: suggest the upgrade that its `note` names. Otherwise check for
 a newer release of the library in the `upstream` link. Ask before you change a version.
