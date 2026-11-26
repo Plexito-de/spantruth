@@ -3,50 +3,33 @@ homepage = "https://github.com/BerriAI/litellm"
 providers = ["openai", "anthropic"]
 packages = ["litellm==1.111.0"]
 track = ["litellm"]
-notes = "A framework: the app calls litellm.completion, and LiteLLM makes the provider call. The documented setup, litellm.callbacks = [\"otel\"], with LiteLLM's default conventions. The OpenAI Responses API and the OpenAI SDK's with_streaming_response helper are not LiteLLM calls, so those scenarios are not run. Nor is anthropic/retry-429: LiteLLM's Anthropic client is not the Anthropic SDK and does not retry, and LiteLLM's own retries (num_retries) need tenacity, which LiteLLM does not install. The environment turns off LiteLLM's fetches of its cost map and Anthropic beta-header table."
-# Every chat call that LiteLLM makes: not the Responses API, not the OpenAI SDK's streaming helper.
+notes = "A framework: the app calls litellm.completion, and LiteLLM makes the provider call. The documented setup, litellm.callbacks = [\"otel\"], with LiteLLM's default conventions. The OpenAI Responses API and the OpenAI SDK's with_streaming_response helper are not LiteLLM calls, so those scenarios are not run. Nor is anthropic/retry-429: LiteLLM's Anthropic client is not the Anthropic SDK and does not retry, and LiteLLM's own retries (num_retries) need tenacity, which LiteLLM does not install. Also not run: a sync call without a stream (basic, cache, tool-call, reasoning, thinking, retry, rate-limited) and an async stream (async-stream, async-stream-dropped, async-stream-error-event). When the app has a span around the call, LiteLLM makes no span of its own for these calls. It writes its attributes and its error status onto the app's span (should_create_primary_span in litellm/integrations/opentelemetry.py, lines 1461 and 2246; USE_OTEL_LITELLM_REQUEST_SPAN turns this off). On a sync call it does so from a thread after the call returns, so they are often lost when the app's span has already ended. spantruth has no check yet for a library that writes onto a span it did not create, and grading these calls as a ghost span would be false where the attributes arrive. The environment turns off LiteLLM's fetches of its cost map and Anthropic beta-header table."
+# The chat calls where LiteLLM makes a span of its own. Not the Responses API, not the OpenAI SDK's
+# streaming helper, and not the calls where LiteLLM writes onto the app's span (see notes).
 scenarios = [
-  "openai/basic",
   "openai/stream",
   "openai/stream-early-exit",
   "openai/stream-early-exit-with",
-  "openai/cache-hit",
   "openai/stream-cache-hit",
-  "openai/cache-write",
   "openai/stream-cache-write",
   "openai/stream-no-usage",
-  "openai/tool-call",
   "openai/stream-tool-call",
-  "openai/rate-limited",
-  "openai/retry-429",
   "openai/stream-dropped",
-  "openai/reasoning",
   "openai/stream-reasoning",
   "openai/async-basic",
-  "openai/async-stream",
   "openai/async-stream-early-exit",
-  "openai/async-stream-dropped",
-  "anthropic/basic",
   "anthropic/stream",
   "anthropic/stream-early-exit",
   "anthropic/stream-early-exit-with",
-  "anthropic/cache-hit",
   "anthropic/stream-cache-hit",
   "anthropic/stream-cache-cumulative",
-  "anthropic/cache-1h",
   "anthropic/stream-cache-1h",
   "anthropic/stream-error-event",
-  "anthropic/tool-call",
   "anthropic/stream-tool-call",
-  "anthropic/rate-limited",
   "anthropic/stream-dropped",
-  "anthropic/thinking",
   "anthropic/stream-thinking",
   "anthropic/async-basic",
-  "anthropic/async-stream",
   "anthropic/async-stream-early-exit",
-  "anthropic/async-stream-error-event",
-  "anthropic/async-stream-dropped",
 ]
 
 [env]

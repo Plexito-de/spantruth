@@ -283,7 +283,9 @@ def test_litellm_is_a_framework_subject_that_stays_offline():
     # Not LiteLLM calls: the OpenAI SDK's own helper and the Responses API.
     assert not lib.supports("openai/stream-helper")
     assert not lib.supports("openai/responses-stream-missing-finish-abort")
-    assert lib.supports("openai/basic") and lib.supports("anthropic/async-stream")
+    assert lib.supports("openai/stream") and lib.supports("anthropic/async-basic")
+    # LiteLLM writes these calls onto the app's span, which no check grades yet.
+    assert not lib.supports("openai/basic") and not lib.supports("anthropic/async-stream")
     # LiteLLM fetches its cost map and Anthropic beta headers from the web unless told not to.
     assert lib.env["LITELLM_LOCAL_MODEL_COST_MAP"] == "True"
     assert lib.env["LITELLM_LOCAL_ANTHROPIC_BETA_HEADERS"] == "True"

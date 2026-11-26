@@ -89,6 +89,31 @@ def run(sc, base_url, seen):
         result.close()
 
 
+def settle():
+    """Wait for the work LiteLLM does after a call returns, as a process that keeps running does.
+
+    LiteLLM ends its spans later: in its logging thread pool for a sync call, in a thread of its
+    own for a failed stream (`threading.Thread(target=self.logging_obj.failure_handler, ...)` in
+    `streaming_handler.py`), and from a queue on the event loop for an async call, which its exit
+    handler drains. This waits for all three, as the interpreter and that exit handler do at exit,
+    so the probe sees a span that LiteLLM ends later as ended.
+    """
+    import threading
+
+    from litellm.litellm_core_utils.logging_worker import GLOBAL_LOGGING_WORKER
+    from litellm.litellm_core_utils.thread_pool_executor import executor
+
+    GLOBAL_LOGGING_WORKER._flush_on_exit()
+    # The interpreter waits for every non-daemon thread before it exits. The pool's idle workers
+    # wait for work instead, so the pool is shut down after the other threads are done.
+    for thread in threading.enumerate():
+        if thread is threading.current_thread() or thread.daemon:
+            continue
+        if not thread.name.startswith("litellm-logging"):
+            thread.join(timeout=10)
+    executor.shutdown(wait=True)
+
+
 async def _run_async(sc, base_url, seen):
     import litellm
 
