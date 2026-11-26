@@ -15,7 +15,7 @@ track = [
 ]
 detect = ["langchain-core"]
 detect_with = ["opentelemetry-instrumentation-langchain", "traceloop-sdk"]
-notes = "A framework: the app calls a LangChain chat model (ChatOpenAI or ChatAnthropic), and LangChain calls the provider SDK. The documented setup, OpenLLMetry's LangchainInstrumentor().instrument(tracer_provider=...). LangChain's spans are graded, so the provider SDKs are not instrumented. Not run: the OpenAI SDK's with_streaming_response helper, which LangChain does not call, and the two stream-early-exit-with scenarios, because a LangChain stream is a generator with no with block. LangSmith tracing is off."
+notes = "A framework: the app calls a LangChain chat model (ChatOpenAI or ChatAnthropic), and LangChain calls the provider SDK. The LangChain v1 docs show init_chat_model first, which builds this same ChatOpenAI or ChatAnthropic object (langchain/chat_models/base.py in langchain 1.5.2). The documented setup, OpenLLMetry's LangchainInstrumentor().instrument(tracer_provider=...). LangChain's spans are graded, so the provider SDKs are not instrumented. Not run: the OpenAI SDK's with_streaming_response helper, which LangChain does not call, and the two stream-early-exit-with scenarios, because a LangChain stream is a generator with no with block. LangSmith tracing is off."
 scenarios = [
   "openai/basic",
   "openai/stream",
