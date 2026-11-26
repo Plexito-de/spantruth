@@ -42,8 +42,17 @@ def _consume(sc, mock):
         client = openai.OpenAI(base_url=mock.base_url(sc), api_key="test", max_retries=sc.retries)
         kw = {"model": sc.request_model, "input": "hi", "stream": sc.stream}
         call = client.responses.create
-    elif sc.provider == "openai":
-        client = openai.OpenAI(base_url=mock.base_url(sc), api_key="test", max_retries=sc.retries)
+    elif sc.provider in ("openai", "azure"):
+        client = (
+            openai.AzureOpenAI(
+                azure_endpoint=mock.base_url(sc),
+                api_version="2024-10-21",
+                api_key="test",
+                max_retries=sc.retries,
+            )
+            if sc.provider == "azure"
+            else openai.OpenAI(base_url=mock.base_url(sc), api_key="test", max_retries=sc.retries)
+        )
         kw = {"model": sc.request_model, "messages": [{"role": "user", "content": "hi"}]}
         if sc.stream:
             kw["stream"] = True
@@ -184,3 +193,19 @@ def test_a_gemini_request_to_the_wrong_method_is_a_404(mock):
     with pytest.raises(genai.errors.ClientError) as caught:
         client.models.generate_content(model=sc.request_model, contents="hi")
     assert caught.value.code == 404
+
+
+def test_azure_requests_reach_the_deployment_with_an_api_version(mock):
+    mock.reset()
+    _consume(scenarios.get("azure/basic"), mock)
+    ((_sid, path, _body),) = mock.requests
+    assert path.endswith(
+        "/openai/deployments/wt-chat-deployment/chat/completions?api-version=2024-10-21"
+    )
+
+
+def test_an_azure_request_without_the_deployment_path_is_a_404(mock):
+    sc = scenarios.get("azure/basic")
+    client = openai.OpenAI(base_url=f"{mock.base_url(sc)}/openai", api_key="test", max_retries=0)
+    with pytest.raises(openai.NotFoundError):
+        client.chat.completions.create(model=sc.request_model, messages=[])

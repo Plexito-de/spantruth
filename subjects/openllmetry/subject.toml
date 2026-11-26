@@ -1,6 +1,6 @@
 title = "OpenLLMetry"
 homepage = "https://github.com/traceloop/openllmetry"
-providers = ["openai", "anthropic", "gemini"]
+providers = ["openai", "anthropic", "gemini", "azure"]
 packages = [
   "opentelemetry-instrumentation-openai==0.62.4",
   "opentelemetry-instrumentation-anthropic==0.62.4",

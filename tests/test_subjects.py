@@ -33,7 +33,7 @@ def test_an_override_replaces_only_the_package_it_names():
 def test_logfire_is_pinned_and_tracked():
     lib = subjects.load("logfire")
     assert lib.title == "Pydantic Logfire"
-    assert lib.providers == ("openai", "anthropic", "gemini")
+    assert lib.providers == ("openai", "anthropic", "gemini", "azure")
     assert lib.homepage == "https://github.com/pydantic/logfire"
     assert "logfire==5.4.0" in subjects.requirements(lib, latest=False)
     latest = subjects.requirements(lib, latest=True)
@@ -76,7 +76,7 @@ def test_latest_also_unpins_the_sdks():
 def test_openlit_is_pinned_and_tracked():
     lib = subjects.load("openlit")
     assert lib.title == "OpenLIT"
-    assert lib.providers == ("openai", "anthropic", "gemini")
+    assert lib.providers == ("openai", "anthropic", "gemini", "azure")
     assert lib.homepage == "https://github.com/openlit/openlit"
     assert "openlit==1.45.0" in subjects.requirements(lib, latest=False)
     assert "openai==2.54.0" in subjects.requirements(lib, latest=False)
@@ -89,7 +89,7 @@ def test_openlit_is_pinned_and_tracked():
 def test_langfuse_is_pinned_and_tracked():
     lib = subjects.load("langfuse")
     assert lib.title == "Langfuse Python SDK"
-    assert lib.providers == ("openai",)
+    assert lib.providers == ("openai", "azure")
     assert lib.homepage == "https://github.com/langfuse/langfuse-python"
     assert "langfuse==5.2.0" in subjects.requirements(lib, latest=False)
     latest = subjects.requirements(lib, latest=True)

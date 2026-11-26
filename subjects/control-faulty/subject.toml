@@ -1,5 +1,5 @@
 title = "Control: reference instrumentation with planted faults"
 homepage = "https://github.com/Plexito-de/spantruth/blob/main/src/spantruth/reference.py"
 kind = "control"
-providers = ["openai", "anthropic", "gemini"]
+providers = ["openai", "anthropic", "gemini", "azure"]
 notes = "Must fail exactly the checks listed in expected.toml. If it does not, the suite is wrong."

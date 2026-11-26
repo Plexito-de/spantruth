@@ -1,6 +1,6 @@
 title = "OpenTelemetry GenAI instrumentation"
 homepage = "https://github.com/open-telemetry/opentelemetry-python-genai"
-providers = ["openai", "anthropic", "gemini"]
+providers = ["openai", "anthropic", "gemini", "azure"]
 notes = "The Gemini cells run google-genai 2.34.0, the newest 2.x release: opentelemetry-instrumentation-google-genai 1.3b0 declares google-genai < 3 and instruments nothing with 3.x (package.py). Its main branch allows < 4, unreleased on 2026-11-26."
 packages = [
   "opentelemetry-instrumentation-genai-openai==1.3b0",

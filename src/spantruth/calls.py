@@ -97,6 +97,19 @@ def _responses_event(e: Any, seen: Seen) -> None:
         seen.usage = e.response.usage.model_dump()
 
 
+def _openai_client(sc: Scenario, base_url: str, asynchronous: bool) -> Any:
+    """An OpenAI client, or for Azure the AzureOpenAI client with an endpoint and api-version."""
+    import openai
+
+    kw = {"api_key": "wt-test", "max_retries": sc.retries, "timeout": 10}
+    if sc.provider == "azure":
+        from .wire_azure import API_VERSION
+
+        azure = openai.AsyncAzureOpenAI if asynchronous else openai.AzureOpenAI
+        return azure(azure_endpoint=base_url, api_version=API_VERSION, **kw)
+    return (openai.AsyncOpenAI if asynchronous else openai.OpenAI)(base_url=base_url, **kw)
+
+
 def _openai_create(client: Any, sc: Scenario):
     """The call for the scenario's API, and how the app reads a stream from it."""
     if sc.api == "responses":
@@ -182,12 +195,8 @@ def run(sc: Scenario, base_url: str, seen: Seen) -> None:
     if sc.asynchronous:
         asyncio.run(_run_async(sc, base_url, seen))
         return
-    if sc.provider == "openai":
-        import openai
-
-        client = openai.OpenAI(
-            base_url=base_url, api_key="wt-test", max_retries=sc.retries, timeout=10
-        )
+    if sc.provider in ("openai", "azure"):
+        client = _openai_client(sc, base_url, asynchronous=False)
         if sc.entrypoint == "with_streaming_response":
             with client.chat.completions.with_streaming_response.create(
                 **_openai_kwargs(sc)
@@ -223,12 +232,8 @@ def _read(stream: Any, sc: Scenario, seen: Seen, on_event) -> None:
 
 
 async def _run_async(sc: Scenario, base_url: str, seen: Seen) -> None:
-    if sc.provider == "openai":
-        import openai
-
-        client = openai.AsyncOpenAI(
-            base_url=base_url, api_key="wt-test", max_retries=sc.retries, timeout=10
-        )
+    if sc.provider in ("openai", "azure"):
+        client = _openai_client(sc, base_url, asynchronous=True)
         if sc.entrypoint == "with_streaming_response":
             async with client.chat.completions.with_streaming_response.create(
                 **_openai_kwargs(sc)

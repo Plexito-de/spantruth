@@ -68,6 +68,8 @@ PRICED: dict[str, frozenset[str]] = {
         }
     ),
 }
+# Azure OpenAI bills the Chat Completions usage fields, at the deployment's rates.
+PRICED["azure"] = PRICED["openai"]
 # The key of the object that holds the counts, where it is not `usage`.
 USAGE_KEY = {"gemini": "usageMetadata"}
 # Fields that multiply every rate of a call, and the values that leave the standard rates in force.
@@ -79,6 +81,9 @@ STANDARD: dict[str, dict[str, frozenset[str]]] = {
     },
     "openai": {
         "service_tier": frozenset({"default"}),  # `flex`, `priority` and `scale` have other rates
+    },
+    "azure": {
+        "service_tier": frozenset({"default"}),
     },
     "gemini": {
         "serviceTier": frozenset({"standard"}),  # `flex` and `priority` have other rates

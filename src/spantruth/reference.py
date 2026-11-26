@@ -370,16 +370,28 @@ class _Stream:
         self._closed()
 
 
+def _provider(resource: Any, provider: str) -> str:
+    """`azure.ai.openai` for a call made through an Azure client: registry.yaml#L41-L44.
+
+    The provider name follows the instrumentation's best knowledge of the endpoint
+    (registry.yaml#L84-L87), and an AzureOpenAI client knows it calls Azure.
+    """
+    from openai.lib.azure import BaseAzureClient
+
+    return "azure.ai.openai" if isinstance(resource._client, BaseAzureClient) else provider
+
+
 def _wrap(tracer: Tracer, provider: str, faults: set[str], on_result, on_event, create, is_async):
-    def begin(kwargs: dict) -> _Call:
-        return _Call(tracer, provider, kwargs.get("model", ""), faults)
+    def begin(resource: Any, kwargs: dict) -> _Call:
+        name = _provider(resource, provider) if provider == "openai" else provider
+        return _Call(tracer, name, kwargs.get("model", ""), faults)
 
     # Decided by class, not by inspection: the SDKs wrap async methods in sync decorators.
     if is_async:
 
         @functools.wraps(create)
         async def acall(self, *args, **kwargs):
-            call = begin(kwargs)
+            call = begin(self, kwargs)
             try:
                 result = await create(self, *args, **kwargs)
             except Exception as exc:
@@ -391,7 +403,7 @@ def _wrap(tracer: Tracer, provider: str, faults: set[str], on_result, on_event, 
 
     @functools.wraps(create)
     def scall(self, *args, **kwargs):
-        call = begin(kwargs)
+        call = begin(self, kwargs)
         try:
             result = create(self, *args, **kwargs)
         except Exception as exc:

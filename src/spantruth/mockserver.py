@@ -39,6 +39,17 @@ def _gemini_route(sc: Scenario, path: str) -> str | None:
     return None
 
 
+def _azure_route(sc: Scenario, path: str) -> str | None:
+    """Why an Azure request missed its deployment or its api-version, or None when it is right."""
+    route, _, query = path.partition("?")
+    want = f"/openai/deployments/{sc.request_model}/chat/completions"
+    if not route.endswith(want):
+        return f"{sc.id} expects {want}, not {route}"
+    if not any(p.startswith("api-version=") for p in query.split("&")):
+        return f"{sc.id} expects an api-version query parameter, not ?{query}"
+    return None
+
+
 class _Handler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
     server: MockServer
@@ -60,6 +71,9 @@ class _Handler(BaseHTTPRequestHandler):
             return
         if sc.provider == "gemini" and (problem := _gemini_route(sc, self.path)):
             self._json(404, {"error": {"code": 404, "message": problem, "status": "NOT_FOUND"}})
+            return
+        if sc.provider == "azure" and (problem := _azure_route(sc, self.path)):
+            self._json(404, {"error": {"code": "DeploymentNotFound", "message": problem}})
             return
         self.server.record(sc.id, self.path, request)
         retry_header = self.headers.get("x-stainless-retry-count")

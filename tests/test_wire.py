@@ -1,6 +1,7 @@
 """Fixtures are valid wire data, and the truth derived from them is what the spec says."""
 
 import json
+import re
 
 import anthropic.types
 import google.genai.types
@@ -12,6 +13,7 @@ import pytest
 
 from spantruth import calls, impact, scenarios
 from spantruth import wire_anthropic as an
+from spantruth import wire_azure as az
 from spantruth.mockserver import MockServer
 from spantruth.model import Event, Response
 
@@ -60,10 +62,15 @@ def test_fixtures_parse_with_sdk_types(sc):
                 usage = {k: v for k, v in data["usageMetadata"].items() if k != "serviceTier"}
                 typed = data | {"usageMetadata": usage}
                 parsed.append(google.genai.types.GenerateContentResponse.model_validate(typed))
-        elif sc.provider == "openai":
+        elif sc.provider in ("openai", "azure"):
             if r.body is not None:
                 parsed.append(openai.types.chat.ChatCompletion.model_validate(r.body, strict=False))
             for e in r.events or ():
+                if sc.provider == "azure" and isinstance(e.data, dict) and e.data["id"] == "":
+                    # Azure's prompt filter chunk: `object` is empty, which the chunk type
+                    # rejects. The SDK does not validate, so the app receives it as sent.
+                    assert e.data["choices"] == [] and e.data["prompt_filter_results"]
+                    continue
                 if isinstance(e.data, dict):
                     parsed.append(openai.types.chat.ChatCompletionChunk.model_validate(e.data))
                 else:
@@ -79,7 +86,11 @@ def test_fixtures_parse_with_sdk_types(sc):
                 parsed.append(ANTHROPIC_EVENT.validate_python(e.data))
                 assert parsed[-1].type == e.event
     if sc.id not in RECORDED:
-        assert _undeclared(parsed) == [], f"{sc.id} sends fields the SDK types do not declare"
+        allowed = az.AZURE_ONLY if sc.provider == "azure" else frozenset()
+        undeclared = [
+            p for p in _undeclared(parsed) if re.sub(r"(^|\.)\d+\.", r"\1", p) not in allowed
+        ]
+        assert undeclared == [], f"{sc.id} sends fields the SDK types do not declare"
 
 
 def test_the_fixture_check_sees_a_field_the_sdk_type_does_not_declare():
@@ -459,3 +470,28 @@ def test_gemini_has_no_with_block_variant():
     # The google-genai stream is a plain generator, not a context manager.
     assert "gemini/stream-early-exit-with" not in scenarios.SCENARIOS
     assert scenarios.get("gemini/async-stream-early-exit").asynchronous
+
+
+@pytest.mark.parametrize("sid", ["azure/basic", "azure/async-basic"])
+def test_an_azure_request_names_the_deployment_and_the_response_the_model(sid):
+    t = scenarios.truth(scenarios.get(sid))
+    assert t.request_model == "wt-chat-deployment"
+    assert (t.response_model, t.response_id) == ("gpt-5-mini-2026-08-07", "chatcmpl-wt-azbasic")
+    assert (t.input_tokens, t.output_tokens, t.finish_reasons) == (1213, 277, ("stop",))
+
+
+def test_an_azure_stream_takes_its_id_and_model_after_the_prompt_filter_chunk():
+    sc = scenarios.get("azure/stream")
+    first = sc.response.events[0].data
+    assert (first["id"], first["model"], first["choices"]) == ("", "", [])
+    t = scenarios.truth(sc)
+    assert (t.response_model, t.response_id) == ("gpt-5-mini-2026-08-07", "chatcmpl-wt-azstream")
+    assert (t.input_tokens, t.output_tokens) == (2341, 433)
+
+
+def test_only_the_azure_filter_fields_are_accepted_beyond_the_sdk_types():
+    parsed = openai.types.chat.ChatCompletion.model_validate(
+        scenarios.get("azure/basic").response.body
+    )
+    found = {re.sub(r"(^|\.)\d+\.", r"\1", p) for p in _undeclared(parsed)}
+    assert found == az.AZURE_ONLY

@@ -1,6 +1,6 @@
 title = "OpenInference"
 homepage = "https://github.com/Arize-ai/openinference"
-providers = ["openai", "anthropic", "gemini"]
+providers = ["openai", "anthropic", "gemini", "azure"]
 packages = [
   "openinference-instrumentation-openai==0.1.69",
   "openinference-instrumentation-anthropic==3.3.0",

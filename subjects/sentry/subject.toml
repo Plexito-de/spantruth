@@ -1,6 +1,6 @@
 title = "Sentry SDK"
 homepage = "https://github.com/getsentry/sentry-python"
-providers = ["openai", "anthropic", "gemini"]
+providers = ["openai", "anthropic", "gemini", "azure"]
 packages = ["sentry-sdk==2.74.0"]
 track = ["sentry-sdk"]
 # Many projects use Sentry for errors only, so `spantruth doctor` needs a provider SDK as well.

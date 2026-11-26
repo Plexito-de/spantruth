@@ -10,6 +10,7 @@ from dataclasses import replace
 
 from . import recorded
 from . import wire_anthropic as an
+from . import wire_azure as az
 from . import wire_gemini as ge
 from . import wire_openai as oa
 from .model import Scenario, Truth
@@ -24,6 +25,8 @@ ANTHROPIC_SERVED = "claude-sonnet-5-5-20260915"
 # The Gemini API answers with `modelVersion` equal to the requested model id.
 GEMINI_MODEL = "gemini-3.5-flash-lite"
 GEMINI_SERVED = GEMINI_MODEL
+# An Azure request names a deployment. The response names the model behind it.
+AZURE_DEPLOYMENT = "wt-chat-deployment"
 PARTS = ("The capital", " of France", " is Paris.")
 WEATHER = ("get_weather", {"city": "Paris"})
 TIME = ("get_time", {"zone": "Europe/Paris"})
@@ -548,6 +551,49 @@ def _gemini() -> list[Scenario]:
     ]
 
 
+def _azure() -> list[Scenario]:
+    def sc(name: str, title: str, catches: str, response, **kw) -> Scenario:
+        return Scenario(
+            id=f"azure/{name}",
+            provider="azure",
+            title=title,
+            catches=catches,
+            request_model=AZURE_DEPLOYMENT,
+            response=response,
+            **kw,
+        )
+
+    return [
+        sc(
+            "basic",
+            "One call to a deployment",
+            "the deployment name taken for the model, Azure's filter results in the way",
+            az.completion(
+                id="chatcmpl-wt-azbasic",
+                model=OPENAI_SERVED,
+                text="The capital of France is Paris.",
+                finish="stop",
+                prompt=1213,
+                completion_tokens=277,
+            ),
+        ),
+        sc(
+            "stream",
+            "Stream from a deployment",
+            "the empty id and model of Azure's first chunk recorded",
+            az.chunks(
+                id="chatcmpl-wt-azstream",
+                model=OPENAI_SERVED,
+                parts=PARTS,
+                finish="stop",
+                prompt=2341,
+                completion_tokens=433,
+            ),
+            stream=True,
+        ),
+    ]
+
+
 # The early exit through a `with` block, for the SDKs whose stream is a context manager. The
 # google-genai stream is a plain generator.
 WITH_BLOCK_PROVIDERS = ("openai", "anthropic")
@@ -584,7 +630,8 @@ def _with_async(scenarios: list[Scenario]) -> list[Scenario]:
 
 
 SCENARIOS: dict[str, Scenario] = {
-    s.id: s for s in _with_async(_with_block(_openai() + _anthropic() + _gemini())) + _recorded()
+    s.id: s
+    for s in _with_async(_with_block(_openai() + _anthropic() + _gemini() + _azure())) + _recorded()
 }
 
 
@@ -625,6 +672,8 @@ def truth(scenario: Scenario) -> Truth:
         derive = oa.responses_truth
     elif scenario.provider == "gemini":
         derive = ge.truth
+    elif scenario.provider == "azure":
+        derive = az.truth
     else:
         derive = oa.truth if scenario.provider == "openai" else an.truth
     return derive(scenario.request_model, scenario.response, scenario.read_events)
