@@ -273,3 +273,17 @@ def test_the_wrapper_example_loads_as_a_subject():
     assert subject.name == "spantruth"
     assert "acme-llm==0.1.0" in subject.packages
     assert subjects.resolve_override(str(example)).startswith("acme-llm @ file://")
+
+
+def test_litellm_is_a_framework_subject_that_stays_offline():
+    lib = subjects.load("litellm")
+    assert lib.app
+    assert "litellm==1.111.0" in subjects.requirements(lib, latest=False)
+    assert "litellm" in subjects.requirements(lib, latest=True)
+    # Not LiteLLM calls: the OpenAI SDK's own helper and the Responses API.
+    assert not lib.supports("openai/stream-helper")
+    assert not lib.supports("openai/responses-stream-missing-finish-abort")
+    assert lib.supports("openai/basic") and lib.supports("anthropic/async-stream")
+    # LiteLLM fetches its cost map and Anthropic beta headers from the web unless told not to.
+    assert lib.env["LITELLM_LOCAL_MODEL_COST_MAP"] == "True"
+    assert lib.env["LITELLM_LOCAL_ANTHROPIC_BETA_HEADERS"] == "True"
