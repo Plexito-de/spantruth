@@ -11,4 +11,5 @@ build/
 results/*
 !results/2026-11-03-pinned.json
 !results/2026-11-06-double-spans/
+!results/2026-11-24-dropped-streams/
 .playwright-mcp/
