@@ -2,6 +2,7 @@
 
 import json
 import shutil
+from types import SimpleNamespace
 
 import pytest
 
@@ -23,7 +24,8 @@ def run(scenario, base_url, seen):
 def _framework(tmp_path, scenarios=("openai/basic", "openai/stream"), app=APP):
     target = tmp_path / "my-framework"
     shutil.copytree(subjects.SUBJECTS / "control-honest", target)
-    listed = "" if scenarios is None else f"scenarios = {json.dumps(list(scenarios))}\n"
+    value = scenarios if isinstance(scenarios, str) else list(scenarios or ())
+    listed = "" if scenarios is None else f"scenarios = {json.dumps(value)}\n"
     (target / "subject.toml").write_text(
         'title = "t"\nhomepage = "https://example.org"\nproviders = ["openai"]\n' + listed
     )
@@ -78,6 +80,23 @@ def test_a_bad_scenario_list_is_one_clear_error(tmp_path):
     # A library that instruments the SDK may not leave a scenario out: that hides a red cell.
     with pytest.raises(subjects.SubjectError, match=r"only for a subject with an app\.py"):
         subjects.load(str(_framework(tmp_path / "d", app=None)))
+    with pytest.raises(subjects.SubjectError, match="non-empty list"):
+        subjects.load(str(_framework(tmp_path / "e", scenarios="openai/basic")))
+    with pytest.raises(subjects.SubjectError, match="non-empty list"):
+        subjects.load(str(_framework(tmp_path / "f", scenarios=[])))
+
+
+def test_a_scenario_with_several_calls_is_refused_for_an_app(tmp_path, monkeypatch):
+    """An app must record each call of an agent loop with seen.add(); no app does yet."""
+    real = subjects.scenarios.get
+
+    def get(sid):
+        sc = real(sid)
+        return SimpleNamespace(provider=sc.provider, calls=(1, 2)) if sid == "openai/stream" else sc
+
+    monkeypatch.setattr(subjects.scenarios, "get", get)
+    with pytest.raises(subjects.SubjectError, match="openai/stream makes several calls"):
+        subjects.load(str(_framework(tmp_path)))
 
 
 def test_an_unsupported_scenario_has_no_cell(tmp_path):
@@ -94,7 +113,9 @@ def test_expect_with_only_unsupported_scenarios_is_a_usage_error(tmp_path, capsy
         ["run", "--subject", str(directory), "--scenario", "openai/tool-call", "--expect", "x"]
     )
     assert code == 2
-    assert "no selected scenario applies" in capsys.readouterr().err
+    err = capsys.readouterr().err
+    assert "no selected scenario applies" in err
+    assert "runs only the scenarios in its subject.toml: openai/basic, openai/stream" in err
 
 
 def test_the_driver_runs_the_app_instead_of_calls_py(tmp_path):
@@ -178,3 +199,43 @@ def test_a_span_the_framework_ends_after_the_call_is_not_lost(tmp_path):
     doc = runner.run([early], ["openai/basic"], tmp_path / "v")
     checks = doc["subjects"]["my-framework"]["cells"]["openai/basic"]["checks"]
     assert any(c["id"] == "span.ended" and c["verdict"] == "lost" for c in checks)
+
+
+@pytest.mark.slow
+@pytest.mark.external
+@pytest.mark.timeout(600)
+def test_an_app_that_fails_to_load_is_reported_not_a_crash(tmp_path):
+    """An app.py that cannot load is the adapter's bug, so the run is incomplete, with the cause."""
+    lib = subjects.load(str(_framework(tmp_path, app="import no_such_framework\n")))
+    doc = runner.run([lib], ["openai/basic"], tmp_path / "v")
+    result = doc["subjects"]["my-framework"]
+    assert "no_such_framework" in result["error"]
+    assert runner.incomplete(doc)
+
+
+@pytest.mark.slow
+def test_the_instrumented_run_records_an_app_that_fails_to_load(tmp_path):
+    import subprocess
+    import sys
+
+    directory = _framework(tmp_path, app="import no_such_framework\n")
+    out = tmp_path / "obs.json"
+    with MockServer() as mock:
+        args = ["--mock", mock.url, "--otlp", "http://127.0.0.1:9", "--out", str(out)]
+        proc = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "spantruth.driver",
+                "instrumented",
+                "openai/basic",
+                *args,
+                "--subject",
+                str(directory),
+            ],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+    assert proc.returncode == 2, proc.stderr
+    assert "no_such_framework" in json.loads(out.read_text())["instrument_error"]

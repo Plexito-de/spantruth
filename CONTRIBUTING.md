@@ -86,6 +86,11 @@ List the scenarios that the framework can make in `subject.toml`, such as
 Only a subject with an `app.py` can list scenarios: a library that instruments the SDK meets every
 call that the SDK makes.
 
+A scenario with `calls`, such as an agent loop, makes several calls in one trace. For it, the app
+must call `seen.add(one, start_ns, end_ns)` once per call, with what the app saw of that call and
+when it ran, and send the message history from call to call the way `calls._loop` does. No app does
+that yet, so `subject.toml` cannot list such a scenario for a subject with an `app.py`.
+
 ## Add a scenario
 
 1. Build the response in `src/spantruth/scenarios.py` with the builders in `wire_openai.py` or

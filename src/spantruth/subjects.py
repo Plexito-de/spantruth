@@ -129,12 +129,22 @@ def _supported(config: Path, data: dict, app: bool) -> tuple[str, ...]:
         return ()
     if not app:
         raise SubjectError(f"{config}: scenarios is only for a subject with an app.py")
+    if not isinstance(listed, list) or not listed or not all(isinstance(i, str) for i in listed):
+        raise SubjectError(f"{config}: scenarios must be a non-empty list of scenario IDs")
     unknown = [sid for sid in listed if sid not in scenarios.SCENARIOS]
     if unknown:
         raise SubjectError(f"{config}: unknown scenario {', '.join(unknown)}")
     off = [sid for sid in listed if scenarios.get(sid).provider not in data["providers"]]
     if off:
         raise SubjectError(f"{config}: scenario {', '.join(off)} is for a provider not listed")
+    # A scenario with several calls needs an app that records each call with seen.add() and sends
+    # the message history as calls.py does. No app does that yet. `calls` is absent before it lands.
+    several = [sid for sid in listed if getattr(scenarios.get(sid), "calls", ())]
+    if several:
+        raise SubjectError(
+            f"{config}: scenario {', '.join(several)} makes several calls, "
+            "which an app.py cannot run yet"
+        )
     return tuple(listed)
 
 

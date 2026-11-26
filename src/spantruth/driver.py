@@ -156,9 +156,15 @@ def instrumented(scenario_id: str, mock: str, otlp: str, subject: str, out: str)
     if not isinstance(current, TracerProvider):
         trace.set_tracer_provider(provider)
         current = provider
-    # After instrument(), as an app's own code loads after the setup at its start.
-    app = _load_app(subject)
     timer = _watchdog(out, scenario_id)
+    try:
+        # After instrument(), as an app's own code loads after the setup at its start.
+        app = _load_app(subject)
+    except Exception:
+        timer.cancel()
+        result["instrument_error"] = traceback.format_exc(limit=5)
+        _write(out, result)
+        return 2
     with current.get_tracer("spantruth.driver").start_as_current_span("spantruth.scenario") as p:
         ctx = p.get_span_context()
         result |= observe(scenario_id, mock, app)

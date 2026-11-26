@@ -62,10 +62,12 @@ def _run(args: argparse.Namespace) -> int:
         return _usage("--expect and --write-expect take exactly one --subject")
     if (args.expect or args.write_expect) and not any(selected[0].supports(sid) for sid in ids):
         # Without one cell, a comparison would pass on nothing.
-        return _usage(
-            f"no selected scenario applies to {selected[0].name}, which covers "
-            f"{', '.join(selected[0].providers)}"
+        covers = (
+            f"runs only the scenarios in its subject.toml: {', '.join(selected[0].scenarios)}"
+            if selected[0].app
+            else f"covers {', '.join(selected[0].providers)}"
         )
+        return _usage(f"no selected scenario applies to {selected[0].name}, which {covers}")
     try:
         expected = expectations.load(Path(args.expect)) if args.expect else None
     except expectations.ExpectationError as exc:
