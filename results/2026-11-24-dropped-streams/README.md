@@ -1,6 +1,6 @@
 # A stream that drops: what the library reports, and what the span says
 
-Draft for kartsan03/wiretruth#82, 2026-11-24. Not published. It goes to Tymur first; the wiretruth parts are his to check.
+Written for kartsan03/wiretruth#82, 2026-11-24. Its maintainer checked the wiretruth parts before publication.
 
 wiretruth and spantruth look at the same failure from two layers. wiretruth replays a recorded response through an
 LLM library and grades what the library hands back to the caller. spantruth replays a response through a provider
