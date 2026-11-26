@@ -6,7 +6,7 @@ Pure functions over plain records, so every verdict is testable without a subpro
 from __future__ import annotations
 
 import json
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from typing import Any
 
 from .calls import PROMPT
@@ -341,6 +341,14 @@ def _grade(
                 detail=f"{len(errored)} span(s) set status to Error on a successful operation",
             )
         )
+    if sc.calls:
+        return checks + _per_call(sc, t, obs, llm)
+    return checks + _values(t, llm)
+
+
+def _values(t: Truth, llm: list[SpanRecord]) -> list[Check]:
+    """The value checks of one call, on the LLM spans of that call."""
+    checks = []
     for fact in VALUES:
         if not any(defined_for(s.attributes, fact) for s in llm):
             checks.append(
@@ -365,3 +373,62 @@ def _grade(
             )
         )
     return checks
+
+
+def _owner(span: SpanRecord, sc: Scenario, windows: list[list[int]]) -> int | None:
+    """The index of the call that a span belongs to, or None when no call fits.
+
+    When every call asks for its own model, the span's request model names its call: a library
+    sets it from the request, before any response can be mixed in. Otherwise it is the call whose
+    time window holds the span's start, which is unique for calls made one after the other.
+    """
+    models = [c.request_model for c in sc.calls]
+    if len(set(models)) == len(models):
+        hit = lookup(span.attributes, "request_model")
+        return models.index(hit[1]) if hit and hit[1] in models else None
+    inside = [i for i, (start, end) in enumerate(windows) if start <= span.start_ns <= end]
+    return inside[0] if len(inside) == 1 else None
+
+
+def _crossed(c: Check, i: int, t: Truth) -> str:
+    """Name the other call whose count a wrong count is."""
+    if c.verdict != "wrong" or c.id not in TOKENS:
+        return ""
+    for j, other in enumerate(t.calls):
+        if j != i and getattr(other, c.id) == c.got:
+            return f"the {c.id.replace('_', ' ')} of call {j + 1}"
+    return ""
+
+
+def _per_call(sc: Scenario, t: Truth, obs: dict, llm: list[SpanRecord]) -> list[Check]:
+    """Grade each call on its own spans, then keep one check per ID: the worst one.
+
+    So a check ID keeps its meaning, and an expectation file names it as for one call:
+    `input_tokens` is the input tokens of each call. The detail names the call it failed on.
+    """
+    windows = [c["window"] for c in obs["seen"].get("calls", [])]
+    owned: list[list[SpanRecord]] = [[] for _ in sc.calls]
+    for s in llm:
+        if windows and (i := _owner(s, sc, windows)) is not None:
+            owned[i].append(s)
+    worst: dict[str, Check] = {}
+    failed: dict[str, list[str]] = {}
+    for i, (spans, truth) in enumerate(zip(owned, t.calls, strict=True)):
+        label = f"call {i + 1} of {len(sc.calls)}"
+        if not spans:
+            found = [Check("span.recorded", "missing", detail="no LLM span matched this call")]
+        else:
+            found = _values(truth, spans)
+        for c in found:
+            if c.verdict in FAILING:
+                why = _crossed(c, i, t) or c.detail
+                c = replace(c, detail=f"{label}: {why}" if why else label)
+                failed.setdefault(c.id, []).append(str(i + 1))
+            kept = worst.get(c.id)
+            if kept is None or SEVERITY.index(c.verdict) > SEVERITY.index(kept.verdict):
+                worst[c.id] = c
+    for fact, calls in failed.items():
+        if len(calls) > 1:
+            c = worst[fact]
+            worst[fact] = replace(c, detail=f"{c.detail}; failed on calls {', '.join(calls)}")
+    return list(worst.values())

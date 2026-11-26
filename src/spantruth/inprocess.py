@@ -117,6 +117,10 @@ class Spantruth:
             # A content cell sets the subject's own switch for prompt and completion text. The
             # plugin has no subject, so it cannot set one: grade those cells with `spantruth run`.
             raise ValueError(f"{scenario_id} needs a subject's content switch: use spantruth run")
+        if sc.calls:
+            # Each call of such a scenario is graded inside its own time window, which the driver
+            # records and the plugin does not yet.
+            raise ValueError(f"{scenario_id} makes several calls: use spantruth run")
         self.mock.reset()  # a retry scenario starts again from its first response
         current = Call(sc, self.base_url(scenario_id))
         first = len(self.receiver.spans)

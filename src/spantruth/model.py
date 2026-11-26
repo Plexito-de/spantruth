@@ -77,6 +77,17 @@ class Truth:
     # Token facts the usage has no field for, such as a cache count from a server that sends no
     # `prompt_tokens_details`. A non-zero value for one of them did not come from the wire.
     uncounted: tuple[str, ...] = ()
+    # The truth of each call, for a scenario that makes more than one. The fields above then hold
+    # only the request model of the first call.
+    calls: tuple[Truth, ...] = ()
+
+
+@dataclass(frozen=True)
+class Call:
+    """One call of a scenario that makes more than one: the model it asks for, and its answer."""
+
+    request_model: str
+    response: Response
 
 
 @dataclass(frozen=True)
@@ -90,6 +101,8 @@ class Scenario:
     `api` is the OpenAI API the app calls: `chat` (Chat Completions) or `responses`.
     `content` is `off` or `on` for a scenario that sets the library's own switch for recording
     prompt and completion text, as the subject declares it. Empty: the switch is left alone.
+    `calls` makes the app call more than once in its trace. As an agent loop, each call sends the
+    tool results of the call before it.
     """
 
     id: str
@@ -110,10 +123,22 @@ class Scenario:
     responses: tuple[Response, ...] = ()
     retries: int = 0
     content: str = ""
+    calls: tuple[Call, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.responses:
-            object.__setattr__(self, "responses", (self.response,))
+            object.__setattr__(
+                self, "responses", tuple(c.response for c in self.calls) or (self.response,)
+            )
+
+    def call_for(self, model: str, answered: int) -> Call | None:
+        """The planned call for a request: its model, and how many replies it sends back.
+
+        Calls to one model are told apart by the number of assistant messages in the request,
+        which grows by one with each step of an agent loop.
+        """
+        same = [c for c in self.calls if c.request_model == model]
+        return same[answered] if answered < len(same) else None
 
     @property
     def key(self) -> str:

@@ -57,6 +57,11 @@ def scenario(sc: Scenario) -> dict[str, Any]:
         "catches": sc.catches,
         "tags": list(sc.tags),
         "content": sc.content,
+        # A scenario with several calls: the mock picks each call's response from the request,
+        # by its model and by how many assistant messages it sends back.
+        "calls": [
+            {"request_model": c.request_model, "response": response(c.response)} for c in sc.calls
+        ],
         "depends_on": scenarios.depends_on(sc.id),
         "path": f"/s/{sc.key}",
         "responses": [response(r) for r in sc.responses],

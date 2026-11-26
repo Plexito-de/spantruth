@@ -91,6 +91,9 @@ scenario replayed from a recorded stream. `depends_on` names the full stream who
 an early-exit cell. `path` is the path prefix on spantruth's mock server. `content` is `off` or
 `on` for a content scenario, which runs with the library's own switch for prompt and
 completion text set that way, and empty for every other scenario.
+`calls` lists each call of a scenario that makes more than one, such as an agent loop:
+its `request_model` and its `response`. The mock server picks a call's response by the
+request's model and by how many assistant messages the request sends back.
 
 ## Use the pack with spantruth's own mock server
 

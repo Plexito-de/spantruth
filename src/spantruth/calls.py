@@ -7,6 +7,7 @@ runner can compare an instrumented run with an uninstrumented one.
 from __future__ import annotations
 
 import asyncio
+import time
 from typing import Any
 
 from .model import Scenario
@@ -34,16 +35,27 @@ class Seen:
     def __init__(self) -> None:
         self.text = ""
         self.events = 0
-        self.response_id: str | None = None
-        self.usage: dict | None = None
+        self.response_id: str | list[str | None] | None = None
+        self.usage: dict | list[dict | None] | None = None
+        self.calls: list[dict[str, Any]] = []
+
+    def add(self, one: Seen, start_ns: int, end_ns: int) -> None:
+        """Record one call of several. Ids and usages become lists, in the order of the plan."""
+        self.text += one.text
+        self.events += one.events
+        self.response_id = [*(self.response_id or []), one.response_id]
+        self.usage = [*(self.usage or []), one.usage]
+        self.calls.append({"window": [start_ns, end_ns]})
 
     def as_dict(self) -> dict[str, Any]:
-        return {
+        seen = {
             "text": self.text,
             "events": self.events,
             "response_id": self.response_id,
             "usage": self.usage,
         }
+        # When each call ran. The checks match spans to calls by it, and it is never compared.
+        return seen | ({"calls": self.calls} if self.calls else {})
 
 
 def _openai_kwargs(sc: Scenario) -> dict:
@@ -122,6 +134,9 @@ def _anthropic_event(e: Any, seen: Seen) -> None:
 
 def run(sc: Scenario, base_url: str, seen: Seen) -> None:
     """Run one scenario the way an application would. Exceptions propagate to the caller."""
+    if sc.calls:
+        _loop(sc, base_url, seen)
+        return
     if sc.asynchronous:
         asyncio.run(_run_async(sc, base_url, seen))
         return
@@ -205,3 +220,54 @@ async def _aread(stream: Any, sc: Scenario, seen: Seen, on_event) -> None:
         on_event(event, seen)
         if sc.read_events is not None and seen.events >= sc.read_events:
             break
+
+
+def _tool_result(name: str) -> str:
+    return {"get_weather": "18 C and sunny", "get_time": "14:05"}.get(name, "done")
+
+
+def _openai_step(r: Any) -> list:
+    """What an agent loop appends after an OpenAI response: the message, then each tool result."""
+    msg = r.choices[0].message
+    return [msg] + [
+        {"role": "tool", "tool_call_id": c.id, "content": _tool_result(c.function.name)}
+        for c in msg.tool_calls or ()
+    ]
+
+
+def _anthropic_step(r: Any) -> list:
+    """What an agent loop appends after an Anthropic response: the reply, then the results."""
+    results = [
+        {"type": "tool_result", "tool_use_id": b.id, "content": _tool_result(b.name)}
+        for b in r.content
+        if b.type == "tool_use"
+    ]
+    return [{"role": "assistant", "content": r.content}, {"role": "user", "content": results}]
+
+
+def _loop(sc: Scenario, base_url: str, seen: Seen) -> None:
+    """An agent loop: call, run the tools the model asked for, and call again with the results.
+
+    It appends the response message itself, as the provider's own tool-use guides show.
+    """
+    messages: list = list(PROMPT)
+    if sc.provider == "openai":
+        import openai
+
+        client = openai.OpenAI(base_url=base_url, api_key="wt-test", max_retries=0, timeout=10)
+        create, on_result, step = client.chat.completions.create, _openai_result, _openai_step
+        extra: dict = {"tools": OPENAI_TOOLS}
+    else:
+        import anthropic
+
+        client = anthropic.Anthropic(
+            base_url=base_url, api_key="wt-test", max_retries=0, timeout=10
+        )
+        create, on_result, step = client.messages.create, _anthropic_result, _anthropic_step
+        extra = {"tools": ANTHROPIC_TOOLS, "max_tokens": 1024}
+    for call in sc.calls:
+        one, start = Seen(), time.time_ns()
+        r = create(model=call.request_model, messages=list(messages), **extra)
+        on_result(r, one)
+        seen.add(one, start, time.time_ns())
+        messages += step(r)

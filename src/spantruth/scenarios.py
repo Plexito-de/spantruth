@@ -11,7 +11,7 @@ from dataclasses import replace
 from . import recorded
 from . import wire_anthropic as an
 from . import wire_openai as oa
-from .model import Scenario, Truth
+from .model import Call, Scenario, Truth
 
 OPENAI_MODEL = "gpt-5-mini"
 OPENAI_SERVED = "gpt-5-mini-2026-08-07"
@@ -580,6 +580,84 @@ def _anthropic() -> list[Scenario]:
     ]
 
 
+def _plans() -> list[Scenario]:
+    """Scenarios with more than one call in the app's trace. Each call's span has its own counts.
+
+    An agent loop asks for the weather, then for the time, then answers. The second and third
+    calls send the tool results back, and read most of their prompt from the cache, as a loop does.
+    """
+    weather = (("call_wt_w", WEATHER[0], '{"city":"Paris"}'),)
+    time_ = (("call_wt_t", TIME[0], '{"zone":"Europe/Paris"}'),)
+    answer = "It is 18 C and sunny in Paris, and the time is 14:05."
+    tool = dict(model=OPENAI_SERVED, text=None, finish="tool_calls")
+    openai_loop = (
+        oa.completion(
+            id="chatcmpl-wt-loop1", prompt=1171, completion_tokens=97, tool_calls=weather, **tool
+        ),
+        oa.completion(
+            id="chatcmpl-wt-loop2",
+            prompt=1307,
+            completion_tokens=89,
+            cached=1093,
+            tool_calls=time_,
+            **tool,
+        ),
+        oa.completion(
+            id="chatcmpl-wt-loop3",
+            model=OPENAI_SERVED,
+            text=answer,
+            finish="stop",
+            prompt=1459,
+            completion_tokens=211,
+            cached=1279,
+        ),
+    )
+    use = dict(model=ANTHROPIC_SERVED, text=None, stop="tool_use")
+    anthropic_loop = (
+        an.message(
+            id="msg_wt_loop1",
+            input_tokens=1171,
+            output_tokens=97,
+            tool_uses=(("toolu_wt_w", *WEATHER),),
+            **use,
+        ),
+        an.message(
+            id="msg_wt_loop2",
+            input_tokens=214,
+            output_tokens=89,
+            cache_read=1093,
+            tool_uses=(("toolu_wt_t", *TIME),),
+            **use,
+        ),
+        an.message(
+            id="msg_wt_loop3",
+            model=ANTHROPIC_SERVED,
+            text=answer,
+            stop="end_turn",
+            input_tokens=180,
+            output_tokens=211,
+            cache_read=1279,
+        ),
+    )
+
+    def loop(provider: str, model: str, responses: tuple) -> Scenario:
+        return Scenario(
+            id=f"{provider}/agent-loop",
+            provider=provider,
+            title="Agent loop: three calls, two with tool results",
+            catches="one call's counts on another call's span, or a call with no span",
+            request_model=model,
+            response=responses[0],
+            tools=True,
+            calls=tuple(Call(model, r) for r in responses),
+        )
+
+    return [
+        loop("openai", OPENAI_MODEL, openai_loop),
+        loop("anthropic", ANTHROPIC_MODEL, anthropic_loop),
+    ]
+
+
 def _with_block(scenarios: list[Scenario]) -> list[Scenario]:
     """The early exit again, leaving a `with` block instead of calling `close()`."""
     extra = []
@@ -640,6 +718,7 @@ SCENARIOS: dict[str, Scenario] = {
     for s in _with_content(_with_async(_with_block(_openai() + _anthropic())))
     + _compat()
     + _recorded()
+    + _plans()
 }
 
 
@@ -676,6 +755,14 @@ def by_key(key: str) -> Scenario:
 
 
 def truth(scenario: Scenario) -> Truth:
+    if scenario.calls:
+        one = [
+            replace(
+                scenario, calls=(), responses=(), request_model=c.request_model, response=c.response
+            )
+            for c in scenario.calls
+        ]
+        return Truth(request_model=scenario.request_model, calls=tuple(truth(c) for c in one))
     if scenario.api == "responses":
         derive = oa.responses_truth
     else:

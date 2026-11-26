@@ -6,7 +6,7 @@ import json
 
 from spantruth import cli, pack, scenarios
 from spantruth.mockserver import MockServer
-from spantruth.model import Event, Response, Scenario, Truth
+from spantruth.model import Call, Event, Response, Scenario, Truth
 
 ENTRY = {
     *pack.CALL,
@@ -14,6 +14,7 @@ ENTRY = {
     "catches",
     "tags",
     "content",
+    "calls",
     "depends_on",
     "path",
     "responses",
@@ -56,6 +57,7 @@ def scenario_from(entry: dict) -> Scenario:
         catches=entry["catches"],
         tags=tuple(entry["tags"]),
         content=entry["content"],
+        calls=tuple(Call(c["request_model"], response_from(c["response"])) for c in entry["calls"]),
         response=responses[entry["truth_response"]],
         responses=responses,
     )
@@ -64,7 +66,9 @@ def scenario_from(entry: dict) -> Scenario:
 def truth_from(data: dict) -> Truth:
     """JSON has lists only, so every field that `Truth` declares as a tuple becomes one again."""
     lists = {f.name for f in dataclasses.fields(Truth) if str(f.type).startswith("tuple")}
-    return Truth(**{k: tuple(v) if k in lists and v is not None else v for k, v in data.items()})
+    values = {k: tuple(v) if k in lists and v is not None else v for k, v in data.items()}
+    values["calls"] = tuple(truth_from(c) for c in data["calls"])
+    return Truth(**values)
 
 
 def exported() -> dict:
@@ -100,11 +104,11 @@ def test_the_call_plan_keys_do_not_change():
     assert all(list(plan) == list(PLAN_KEYS) for plan in plans.values())
 
 
-def _served(url: str, path: str) -> tuple[int, bytes]:
+def _served(url: str, path: str, request: bytes = b"{}") -> tuple[int, bytes]:
     """What the mock server sends, up to where it closes the connection."""
     host, port = url.removeprefix("http://").split(":")
     conn = http.client.HTTPConnection(host, int(port), timeout=5)
-    conn.request("POST", path + "/x", body=b"{}")
+    conn.request("POST", path + "/x", body=request)
     reply = conn.getresponse()
     try:
         body = reply.read()
@@ -128,8 +132,21 @@ def test_the_mock_server_sends_what_the_pack_says():
     with MockServer() as mock:
         for entry in exported()["scenarios"].values():
             mock.reset()
-            for response in entry["responses"]:
+            # A scenario with several calls answers by the request, so its calls are sent below.
+            for response in [] if entry["calls"] else entry["responses"]:
                 status, body = _served(mock.url, entry["path"])
+                assert (status, body) == (response["status"], _wire(response)), entry["id"]
+            seen: dict[str, int] = {}
+            for call in entry["calls"]:
+                # The request names the model and sends back one assistant message per answer
+                # that the same model gave before.
+                answered = seen.get(call["request_model"], 0)
+                seen[call["request_model"]] = answered + 1
+                request = json.dumps(
+                    {"model": call["request_model"], "messages": [{"role": "assistant"}] * answered}
+                ).encode()
+                status, body = _served(mock.url, entry["path"], request)
+                response = call["response"]
                 assert (status, body) == (response["status"], _wire(response)), entry["id"]
 
 

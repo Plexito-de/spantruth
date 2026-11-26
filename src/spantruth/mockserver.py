@@ -24,6 +24,20 @@ def _sse(event: Event) -> bytes:
     return f"{head}data: {data}\n\n".encode()
 
 
+def _planned(sc: Scenario, request: bytes) -> Response | None:
+    """The response to one call of a scenario with several, picked from the request alone.
+
+    Concurrent calls can arrive in any order, so a counter would not do.
+    """
+    try:
+        body = json.loads(request)
+    except ValueError:
+        return None
+    answered = sum(1 for m in body.get("messages", ()) if m.get("role") == "assistant")
+    call = sc.call_for(body.get("model", ""), answered)
+    return call.response if call else None
+
+
 class _Handler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
     server: MockServer
@@ -48,7 +62,10 @@ class _Handler(BaseHTTPRequestHandler):
         retry_count = (
             int(retry_header) if retry_header is not None and retry_header.isdigit() else None
         )
-        response = self.server.next_response(sc, retry_count)
+        response = _planned(sc, request) if sc.calls else self.server.next_response(sc, retry_count)
+        if response is None:
+            self._json(404, {"error": {"message": f"no planned call of {sc.id} fits the request"}})
+            return
         if response.body is not None:
             self._json(response.status, response.body, response.headers)
         else:

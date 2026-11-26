@@ -45,13 +45,19 @@ def attach(monkeypatch, spantruth):
     return attach_reference
 
 
-# A content cell sets a subject's switch, which the plugin has not got.
-IN_PROCESS = [sid for sid, sc in scenarios.SCENARIOS.items() if not sc.content]
+# A content cell sets a subject's switch, which the plugin has not got, and a scenario with
+# several calls needs the driver's call windows.
+IN_PROCESS = [sid for sid, sc in scenarios.SCENARIOS.items() if not (sc.content or sc.calls)]
 
 
 def test_a_content_scenario_is_refused_in_process(spantruth):
     with pytest.raises(ValueError, match="content switch"):
         spantruth.run("openai/content-on")
+
+
+def test_a_scenario_with_several_calls_is_refused_in_process(spantruth):
+    with pytest.raises(ValueError, match="several calls"):
+        spantruth.run("openai/agent-loop")
 
 
 def test_the_reference_passes_every_scenario_in_process(spantruth, attach):
