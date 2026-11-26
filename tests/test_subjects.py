@@ -350,3 +350,19 @@ def test_langchain_openllmetry_is_a_framework_subject():
     assert not lib.supports("anthropic/stream-early-exit-with")
     assert not lib.supports("openai/async-stream-helper")
     assert lib.env["LANGCHAIN_TRACING_V2"] == "false"
+
+
+def test_pydantic_ai_is_a_framework_subject():
+    lib = subjects.load("pydantic-ai")
+    assert lib.app
+    pinned = subjects.requirements(lib, latest=False)
+    assert "pydantic-ai-slim[openai,anthropic]==2.75.0" in pinned
+    # pydantic-ai-slim[openai] requires openai>=3.50.0, so the base pin is replaced.
+    assert "openai==3.50.0" in pinned and "openai==3.42.1" not in pinned
+    assert "pydantic-ai-slim" in subjects.requirements(lib, latest=True)
+    assert lib.supports("openai/responses-stream-missing-finish-abort")
+    assert lib.supports("anthropic/async-stream-early-exit")
+    # External tools end the run after the response that calls them.
+    assert lib.supports("openai/tool-call") and lib.supports("anthropic/stream-tool-call")
+    assert not lib.supports("openai/stream-helper")
+    assert not lib.supports("openai/stream-early-exit-with")
