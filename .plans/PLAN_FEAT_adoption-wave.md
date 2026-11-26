@@ -103,3 +103,28 @@ the subject's app instead of to `calls.py`, and a subject lists the scenarios it
 Found while merging: content capture and the agent loop met in the reference instrumentation (an SDK
 message object in the prompt), two planted faults met on Gemini's thinking cells (a negative histogram
 value), and the history table did not map Azure to the OpenAI packages. Each fix has a test.
+
+## Open after release 0.6.0 (2026-11-26)
+
+Released: [v0.6.0](https://github.com/Plexito-de/spantruth/releases/tag/v0.6.0), on PyPI and the
+GitHub Marketplace. What is still open, and who owns it:
+
+| Item | Owner | State |
+| --- | --- | --- |
+| mlflow fix: Anthropic `gen_ai.response.finish_reasons` (branch `anthropic-semconv-finish-reasons` in `~/oss-scratch/w13-mlflow/mlflow`, text in `plexito-oss-contribution/.drafts/pr_mlflow_new_w13_anthropic-semconv-finish-reasons.md`) | agent, with a fresh `gitok` | Held by the pace cap on 2026-11-26. Post on 2026-11-27 or later: duplicate check, `/thorough-review` of the text, both pace gates, then push and open. Update the test times in the draft. |
+| Outreach schedule (CI-gate issue to OpenInference on 11-27, badge issue, semconv-genai issue, vendor docs PRs) | agent, under the standing go | `plexito-oss-contribution/.drafts/SCHEDULE_spantruth_adoption-wave.md` |
+| Hacker News and newsletters | Christopher | Skipped for now, his decision of 2026-11-26. |
+| `ghcr.io/plexito-de/spantruth` package visibility | Christopher | Make it public once in the package settings, if GitHub created it private. |
+| Co-maintainer invite (recommended: Yash990-bit now) | Christopher | Decision open. |
+| Neutral home for the repository (recommended: later, with a second co-maintaining org) | Christopher | Decision open. |
+| DCO instead of the CLA (recommended: switch, unless a commercial license must stay possible) | Christopher | Decision open. |
+| Email digest of the changes feed (recommended: skip, the feed and release watching cover it) | Christopher | Decision open. |
+| Pre-recorded walkthrough video, no live Q&A (recommended) | Christopher | Decision open. |
+| OTel blog post: affiliation line and a SIG sponsor in writing | Christopher | Decision open. |
+| arXiv preprint (recommended: after the Q1 2027 report) | Christopher | Deferred. |
+| AWS Bedrock (#4) | open to contributors | Not started. |
+| JavaScript driver (#74) | contributor Yash990-bit | In review in another session. |
+| `app.py` `settle()` that raises crashes the instrumented run | maintainer | Optional review note on the hook; no subject's `settle()` raises today. |
+| `doctor --fast` covers only the last five releases per package | maintainer | Older versions, the pinned ones included, run locally. A wider table costs nightly run time. |
+| A LiteLLM check for "writes onto a span it did not create" | maintainer | 18 LiteLLM scenarios are left out until a check and a rule exist. |
+| `doctor` full run fails to resolve `openlit==1.44.0` with `openai==3.42.1` | maintainer | Seen by the history stream; doctor installs every instrumentor of a subject. |
