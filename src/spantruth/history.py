@@ -36,7 +36,17 @@ DEFAULT_RELEASES = 5
 MAX_RELEASES = 10
 # Modules that render or read results. A change in them does not change a verdict, so it does not
 # invalidate the entries of an earlier table.
-PRESENTATION = {"cli", "doctor", "history", "impact", "paths", "report", "site", "watch"}
+PRESENTATION = {
+    "cli",
+    "doctor",
+    "history",
+    "impact",
+    "paths",
+    "report",
+    "site",
+    "snapshots",
+    "watch",
+}
 _VERSION = re.compile(r"(\d+(?:\.\d+)*)(?:(a|b|rc)(\d+))?(?:\.post(\d+))?(?:\.dev(\d+))?")
 _PHASE = {"a": 0, "b": 1, "rc": 2, None: 3}
 

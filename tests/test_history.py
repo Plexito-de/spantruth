@@ -429,3 +429,8 @@ def test_the_table_names_the_sdk_versions_each_subject_ran_with():
         "openai": "2.54.0",
     }
     assert history.sdk_pins(subjects.load("logfire")) == {"anthropic": "2.4.0", "openai": "3.42.1"}
+
+
+def test_every_module_that_only_renders_exists():
+    package = Path(history.__file__).parent
+    assert {p.stem for p in package.glob("*.py")} >= history.PRESENTATION
