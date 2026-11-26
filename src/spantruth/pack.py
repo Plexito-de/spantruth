@@ -19,7 +19,7 @@ from .conventions import SEMCONV_GENAI_COMMIT
 from .model import Response, Scenario
 
 FORMAT = 1
-# The call plan: how the app calls the SDK. The same keys as the Node driver's scenarios.json.
+# The call plan: how the app calls the SDK. A driver in another language reads these keys.
 CALL = (
     "id",
     "provider",
@@ -76,7 +76,7 @@ def export() -> dict[str, Any]:
 
 
 def calls_only() -> dict[str, dict[str, Any]]:
-    """The call plans alone, keyed by scenario ID: the Node driver's scenarios.json."""
+    """The call plans alone, keyed by scenario ID, for a driver that needs nothing else."""
     return {sid: call_plan(sc) for sid, sc in scenarios.SCENARIOS.items()}
 
 

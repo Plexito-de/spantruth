@@ -96,17 +96,25 @@ the mock server, and the driver points the SDK at `<mock URL><path>`, plus `/v1`
 the driver needs only the call plan. The responses and the truth are there for a harness that runs
 without spantruth.
 
-## The Node driver (pull request #74)
+## A driver that reads only call plans
 
-The Node driver reads `drivers/node/scenarios.json`: the call plans, keyed by scenario ID, with
-the same twelve keys as the call plan above. `spantruth export --calls-only` writes that file. On
-2026-11-26 its output equals, as JSON, the `scenarios.json` in #74, for all 45 scenarios. Only the
-indent differs.
+`spantruth export --calls-only` writes the call plans alone: one object keyed by scenario ID, each
+value with the twelve keys of the call-plan table above. A driver that looks a plan up by
+`data[scenarioId]` reads this file. It does not read the full pack as it is, because the pack keeps
+its scenarios under `scenarios`. Give such a driver the `--calls-only` file, or one entry of the
+pack: an entry has every key of a call plan, plus more that the driver can ignore. Compare a file
+with the export as JSON, not as bytes: the indent and the order of the keys can differ.
 
-The full pack is not a drop-in for the driver's `--plan FILE`. The driver looks up
-`data[scenarioId]`, and the pack keeps its scenarios under `scenarios`. Pass one entry of the pack,
-or the `--calls-only` output, instead. An entry of the pack is a superset of a call plan, so the
-driver reads it as it is.
+## What else the mock server does
+
+A driver that uses spantruth's mock server gets two things that the pack does not list:
+
+- Every response also has the header `x-request-id: req_spantruth`. A JSON body has
+  `content-type: application/json` and `content-length`. A stream has
+  `content-type: text/event-stream` and `transfer-encoding: chunked`.
+- A scenario with more than one response gives them in order, one per request, and starts again
+  after the last. When the request has the header `x-stainless-retry-count: N`, which the OpenAI and
+  Anthropic SDKs send, the server gives response N instead (the last one, when N is larger).
 
 ## Versions
 

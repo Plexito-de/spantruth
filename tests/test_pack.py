@@ -18,8 +18,8 @@ ENTRY = {
     "truth_response",
     "truth",
 }
-# The keys of `Scenario.call_plan()` in the Node driver pull request (#74), in its order.
-NODE_PLAN = (
+# The call-plan keys, in order. A driver in another language reads them, so they never change.
+PLAN_KEYS = (
     "id",
     "provider",
     "request_model",
@@ -89,11 +89,11 @@ def test_the_export_is_the_same_bytes_every_time():
     assert "created" not in pack.export()
 
 
-def test_the_call_plan_has_the_node_drivers_keys():
-    assert pack.CALL == NODE_PLAN
+def test_the_call_plan_keys_do_not_change():
+    assert pack.CALL == PLAN_KEYS
     plans = pack.calls_only()
     assert list(plans) == list(scenarios.SCENARIOS)
-    assert all(list(plan) == list(NODE_PLAN) for plan in plans.values())
+    assert all(list(plan) == list(PLAN_KEYS) for plan in plans.values())
 
 
 def _served(url: str, path: str) -> tuple[int, bytes]:
