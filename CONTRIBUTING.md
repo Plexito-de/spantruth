@@ -34,6 +34,10 @@ uv run ruff check . && uv run ruff format --check .
 
 `uvx pre-commit install` runs the linters on every commit.
 
+Keep `XDG_CACHE_HOME` outside the checkout. The subject environments live under it, and a
+cache inside the tree goes into the source distribution, which fails
+`test_wheel_runs_a_control_without_a_clone`.
+
 ## Add a subject
 
 1. Create `subjects/<name>/subject.toml` with `title`, `homepage`, `providers`, the pinned
