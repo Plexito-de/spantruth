@@ -286,8 +286,8 @@ def test_openai_agents_is_a_framework_subject():
     assert "openai-agents" in subjects.requirements(lib, latest=True)
     assert lib.supports("openai/basic") and lib.supports("openai/async-stream")
     assert lib.supports("openai/responses-stream-missing-finish-abort")
-    # The agent loop cannot end on a tool call that the fake provider repeats.
-    assert not lib.supports("openai/tool-call")
+    # stop_on_first_tool ends the agent loop after the first tool call.
+    assert lib.supports("openai/tool-call") and lib.supports("openai/stream-tool-call")
     # The SDK reads the model stream in a background task, whatever the app reads.
     assert not lib.supports("openai/stream-early-exit")
     # The SDK sends its own traces only with OPENAI_API_KEY set, which no subject process has.
