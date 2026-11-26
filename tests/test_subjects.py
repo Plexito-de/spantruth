@@ -273,3 +273,19 @@ def test_the_wrapper_example_loads_as_a_subject():
     assert subject.name == "spantruth"
     assert "acme-llm==0.1.0" in subject.packages
     assert subjects.resolve_override(str(example)).startswith("acme-llm @ file://")
+
+
+def test_langchain_openinference_is_a_framework_subject():
+    lib = subjects.load("langchain-openinference")
+    assert lib.app
+    reqs = subjects.requirements(lib, latest=False)
+    assert {"langchain-openai==1.8.5", "openinference-instrumentation-langchain==0.1.90"} <= set(
+        reqs
+    )
+    assert "openai==3.42.1" in reqs  # LangChain runs the base SDK versions
+    assert "langchain-openai" in subjects.requirements(lib, latest=True)
+    # A LangChain stream is a generator: no with block, and no SDK streaming helper.
+    assert not lib.supports("openai/stream-early-exit-with")
+    assert not lib.supports("openai/stream-helper")
+    assert lib.supports("openai/responses-stream-missing-finish-abort")
+    assert lib.env["LANGSMITH_TRACING"] == "false"
