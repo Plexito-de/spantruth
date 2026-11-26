@@ -338,10 +338,19 @@ def as_the_app_runs(
     return replace(subject, env={**subject.env, SELF_TRACING: environ.get(SELF_TRACING, "true")})
 
 
+# The SDK package that says a project calls a provider, when its name is not the provider's.
+# Azure OpenAI is called through the OpenAI SDK.
+PROVIDER_PACKAGES = {"gemini": ("google-genai",), "azure": ("openai",)}
+
+
 def scenario_ids(versions: Mapping[str, str | None]) -> list[str]:
     """The scenarios of the providers the project uses, or all of them when it names neither."""
     every = list(scenarios.SCENARIOS)
-    used = {sc.provider for sc in scenarios.SCENARIOS.values() if sc.provider in versions}
+    used = {
+        sc.provider
+        for sc in scenarios.SCENARIOS.values()
+        if any(p in versions for p in PROVIDER_PACKAGES.get(sc.provider, (sc.provider,)))
+    }
     return [i for i in every if scenarios.get(i).provider in used] if used else every
 
 

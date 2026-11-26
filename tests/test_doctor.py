@@ -2,6 +2,7 @@
 
 import json
 from dataclasses import replace
+from types import SimpleNamespace
 
 import pytest
 
@@ -759,7 +760,9 @@ def test_a_package_that_a_subject_detects_is_covered(table):
 
 def test_every_uncovered_entry_names_a_title_and_an_issue_to_ask_in():
     rows = doctor.uncovered_table()
-    assert {"litellm", "langchain", "google-genai", "instructor"} <= set(rows)
+    assert {"litellm", "langchain", "instructor"} <= set(rows)
+    # Gemini is a provider now, so a google-genai project is graded, not sent to an issue.
+    assert not {"google-genai", "google-generativeai"} & set(rows)
     for name, row in rows.items():
         assert name == subjects.package_name(name), name
         assert row["title"], name
@@ -835,6 +838,7 @@ def two_commits(repo, old, new, name="requirements.txt"):
     repo.mkdir(parents=True, exist_ok=True)
     git(repo, "init", "-q", "-b", "main")
     for text, message in ((old, "old"), (new, "new")):
+        (repo / name).parent.mkdir(parents=True, exist_ok=True)
         (repo / name).write_text(text)
         git(repo, "add", name)
         git(repo, "-c", "user.name=t", "-c", "user.email=t@example.com", "commit", "-qm", message)
@@ -867,7 +871,7 @@ def test_base_names_a_finding_that_the_bump_fixes(tmp_path, capsys, runs):
     assert len(runs) == 2
     assert (tmp_path / "r-base.json").is_file()
     comment = body.read_text()
-    assert comment.startswith(report.comment_marker("doctor"))
+    assert comment.startswith(report.comment_marker(f"doctor-{repo}"))
     assert "1 finding fixed, 0 new" in comment
     assert "| `openinference` | [ST01 Ghost span]" in comment
 
@@ -957,3 +961,52 @@ def test_the_comment_keeps_values_from_the_lock_file_in_code_spans():
     body = doctor_base.comment([], "main", versions, [], False, "")
     assert "`` 2.0`<script> ``" in body
     assert body.count("<!--") == 1
+
+
+def test_a_newline_in_a_repository_value_cannot_leave_its_code_span():
+    evil = "2.0\n\n![x](https://evil.example/x.png) @someone"
+    body = doctor_base.comment(
+        [], f"main\n\n# {evil}", [(f"pkg\n\n{evil}", "1.0", evil)], [], False, ""
+    )
+    assert "\n![x]" not in body and "\n# " not in body
+    assert "\n@someone" not in body
+
+
+def test_each_project_path_gets_its_own_comment_marker():
+    root = doctor_base.comment([], None, [], [], False, "", project=".")
+    api = doctor_base.comment([], None, [], [], False, "", project="services/api")
+    worker = doctor_base.comment([], None, [], [], False, "", project="./services/worker/")
+    assert root.startswith(report.comment_marker("doctor"))
+    markers = {body.splitlines()[0] for body in (root, api, worker)}
+    assert len(markers) == 3
+    assert "`services/api`" in api
+
+
+def test_base_passes_when_the_same_finding_is_on_both_sides(tmp_path, capsys, runs):
+    # The bump moves a version doctor runs, so both sides run, and both lose the stream span.
+    old = pins("3.0.0").replace("anthropic==2.5.0", "anthropic==2.4.0")
+    repo = two_commits(tmp_path / "app", old, pins("3.0.0"))
+    args = ["doctor", str(repo), "--base", "HEAD~1", "--out", str(tmp_path / "r.json")]
+    assert cli.main(args) == 0
+    assert len(runs) == 2
+    assert "No finding changed" in capsys.readouterr().out
+
+
+def test_base_reads_a_file_under_a_requirements_directory(tmp_path, capsys, runs):
+    repo = two_commits(tmp_path / "app", pins("3.0.0"), pins("3.1.0"), name="requirements/dev.txt")
+    target = repo / "requirements" / "dev.txt"
+    args = ["doctor", str(target), "--base", "HEAD~1", "--out", str(tmp_path / "r.json")]
+    assert cli.main(args) == 0
+    assert "Fixed in openinference: ST01 Ghost span" in capsys.readouterr().out
+
+
+def test_a_provider_counts_when_the_project_has_its_sdk_package(monkeypatch):
+    fake = {
+        "openai/basic": SimpleNamespace(provider="openai"),
+        "gemini/basic": SimpleNamespace(provider="gemini"),
+        "azure/basic": SimpleNamespace(provider="azure"),
+    }
+    monkeypatch.setattr(doctor.scenarios, "SCENARIOS", fake)
+    monkeypatch.setattr(doctor.scenarios, "get", fake.__getitem__)
+    assert doctor.scenario_ids({"google-genai": "1.0"}) == ["gemini/basic"]
+    assert doctor.scenario_ids({"openai": "3.0"}) == ["openai/basic", "azure/basic"]

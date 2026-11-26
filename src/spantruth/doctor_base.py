@@ -47,9 +47,12 @@ def read_at(path: Path, ref: str, tmp: Path) -> Found:
     path = Path(path)
     where = path.parent if path.is_file() else path
     if not where.is_dir():
-        raise DoctorError(f"no such directory: {doctor._line(where)}")
+        raise DoctorError(f"no such file or directory: {doctor._line(where)}")
+    if ref.startswith("-"):
+        # A ref is never an option, so `--upload-pack=...` and the like cannot reach git.
+        raise DoctorError(f"--base takes a git ref, not an option: {doctor._line(ref)}")
     check = subprocess.run(
-        ["git", "rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}"],
+        ["git", "rev-parse", "--verify", "--quiet", "--end-of-options", f"{ref}^{{commit}}"],
         cwd=where,
         capture_output=True,
         text=True,
@@ -62,10 +65,13 @@ def read_at(path: Path, ref: str, tmp: Path) -> Found:
     names = _git(["ls-tree", "--name-only", ref, "--", "."], where).splitlines()
     names = [n for n in names if (n == path.name if path.is_file() else _wanted(n))]
     if not names:
-        return Found(f"nothing at {ref}", {})
+        return Found(doctor._line(f"nothing at {ref}"), {})
+    # A file keeps its directory's name, so `requirements/dev.txt` is still a requirements file.
+    into = tmp / where.resolve().name if path.is_file() else tmp
+    into.mkdir(parents=True, exist_ok=True)
     for name in names:
-        (tmp / name).write_text(_git(["show", f"{ref}:./{name}"], where))
-    return doctor.read_versions(tmp / names[0] if path.is_file() else tmp)
+        (into / name).write_text(_git(["show", f"{ref}:./{name}"], where))
+    return doctor.read_versions(into / names[0] if path.is_file() else into)
 
 
 def changes(base: list[dict[str, Any]], head: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -137,6 +143,15 @@ def render(
     return "\n".join(lines)
 
 
+def project_label(project: str | Path) -> str:
+    """The project path as the user gave it, without `./` or a trailing slash. Empty for the root.
+
+    A monorepo runs a step per subproject, so each one needs its own comment.
+    """
+    text = str(project).strip().removeprefix("./").rstrip("/")
+    return "" if text in ("", ".") else text
+
+
 def comment(
     head: list[dict[str, Any]],
     ref: str | None,
@@ -144,14 +159,20 @@ def comment(
     found: list[dict[str, Any]],
     incomplete: bool,
     link: str,
+    project: str = ".",
 ) -> str:
-    """A pull request comment, which the action keeps up to date.
+    """A pull request comment, which the action keeps up to date, one per project path.
 
     Library names and class IDs are spantruth's own. Refs, package names and versions come from the
-    repository, so each is a code span that no backtick in it can close.
+    repository, so each is on one line, in a code span that no backtick in it can close.
     """
-    code = report._code
-    lines = [report.comment_marker(MARKER), "### spantruth doctor", ""]
+
+    def code(value: Any) -> str:
+        return report._code(doctor._line(value))
+
+    where = project_label(project)
+    title = "### spantruth doctor" + (f": {code(where)}" if where else "")
+    lines = [report.comment_marker(f"{MARKER}-{where}" if where else MARKER), title, ""]
     if incomplete:
         lines += ["⚠️ spantruth could not run every library, so the result is incomplete.", ""]
     if ref is not None and not incomplete:
@@ -241,7 +262,7 @@ def run(
         code = 1 if any(c["change"] == "added" for c in found) else 0
     else:
         code = doctor.exit_code(head_doc, head_sum)
-    body = comment(head_sum, base, moved, found, incomplete, link)
+    body = comment(head_sum, base, moved, found, incomplete, link, project=str(directory))
     if comment_file:
         comment_file.write_text(body)
     if summary_file:

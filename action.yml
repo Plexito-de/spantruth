@@ -132,17 +132,30 @@ runs:
             repo="$project"
             if [ -f "$repo" ]; then repo="$(dirname "$repo")"; fi
             base="${BASE:-${BASE_SHA:-}}"
+            if [[ "$base" == -* ]]; then
+              # A ref is never an option: `--upload-pack=...` must not reach git.
+              echo "::error::spantruth: the base input is a git ref, and it cannot start with -"
+              echo "exit-code=2" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
             if [ -n "$base" ]; then
-              # A shallow checkout has no base commit. Fetch it; a private fork may not allow it.
-              if ! git -C "$repo" rev-parse --verify --quiet "$base^{commit}" > /dev/null; then
-                git -C "$repo" fetch --quiet --no-tags --depth=1 origin "$base" ||
-                  echo "::warning::spantruth could not fetch the base commit, so doctor does not compare"
+              # A shallow checkout has no base commit, and fetching a branch such as main updates
+              # only origin/main, so the fetched commit is read from FETCH_HEAD.
+              commit="$(git -C "$repo" rev-parse --verify --quiet --end-of-options "$base^{commit}")" ||
+                commit=""
+              if [ -z "$commit" ] &&
+                git -C "$repo" fetch --quiet --no-tags --depth=1 --end-of-options origin "$base"; then
+                commit="$(git -C "$repo" rev-parse --verify --quiet --end-of-options "FETCH_HEAD^{commit}")" ||
+                  commit=""
               fi
-              if git -C "$repo" rev-parse --verify --quiet "$base^{commit}" > /dev/null; then
-                args+=(--base "$base")
+              if [ -n "$commit" ]; then
+                args+=(--base "$commit")
+              else
+                echo "::warning::spantruth could not find the base commit, so doctor does not compare and fails on any finding"
               fi
             fi
-            label=doctor
+            # One comment and one artifact per project path: a monorepo runs a step per subproject.
+            label="doctor$(printf '%s' "${project#./}" | sed -e 's#/*$##' -e 's#^\.$##' | tr -c 'A-Za-z0-9._' '_' | sed -e 's#^.#-&#')"
             ;;
           *)
             echo "::error::spantruth: the command input is run or doctor"

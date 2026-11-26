@@ -186,6 +186,25 @@ def test_an_unknown_command_or_run_without_a_subject_is_a_usage_error(tmp_path, 
     assert code == 2
 
 
+@pytest.mark.slow
+@pytest.mark.timeout(300)
+def test_a_base_input_cannot_pass_an_option_to_git(tmp_path):
+    repo = tmp_path / "app"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q", "-b", "main"], cwd=repo, check=True)
+    commit(repo, "anthropic==2.5.0\nopeninference-instrumentation-anthropic==3.3.1\n", "base")
+    planted = tmp_path / "planted"
+    code, _, _ = run_action(
+        tmp_path / "a",
+        tmp_path / "runner",
+        command="doctor",
+        project=str(repo),
+        base=f"--upload-pack=touch {planted};true",
+    )
+    assert code == 2
+    assert not planted.exists()
+
+
 def commit(repo: Path, text: str, message: str) -> str:
     """Commit the requirements file with this text, and return the commit."""
     (repo / "requirements.txt").write_text(text)
@@ -201,31 +220,48 @@ def commit(repo: Path, text: str, message: str) -> str:
 
 @pytest.mark.slow
 @pytest.mark.timeout(600)
-def test_doctor_in_an_application_repository_fails_on_a_finding_the_change_adds(tmp_path):
-    """Two commits: the pull request swaps OpenInference for a library that doubles each span."""
-    repo = tmp_path / "app"
-    repo.mkdir()
-    subprocess.run(["git", "init", "-q", "-b", "main"], cwd=repo, check=True)
+@pytest.mark.parametrize("how", ["base-sha", "base-main-in-a-shallow-clone"])
+def test_doctor_in_an_application_repository_fails_on_a_finding_the_change_adds(tmp_path, how):
+    """Two commits: the pull request swaps OpenInference for a library that doubles each span.
+
+    A pull request gives the base commit. A `base: main` input in a shallow clone of the pull
+    request's branch has no `main` until the step fetches it, and then only FETCH_HEAD has it.
+    """
+    origin = tmp_path / "origin"
+    origin.mkdir()
+    subprocess.run(["git", "init", "-q", "-b", "main"], cwd=origin, check=True)
     base = commit(
-        repo,
+        origin,
         "anthropic==2.5.0\nopeninference-instrumentation-anthropic==3.3.1\n"
         "opentelemetry-sdk==1.45.2\n",
         "base",
     )
-    commit(repo, "anthropic==2.4.0\nopentelemetry-instrumentation-genai-anthropic==1.3b0\n", "pr")
+    subprocess.run(["git", "checkout", "-q", "-b", "pr"], cwd=origin, check=True)
+    commit(origin, "anthropic==2.4.0\nopentelemetry-instrumentation-genai-anthropic==1.3b0\n", "pr")
+    if how == "base-sha":
+        repo, inputs = origin, {"base_sha": base}
+    else:
+        repo, inputs = tmp_path / "clone", {"base": "main"}
+        subprocess.run(
+            ["git", "clone", "-q", "--depth=1", "--branch", "pr", f"file://{origin}", str(repo)],
+            check=True,
+        )
+        missing = subprocess.run(["git", "rev-parse", "--verify", "--quiet", "main"], cwd=repo)
+        assert missing.returncode != 0
     code, outputs, summary = run_action(
         tmp_path / "a",
         tmp_path / "runner",
         command="doctor",
         project=str(repo),
-        base_sha=base,
         scenario="anthropic/basic",
         comment="true",
+        **inputs,
     )
     assert code == 1, summary
-    assert outputs["artifact-name"] == "spantruth-doctor"
+    assert outputs["artifact-name"].startswith("spantruth-doctor-")
+    assert "/" not in outputs["artifact-name"]
     assert "1 new" in summary and "ST02 Double span" in summary
-    assert outputs["comment-marker"] == "<!-- spantruth:doctor -->"
+    assert outputs["comment-marker"].startswith("<!-- spantruth:doctor_")
     body = Path(outputs["comment-file"]).read_text()
     assert body.startswith(outputs["comment-marker"])
     assert "| `otel-official` | [ST02 Double span]" in body
