@@ -656,6 +656,19 @@ def test_a_monorepo_command_starts_from_the_path_given(tmp_path):
     assert f"spantruth doctor {tmp_path / 'repo' / 'services' / 'api'}" in str(exc.value)
 
 
+def test_a_subproject_name_cannot_send_a_terminal_escape(tmp_path):
+    root = tmp_path / "repo\x1b]0;root\x07"
+    sub = root / "evil\x1b[2J\nspantruth doctor /fake"
+    sub.mkdir(parents=True)
+    (sub / "uv.lock").write_text(UV_LOCK)
+    with pytest.raises(doctor.DoctorError) as exc:
+        doctor.read_versions(root)
+    message = str(exc.value)
+    assert "\x1b" not in message and "\x07" not in message
+    assert "\nspantruth doctor /fake" not in message
+    assert message.count("\n") == 1
+
+
 def test_a_root_with_requirements_is_read_and_not_a_monorepo(tmp_path):
     monorepo(tmp_path)
     project(tmp_path, requirements__txt="openai==1.0\n")

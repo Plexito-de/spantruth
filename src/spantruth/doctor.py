@@ -170,9 +170,12 @@ def subprojects(directory: Path, depth: int = 3) -> list[tuple[Path, str]]:
 
 
 def _monorepo_error(directory: Path, found: list[tuple[Path, str]]) -> DoctorError:
-    lines = [f"  spantruth doctor {shlex.quote(str(path))}  ({lock})" for path, lock in found]
+    # A directory name is anybody's text: no control sequence of it reaches the terminal.
+    lines = [
+        f"  spantruth doctor {_line(shlex.quote(str(path)))}  ({lock})" for path, lock in found
+    ]
     return DoctorError(
-        f"no lock file in {directory.resolve()}, but {len(found)} subprojects have one. "
+        f"no lock file in {_line(directory.resolve())}, but {len(found)} subprojects have one. "
         "Run doctor in each:\n" + "\n".join(lines)
     )
 
@@ -188,7 +191,7 @@ def read_versions(directory: Path) -> Found:
     if directory.is_file():
         return _read_file(directory)
     if not directory.is_dir():
-        raise DoctorError(f"no such directory: {directory}")
+        raise DoctorError(f"no such directory: {_line(directory)}")
     for name, reader in LOCKS.items():
         if (directory / name).is_file():
             return Found(name, reader(directory / name))
@@ -205,7 +208,7 @@ def read_versions(directory: Path) -> Found:
     if (directory / "pyproject.toml").is_file():
         return Found("pyproject.toml", _pyproject(directory / "pyproject.toml"))
     raise DoctorError(
-        f"no lock file, requirements file, .venv or pyproject.toml in {directory.resolve()}"
+        f"no lock file, requirements file, .venv or pyproject.toml in {_line(directory.resolve())}"
     )
 
 
