@@ -106,6 +106,33 @@ def test_receiver_decodes_otlp_protobuf_from_the_real_exporter():
     assert chat.resource["service.name"] == "t"
 
 
+def test_receiver_keeps_log_records_and_span_event_attributes():
+    from opentelemetry.exporter.otlp.proto.http._log_exporter import OTLPLogExporter
+    from opentelemetry.sdk._logs import LoggerProvider
+    from opentelemetry.sdk._logs.export import SimpleLogRecordProcessor
+
+    with Receiver() as rx:
+        lp = LoggerProvider()
+        lp.add_log_record_processor(SimpleLogRecordProcessor(OTLPLogExporter(f"{rx.url}/v1/logs")))
+        lp.get_logger("lib").emit(
+            event_name="gen_ai.choice",
+            body={"message": {"content": "Paris"}},
+            attributes={"gen_ai.provider.name": "openai"},
+        )
+        lp.shutdown()
+        tp = TracerProvider()
+        tp.add_span_processor(SimpleSpanProcessor(OTLPSpanExporter(f"{rx.url}/v1/traces")))
+        with tp.get_tracer("t").start_as_current_span("chat m") as s:
+            s.add_event("gen_ai.content.completion", {"gen_ai.completion": "Paris"})
+        tp.shutdown()
+        [record], [chat] = rx.logs, rx.spans
+    assert (record.event_name, record.body) == ("gen_ai.choice", {"message": {"content": "Paris"}})
+    assert record.attributes == {"gen_ai.provider.name": "openai"}
+    assert rx.counts["logs"] == 1
+    assert chat.events == ("gen_ai.content.completion",)
+    assert chat.event_attributes == ({"gen_ai.completion": "Paris"},)
+
+
 def test_receiver_drops_other_paths():
     import urllib.request
 

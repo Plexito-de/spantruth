@@ -3,3 +3,11 @@ homepage = "https://github.com/Plexito-de/spantruth/blob/main/src/spantruth/refe
 kind = "control"
 providers = ["openai", "anthropic"]
 notes = "Must pass every check. If it does not, the suite is wrong, not a library."
+
+# The reference follows the switch of the OpenTelemetry GenAI instrumentations, off by default.
+[content]
+switch = "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT"
+docs = "https://github.com/open-telemetry/semantic-conventions-genai/blob/6fd0d763a092db245a54104fc1124031eb3c51d2/docs/gen-ai/gen-ai-spans.md#L916-L917"
+default = "off"
+off = { OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT = "false" }
+on = { OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT = "true" }

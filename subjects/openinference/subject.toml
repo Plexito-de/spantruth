@@ -6,3 +6,11 @@ packages = [
   "openinference-instrumentation-anthropic==3.3.0",
 ]
 track = ["openinference-instrumentation-openai", "openinference-instrumentation-anthropic"]
+
+# Hidden inputs and outputs become "__REDACTED__" or are dropped, so no text remains.
+[content]
+switch = "OPENINFERENCE_HIDE_INPUTS and OPENINFERENCE_HIDE_OUTPUTS"
+docs = "https://github.com/Arize-ai/openinference/blob/a9ac9c11841e1fc27385afb2ef796567e2433317/spec/configuration.md#L13-L20"
+default = "on"
+off = { OPENINFERENCE_HIDE_INPUTS = "true", OPENINFERENCE_HIDE_OUTPUTS = "true" }
+on = { OPENINFERENCE_HIDE_INPUTS = "false", OPENINFERENCE_HIDE_OUTPUTS = "false" }

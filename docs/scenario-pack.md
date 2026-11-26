@@ -35,6 +35,7 @@ The output has no date in it, so one spantruth version always writes the same by
    "title": "Connection drops mid-stream",
    "catches": "an error swallowed into a cut-off answer",
    "tags": [],
+   "content": "",
    "depends_on": null,
    "path": "/s/anthropic--stream-dropped",
    "responses": [{"status": 200, "headers": {}, "events": ["..."], "drop_after": 3}],
@@ -87,7 +88,9 @@ estimate.
 
 The other keys: `title` and `catches` describe the scenario. `tags` holds `recorded` for a
 scenario replayed from a recorded stream. `depends_on` names the full stream whose verdict decides
-an early-exit cell. `path` is the path prefix on spantruth's mock server.
+an early-exit cell. `path` is the path prefix on spantruth's mock server. `content` is `off` or
+`on` for a content scenario, which runs with the library's own switch for prompt and
+completion text set that way, and empty for every other scenario.
 
 ## Use the pack with spantruth's own mock server
 

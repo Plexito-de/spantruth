@@ -45,9 +45,18 @@ def attach(monkeypatch, spantruth):
     return attach_reference
 
 
+# A content cell sets a subject's switch, which the plugin has not got.
+IN_PROCESS = [sid for sid, sc in scenarios.SCENARIOS.items() if not sc.content]
+
+
+def test_a_content_scenario_is_refused_in_process(spantruth):
+    with pytest.raises(ValueError, match="content switch"):
+        spantruth.run("openai/content-on")
+
+
 def test_the_reference_passes_every_scenario_in_process(spantruth, attach):
     attach()
-    for sid in scenarios.SCENARIOS:
+    for sid in IN_PROCESS:
         result = spantruth.run(sid)
         assert result.failing == {}, result.explain()
         (app,) = [c for c in result.checks if c.id == "app.unchanged"]
@@ -59,8 +68,9 @@ def test_the_faulty_reference_fails_exactly_its_planted_faults(spantruth, attach
     namespace: dict = {}
     exec((faulty / "instrument.py").read_text(), namespace)
     attach(namespace["FAULTS"])
-    got = {sid: f for sid in scenarios.SCENARIOS if (f := spantruth.run(sid).failing)}
-    assert got == expectations.load(faulty / "expected.toml")
+    got = {sid: f for sid in IN_PROCESS if (f := spantruth.run(sid).failing)}
+    expected = expectations.load(faulty / "expected.toml")
+    assert got == {sid: f for sid, f in expected.items() if sid in IN_PROCESS}
 
 
 def test_no_wrapper_is_a_ghost_span(spantruth):

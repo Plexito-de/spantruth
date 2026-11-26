@@ -5,6 +5,8 @@ from spantruth import reference
 FAULTS = {
     "anthropic-raw-input",
     "close-leaks-span",
+    "content-first-chunk",
+    "content-ignores-off",
     "errors-as-success",
     "estimate-tokens",
     "retry-as-error",

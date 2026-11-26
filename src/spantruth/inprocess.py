@@ -113,6 +113,10 @@ class Spantruth:
         exception of an error scenario inside the block, as your application would.
         """
         sc = scenarios.get(scenario_id)
+        if sc.content:
+            # A content cell sets the subject's own switch for prompt and completion text. The
+            # plugin has no subject, so it cannot set one: grade those cells with `spantruth run`.
+            raise ValueError(f"{scenario_id} needs a subject's content switch: use spantruth run")
         self.mock.reset()  # a retry scenario starts again from its first response
         current = Call(sc, self.base_url(scenario_id))
         first = len(self.receiver.spans)

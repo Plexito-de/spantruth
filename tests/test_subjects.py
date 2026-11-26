@@ -255,6 +255,41 @@ def test_only_a_built_in_subject_can_be_a_control(tmp_path):
     assert subjects.load("control-honest").kind == "control"
 
 
+def test_a_content_switch_sets_its_variables_and_the_mode(tmp_path):
+    honest = subjects.load("control-honest")
+    assert honest.content_env("off") == {
+        "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT": "false",
+        "SPANTRUTH_CONTENT": "off",
+    }
+    directory = _copy_subject(tmp_path)
+    config = directory / "subject.toml"
+    head = config.read_text().split("[content]")[0]
+    config.write_text(
+        head + '[content]\nswitch = "s"\ndocs = "https://x"\ndefault = "on"\non = {}\n'
+    )
+    lib = subjects.load(str(directory))
+    assert lib.content_env("off") is None  # no documented way to turn it off
+    assert lib.content_env("on") == {"SPANTRUTH_CONTENT": "on"}
+    assert subjects.load("openllmetry").content_env("off") is not None
+
+
+@pytest.mark.parametrize(
+    ("table", "error"),
+    [
+        ('switch = "s"\ndocs = "https://x"\n', "needs switch, docs and default"),
+        ('switch = "s"\ndocs = "http://x"\ndefault = "on"\n', "https address"),
+        ('switch = "s"\ndocs = "https://x"\ndefault = "yes"\n', 'must be "on" or "off"'),
+        ('switch = "s"\ndocs = "https://x"\ndefault = "on"\noff = { A = 1 }\n', "table of strings"),
+    ],
+)
+def test_a_bad_content_table_is_one_clear_error(tmp_path, table, error):
+    directory = _copy_subject(tmp_path)
+    config = directory / "subject.toml"
+    config.write_text(config.read_text().split("[content]")[0] + "[content]\n" + table)
+    with pytest.raises(subjects.SubjectError, match=error):
+        subjects.load(str(directory))
+
+
 def test_a_checkout_with_a_broken_pyproject_is_a_usage_error(tmp_path):
     directory = _checkout(tmp_path, "[project\nname = ")
     with pytest.raises(subjects.SubjectError, match=r"pyproject\.toml"):

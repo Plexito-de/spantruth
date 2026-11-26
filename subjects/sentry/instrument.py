@@ -12,6 +12,7 @@ the span classes of the installed version.
 """
 
 import json
+import os
 
 SCOPE = "sentry_sdk.adapter"
 
@@ -116,4 +117,7 @@ def instrument(tracer_provider, otlp_endpoint):
     else:
         _adapt_2(start, end)
 
-    sentry_sdk.init(traces_sample_rate=1.0)
+    # A content scenario sets the documented switch, send_default_pii. Others leave it.
+    mode = os.environ.get("SPANTRUTH_CONTENT")
+    content = {"send_default_pii": mode == "on"} if mode else {}
+    sentry_sdk.init(traces_sample_rate=1.0, **content)

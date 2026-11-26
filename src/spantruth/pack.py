@@ -56,6 +56,7 @@ def scenario(sc: Scenario) -> dict[str, Any]:
         "title": sc.title,
         "catches": sc.catches,
         "tags": list(sc.tags),
+        "content": sc.content,
         "depends_on": scenarios.depends_on(sc.id),
         "path": f"/s/{sc.key}",
         "responses": [response(r) for r in sc.responses],

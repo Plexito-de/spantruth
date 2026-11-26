@@ -47,10 +47,48 @@ class Subject:
     detect_with: tuple[str, ...] = ()
     # How the subject was named: a built-in name, or the path that was given.
     ref: str = ""
+    # The library's documented switch for recording prompt and completion text. See `_content`.
+    content: dict = field(default_factory=dict)
+
+    def content_env(self, mode: str) -> dict[str, str] | None:
+        """The variables that set the content switch to `mode`, or None when it cannot be set."""
+        if mode not in self.content:
+            return None
+        return dict(self.content[mode]) | {"SPANTRUTH_CONTENT": mode}
 
 
 def base() -> dict:
     return tomllib.loads((SUBJECTS / "_base.toml").read_text())
+
+
+def _content(config: Path, data: dict) -> dict:
+    """The `[content]` table: the library's own switch for recording prompt and completion text.
+
+        [content]
+        switch = "TRACELOOP_TRACE_CONTENT"   # the documented name, shown in each finding
+        docs = "https://..."                 # a pinned link to the sentence that documents it
+        default = "on"                       # what the library does when the switch is not set
+        off = { TRACELOOP_TRACE_CONTENT = "false" }
+        on = { TRACELOOP_TRACE_CONTENT = "true" }
+
+    `off` and `on` hold the variables that set the switch that way. A library without a way to
+    turn content off leaves out `off`. A switch that is an argument in code, not a variable, has an
+    empty table: instrument.py then reads SPANTRUTH_CONTENT, which the runner sets to the mode.
+    """
+    table = data.get("content")
+    if table is None:
+        return {}
+    if not isinstance(table, dict) or not {"switch", "docs", "default"} <= table.keys():
+        raise SubjectError(f"{config}: [content] needs switch, docs and default")
+    if not str(table["docs"]).startswith("https://"):
+        raise SubjectError(f"{config}: [content] docs must be an https address")
+    if table["default"] not in ("on", "off"):
+        raise SubjectError(f'{config}: [content] default must be "on" or "off"')
+    for mode in ("off", "on"):
+        env = table.get(mode, {})
+        if not isinstance(env, dict) or not all(isinstance(v, str) for v in env.values()):
+            raise SubjectError(f"{config}: [content] {mode} must be a table of strings")
+    return table
 
 
 def is_path(ref: str) -> bool:
@@ -99,6 +137,7 @@ def load(ref: str) -> Subject:
         detect=tuple(data.get("detect", data.get("track", ()))),
         detect_with=tuple(data.get("detect_with", ())),
         ref=ref if is_path(ref) else directory.name,
+        content=_content(config, data),
     )
 
 

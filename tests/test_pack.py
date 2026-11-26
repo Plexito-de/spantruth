@@ -13,6 +13,7 @@ ENTRY = {
     "title",
     "catches",
     "tags",
+    "content",
     "depends_on",
     "path",
     "responses",
@@ -54,6 +55,7 @@ def scenario_from(entry: dict) -> Scenario:
         title=entry["title"],
         catches=entry["catches"],
         tags=tuple(entry["tags"]),
+        content=entry["content"],
         response=responses[entry["truth_response"]],
         responses=responses,
     )

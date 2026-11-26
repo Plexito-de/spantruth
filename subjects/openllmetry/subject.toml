@@ -11,3 +11,10 @@ detect = [
   "opentelemetry-instrumentation-anthropic",
   "traceloop-sdk",
 ]
+
+[content]
+switch = "TRACELOOP_TRACE_CONTENT"
+docs = "https://github.com/traceloop/openllmetry/blob/be498301c40c55155e6d0678b63943093cda14d1/packages/opentelemetry-instrumentation-openai/README.md#L25-L32"
+default = "on"
+off = { TRACELOOP_TRACE_CONTENT = "false" }
+on = { TRACELOOP_TRACE_CONTENT = "true" }

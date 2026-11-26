@@ -13,3 +13,11 @@ notes = "MLflow's own OTLP export with its own option MLFLOW_ENABLE_OTEL_GENAI_S
 MLFLOW_ENABLE_OTEL_GENAI_SEMCONV = "true"
 MLFLOW_USE_DEFAULT_TRACER_PROVIDER = "false"
 MLFLOW_DISABLE_TELEMETRY = "true"
+
+# Always on: no content variable in mlflow/environment_variables.py. The link is where the
+# recorded inputs and outputs become gen_ai.input.messages and gen_ai.output.messages.
+[content]
+switch = "none, always on: autolog has no content option"
+docs = "https://github.com/mlflow/mlflow/blob/ba41106d110b67096384da12b6b85473457598db/mlflow/tracing/export/genai_semconv/translator.py#L64-L93"
+default = "on"
+on = {}

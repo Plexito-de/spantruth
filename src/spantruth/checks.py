@@ -9,16 +9,21 @@ import json
 from dataclasses import asdict, dataclass
 from typing import Any
 
+from .calls import PROMPT
 from .conventions import (
     LLM_MARKERS,
+    OUTPUT_EVENTS,
     defined_for,
     langfuse_only,
+    leaves,
     lookup,
     openinference_only,
+    output_texts,
     same_finish,
+    text_of,
 )
 from .model import Scenario, Truth
-from .receiver import SpanRecord
+from .receiver import LogRecordData, SpanRecord
 from .rules import RULES
 
 # Ordered by severity. The cell takes the most severe verdict of its checks.
@@ -176,7 +181,93 @@ def _value(fact: str, expected: Any, found: list[tuple[SpanRecord, str, Any]], t
     return Check(fact, "pass", expected, found[0][2], found[0][1])
 
 
+# A piece of exported text this long that is part of the completion is a recorded chunk of it.
+CHUNK = 8
+
+
+def _records(spans: list[SpanRecord], logs: list[LogRecordData]):
+    """(where, attributes, body) for every span, span event and log record of the cell."""
+    for s in spans:
+        yield f"span {s.name}", {"<name>": s.name, **s.attributes}, None
+        for name, attrs in zip(s.events, s.event_attributes, strict=False):
+            yield f"span {s.name} event {name}", attrs, None
+    for rec in logs:
+        yield f"log record {rec.event_name or rec.scope}", rec.attributes, rec.body
+
+
+def _leak(text: str, needles: tuple[str, ...], completion: str) -> bool:
+    if any(n and n in text for n in needles):
+        return True
+    return len(text.strip()) >= CHUNK and text in completion
+
+
+def _content_off(spans, logs, completion: str, switch: str | None) -> Check:
+    check = "content.off_respected"
+    if switch is None:
+        return Check(check, "n/a", detail="the library documents no switch that turns content off")
+    needles = (*(m["content"] for m in PROMPT), completion)
+    for where, attrs, body in _records(spans, logs):
+        for name, v in [*attrs.items(), ("<body>", body)]:
+            hit = next((leaf for leaf in leaves(v) if _leak(leaf, needles, completion)), None)
+            if hit is not None:
+                place = where if name == "<name>" else f"{where}: {name}"
+                return Check(
+                    check,
+                    "wrong",
+                    None,
+                    hit[:200],
+                    place,
+                    f"recorded with content switched off: {switch}",
+                )
+    return Check(check, "pass", detail=f"content switched off: {switch}")
+
+
+def _content_on(spans, logs, completion: str, switch: str | None) -> Check:
+    check = "content.output_matches"
+    if switch is None:
+        return Check(check, "n/a", detail="the library documents no switch that turns content on")
+    found = []
+    for where, attrs, body in _records(spans, logs):
+        found += [(f"{where}: {name}", text) for name, text in output_texts(attrs)]
+        event = where.removeprefix("log record ")
+        if event in OUTPUT_EVENTS and (text := text_of(body)) is not None:
+            found.append((f"{where}: <body>", text))
+    if not found:
+        return Check(
+            check, "missing", completion, detail=f"no completion text with content on: {switch}"
+        )
+    for where, text in found:
+        if text != completion:
+            return Check(check, "wrong", completion, text[:200], where)
+    return Check(check, "pass", completion, found[0][1], found[0][0])
+
+
 def grade(
+    sc: Scenario,
+    t: Truth,
+    base: dict | None,
+    obs: dict | None,
+    spans: list[SpanRecord],
+    logs: list[LogRecordData] = (),
+    content_switch: str | None = None,
+) -> list[Check]:
+    """Every check of one cell. `content_switch` names the library's switch for the scenario's
+    content mode, or None when the subject declares no such switch."""
+    checks = _grade(sc, t, base, obs, spans)
+    if not sc.content or any(c.id in ("harness", "subject.instrument") for c in checks):
+        return checks
+    if obs.get("hang"):
+        return checks
+    own = [s for s in spans if s.span_id != obs["parent"]["span_id"]]
+    completion = obs["seen"]["text"]
+    if sc.content == "off":
+        checks.append(_content_off(own, list(logs), completion, content_switch))
+    else:
+        checks.append(_content_on(own, list(logs), completion, content_switch))
+    return checks
+
+
+def _grade(
     sc: Scenario, t: Truth, base: dict | None, obs: dict | None, spans: list[SpanRecord]
 ) -> list[Check]:
     if obs is None or base is None:

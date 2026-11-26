@@ -5,3 +5,10 @@ packages = ["langfuse==5.2.0"]
 track = ["langfuse"]
 notes = "The documented setup: from langfuse.openai import openai, with a throwaway key so Langfuse does not turn itself off. base_url points at the harness receiver so Langfuse's own export does not attempt an outbound connection; any POST to its own path (/api/public/otel/v1/traces) is answered 200 by the receiver. The driver's tracer provider exports the span to /v1/traces."
 
+# Always on. Only the @observe decorator has an IO switch (the link); langfuse.openai does not
+# read it. A mask function can rewrite the text, but nothing turns it off.
+[content]
+switch = "none, always on: only the @observe decorator has an IO switch"
+docs = "https://github.com/langfuse/langfuse-python/blob/8e6c60db5f76f8cfacb536a7564a3f42f078efdc/langfuse/_client/environment_variables.py#L141-L153"
+default = "on"
+on = {}

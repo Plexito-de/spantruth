@@ -100,6 +100,23 @@ def _install_probe() -> dict[str, dict[str, Any]]:
     return spans
 
 
+def _content_logs(otlp: str) -> Any:
+    """A global logger provider that exports to the receiver, for a content scenario only.
+
+    GenAI instrumentations can send prompt and completion text as log records, so the content
+    checks search them too. Other scenarios get no logger provider, as before.
+    """
+    from opentelemetry._logs import set_logger_provider
+    from opentelemetry.exporter.otlp.proto.http._log_exporter import OTLPLogExporter
+    from opentelemetry.sdk._logs import LoggerProvider
+    from opentelemetry.sdk._logs.export import SimpleLogRecordProcessor
+
+    provider = LoggerProvider()
+    provider.add_log_record_processor(SimpleLogRecordProcessor(OTLPLogExporter(f"{otlp}/v1/logs")))
+    set_logger_provider(provider)
+    return provider
+
+
 def _flush_all(providers: list[Any]) -> None:
     seen: set[int] = set()
     for p in providers:
@@ -119,6 +136,7 @@ def instrumented(scenario_id: str, mock: str, otlp: str, subject: str, out: str)
     provider = TracerProvider(resource=Resource.create({"service.name": "spantruth"}))
     provider.add_span_processor(SimpleSpanProcessor(OTLPSpanExporter(f"{otlp}/v1/traces")))
     result: dict[str, Any] = {"scenario": scenario_id, "hang": False}
+    logs = _content_logs(otlp) if scenarios.get(scenario_id).content else None
     try:
         # The subject owns the global provider: some libraries set it themselves, and the
         # OpenTelemetry API refuses a second set without an error.
@@ -142,7 +160,7 @@ def instrumented(scenario_id: str, mock: str, otlp: str, subject: str, out: str)
     timer.cancel()
     gc.collect()
     result["probe"] = {sid: dict(rec) for sid, rec in probe.items()}
-    _flush_all([provider, current, *(extra or [])])
+    _flush_all([provider, current, logs, *(extra or [])])
     _write(out, result)
     return 0
 

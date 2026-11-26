@@ -11,6 +11,11 @@ RECORDING_ERRORS = (
     "docs/general/recording-errors.md"
 )
 
+REQUIREMENT_LEVELS = (
+    "https://github.com/open-telemetry/semantic-conventions/blob/v1.44.0/"
+    "docs/general/attribute-requirement-level.md"
+)
+
 RULES: dict[str, tuple[str, str]] = {
     "app.unchanged": (
         "spantruth rule: instrumentation does not change what the application receives: the same "
@@ -96,5 +101,20 @@ RULES: dict[str, tuple[str, str]] = {
         "spantruth rule: one call reports its token usage on one span. Usage on two spans of one "
         "call is counted twice by any backend that sums token attributes across spans.",
         "",
+    ),
+    "content.off_respected": (
+        "Prompt and completion text are Opt-In: instrumentations SHOULD populate them if and only "
+        "if the user configures the instrumentation to do so. spantruth grades the documented off "
+        "switch, not the library's default: with the switch set to off, no prompt or completion "
+        "text appears in the exported spans, span events or log records.",
+        f"{REQUIREMENT_LEVELS}#L115-L117",
+    ),
+    "content.output_matches": (
+        "Opt-In content SHOULD be populated if the user configures the instrumentation to do "
+        "so, so with the library's content switch on, the completion text is recorded, and it "
+        "equals the text the application read. Instrumentations MAY give users a way to filter "
+        "or truncate output messages; no scenario sets such an option, so the text is compared "
+        "whole. `gen_ai.output.messages` and the other conventions' output names are read.",
+        f"{REQUIREMENT_LEVELS}#L115-L117",
     ),
 }

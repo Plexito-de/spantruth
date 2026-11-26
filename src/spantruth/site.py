@@ -630,6 +630,14 @@ FAULTS = {
         "Does not end the span when the app closes a stream or stops reading it early.",
         ("span.ended",),
     ),
+    "content-first-chunk": (
+        "Records only the first chunk of a stream as the completion text.",
+        ("content.output_matches",),
+    ),
+    "content-ignores-off": (
+        "Records prompt and completion text with the library's switch set to off.",
+        ("content.off_respected",),
+    ),
     "errors-as-success": (
         "Ends the span of a failed call without status ERROR and without error.type.",
         ("error.status", "error.type"),

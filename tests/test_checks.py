@@ -8,7 +8,7 @@ from spantruth import scenarios
 from spantruth.checks import _formula, cell_verdict, grade
 from spantruth.conventions import lookup
 from spantruth.model import Truth
-from spantruth.receiver import SpanRecord
+from spantruth.receiver import LogRecordData, SpanRecord
 
 TRACE, PARENT = "a" * 32, "b" * 16
 BASE = {"exception": None, "seen": {"text": "x", "events": 0, "response_id": "r", "usage": None}}
@@ -414,3 +414,116 @@ def test_a_cache_count_in_partial_details_passes():
     checks = grade(sc, t, BASE, obs(), [span(attrs)])
     assert by_id(checks)["cache_read_tokens"].verdict == "pass"
     assert cell_verdict(checks) == "pass"
+
+
+# Content capture: graded against the library's own switch.
+SWITCH = "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT"
+ANSWER = "The capital of France is Paris."
+QUESTION = "What is the capital of France?"
+
+
+def content(sid, spans, logs=(), switch=SWITCH, text=ANSWER):
+    sc = scenarios.get(sid)
+    base = BASE | {"seen": BASE["seen"] | {"text": text}}
+    checks = grade(sc, scenarios.truth(sc), base, obs(text=text), spans, list(logs), switch)
+    return by_id(checks)
+
+
+def log(body=None, event_name="gen_ai.client.inference.operation.details", **attrs):
+    return LogRecordData(event_name, body, attrs, TRACE, "c" * 16, "lib")
+
+
+def _messages(role, text):
+    return json.dumps([{"role": role, "parts": [{"type": "text", "content": text}]}])
+
+
+def test_no_content_with_the_switch_off_passes():
+    _t, attrs = honest("openai/content-off")
+    c = content("openai/content-off", [span(attrs)])["content.off_respected"]
+    assert c.verdict == "pass"
+
+
+@pytest.mark.parametrize(
+    "where",
+    [
+        {"gen_ai.input.messages": _messages("user", QUESTION)},
+        {"llm.output_messages.0.message.content": ANSWER},
+        {"gen_ai.completion.0.content": " of France"},  # one chunk of a stream
+        {"output.value": json.dumps({"choices": [{"message": {"content": ANSWER}}]})},
+    ],
+)
+def test_prompt_or_completion_text_with_the_switch_off_is_wrong(where):
+    _t, attrs = honest("openai/content-off")
+    c = content("openai/content-off", [span(attrs | where)])["content.off_respected"]
+    assert c.verdict == "wrong" and SWITCH in c.detail
+    assert c.where == f"span chat: {next(iter(where))}"
+
+
+def test_completion_text_in_a_log_record_with_the_switch_off_is_wrong():
+    _t, attrs = honest("anthropic/stream-content-off")
+    record = log({"message": {"role": "assistant", "content": ANSWER}}, "gen_ai.choice")
+    c = content("anthropic/stream-content-off", [span(attrs)], [record])["content.off_respected"]
+    assert c.verdict == "wrong" and c.where == "log record gen_ai.choice: <body>"
+
+
+def test_a_redacted_value_is_not_content():
+    _t, attrs = honest("openai/content-off")
+    attrs["llm.output_messages.0.message.content"] = "__REDACTED__"
+    assert content("openai/content-off", [span(attrs)])["content.off_respected"].verdict == "pass"
+
+
+def test_without_a_declared_switch_content_is_not_graded():
+    _t, attrs = honest("openai/content-off")
+    attrs["gen_ai.input.messages"] = QUESTION
+    off = content("openai/content-off", [span(attrs)], switch=None)["content.off_respected"]
+    on = content("openai/content-on", [span(attrs)], switch=None)["content.output_matches"]
+    assert (off.verdict, on.verdict) == ("n/a", "n/a")
+
+
+def test_other_scenarios_get_no_content_check():
+    _t, attrs = honest("openai/basic")
+    attrs["gen_ai.input.messages"] = QUESTION
+    graded = content("openai/basic", [span(attrs)])
+    assert not {"content.off_respected", "content.output_matches"} & graded.keys()
+
+
+@pytest.mark.parametrize(
+    "where",
+    [
+        {"gen_ai.output.messages": _messages("assistant", ANSWER)},
+        {"gen_ai.output.messages": json.loads(_messages("assistant", ANSWER))},
+        {"llm.output_messages.0.message.content": ANSWER},
+        {
+            "llm.output_messages.0.message.contents.0.message_content.text": "The capital",
+            "llm.output_messages.0.message.contents.1.message_content.text": " of France is Paris.",
+        },
+        {"gen_ai.completion.0.content": ANSWER},
+        {"gen_ai.response.text": json.dumps([ANSWER])},
+        {"langfuse.observation.output": json.dumps({"role": "assistant", "content": ANSWER})},
+    ],
+)
+def test_output_text_equal_to_what_the_app_read_passes(where):
+    _t, attrs = honest("openai/content-on")
+    c = content("openai/content-on", [span(attrs | where)])["content.output_matches"]
+    assert c.verdict == "pass" and c.got == ANSWER
+
+
+def test_output_text_in_the_details_event_is_read():
+    _t, attrs = honest("openai/stream-content-on")
+    record = log(**{"gen_ai.output.messages": _messages("assistant", ANSWER)})
+    c = content("openai/stream-content-on", [span(attrs)], [record])["content.output_matches"]
+    assert c.verdict == "pass"
+    assert c.where == "log record gen_ai.client.inference.operation.details: gen_ai.output.messages"
+
+
+def test_a_first_chunk_as_the_output_is_wrong():
+    _t, attrs = honest("anthropic/stream-content-on")
+    attrs["gen_ai.output.messages"] = _messages("assistant", "The capital")
+    c = content("anthropic/stream-content-on", [span(attrs)])["content.output_matches"]
+    assert (c.verdict, c.expected, c.got) == ("wrong", ANSWER, "The capital")
+
+
+def test_no_output_text_with_the_switch_on_is_missing():
+    _t, attrs = honest("openai/content-on")
+    c = content("openai/content-on", [span(attrs)])["content.output_matches"]
+    assert c.verdict == "missing" and c.expected == ANSWER
