@@ -74,6 +74,9 @@ class Truth:
     unread_counts: tuple[int, ...] = ()
     # The wire carries no usage at all, so any token count is an estimate.
     no_usage: bool = False
+    # Token facts the usage has no field for, such as a cache count from a server that sends no
+    # `prompt_tokens_details`. A non-zero value for one of them did not come from the wire.
+    uncounted: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

@@ -136,6 +136,10 @@ def _value(fact: str, expected: Any, found: list[tuple[SpanRecord, str, Any]], t
                 continue
             if t.no_usage:
                 return Check(fact, "wrong", None, v, name, "estimated: the stream carried no usage")
+            if fact in t.uncounted:
+                return Check(
+                    fact, "wrong", None, v, name, "invented: the usage has no field for it"
+                )
             if v in t.unread_counts:
                 return Check(
                     fact,
