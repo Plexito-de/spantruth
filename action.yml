@@ -49,6 +49,12 @@ inputs:
     description: Unpin the subject's tracked packages and the provider SDKs.
     required: false
     default: "false"
+  quick:
+    description: >-
+      Run one representative scenario per bug class and provider instead of every scenario. A
+      faster gate for each pull request. Run the full set nightly. Do not set scenario with it.
+    required: false
+    default: "false"
   artifact-name:
     description: The name of the artifact with the results and the HTML report.
     required: false
@@ -99,6 +105,7 @@ runs:
         SCENARIO: ${{ inputs.scenario }}
         EXPECT: ${{ inputs.expect }}
         LATEST: ${{ inputs.latest }}
+        QUICK: ${{ inputs.quick }}
         ARTIFACT_NAME: ${{ inputs.artifact-name }}
         COMMENT: ${{ inputs.comment }}
       run: |
@@ -124,6 +131,7 @@ runs:
             done <<< "$WITH"
             if [ -n "$EXPECT" ]; then args+=(--expect "$EXPECT"); fi
             if [ "$LATEST" = "true" ]; then args+=(--latest); fi
+            if [ "${QUICK:-}" = "true" ]; then args+=(--quick); fi
             label="$(basename "$SUBJECT")"
             ;;
           doctor)

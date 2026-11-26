@@ -16,6 +16,7 @@ from . import (
     history,
     pack,
     paths,
+    quick,
     report,
     runner,
     scaffold,
@@ -64,7 +65,9 @@ def _run(args: argparse.Namespace) -> int:
     try:
         selected = [subjects.load(ref) for ref in args.subject or subjects.all_names()]
         overrides = tuple(subjects.resolve_override(spec) for spec in args.overrides or ())
-        ids = args.scenario or list(scenarios.SCENARIOS)
+        if args.quick and args.scenario:
+            return _usage("--quick and --scenario cannot be used together")
+        ids = args.scenario or (quick.scenario_ids() if args.quick else list(scenarios.SCENARIOS))
         for sid in ids:
             scenarios.get(sid)
     except subjects.SubjectError as exc:
@@ -230,6 +233,11 @@ def parser() -> argparse.ArgumentParser:
         "./spantruth; repeatable",
     )
     run.add_argument("--scenario", action="append", help="scenario id, repeatable")
+    run.add_argument(
+        "--quick",
+        action="store_true",
+        help="run one representative scenario per bug class and provider, not every scenario",
+    )
     run.add_argument("--latest", action="store_true", help="unpin the subjects' own packages")
     run.add_argument(
         "--with",
