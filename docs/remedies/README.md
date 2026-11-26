@@ -24,10 +24,10 @@ Collector the spans that spantruth recorded, and it checks what the file exporte
 | ST04 Phantom tokens | No. The Collector does not know the true count. | Upgrade the library. |
 | ST05 Vanishing tokens | No. A count that was never recorded cannot be restored. | Upgrade the library. |
 | ST06 Hidden reasoning | No, for the same reason. | Upgrade the library. |
-| ST07 False OK | No. A span that does not say it failed looks like a good span. | Upgrade the library. |
+| ST07 False OK | Partly. It can flag an error span that has no `error.type`, but the real type is lost. A span that does not say it failed looks like a good span. | [Flag a missing error type](#st07-flag-an-error-span-without-an-error-type), then upgrade. |
 | ST08 False alarm | No. A recovered retry and a real failure look the same on the span. | Upgrade the library. |
-| ST09 Silent stop | Yes, for the Anthropic SDK's own span. | Upgrade the library. |
-| ST10 Observer effect | No. The bug is in the application, not in the span. | Upgrade the library. |
+| ST09 Silent stop | Yes, for the Anthropic SDK's own span. | No recipe yet. Upgrade the library. |
+| ST10 Observer effect | No. The library changes what the application receives. A Collector sees only the span, after the fact. | Upgrade the library. |
 
 ## How to use a recipe
 
@@ -43,8 +43,9 @@ service:
       exporters: [otlphttp]
 ```
 
-`error_mode: ignore` makes a statement skip a span that it cannot evaluate, such as a span without
-the attribute. The span itself passes on unchanged.
+`error_mode: ignore` makes a statement skip a span that it cannot evaluate, such as a comparison
+of a string with a number. The span itself passes on unchanged. A missing attribute is not an
+error: it reads as `nil`.
 
 ## ST02: drop the SDK's span
 
@@ -70,6 +71,7 @@ processors:
 alone then has no span at all. The test proves this: the SDK-only call disappears. The Collector
 cannot see whether another span reports the same call, because the two spans are not always in
 one trace. OpenLLMetry's two spans are in two traces when the app has no span of its own.
+A span whose parent is the dropped span loses its parent in the trace view.
 
 The better fix is at the source. Set `ANTHROPIC_OPEN_TELEMETRY=false`, or pass
 `open_telemetry=False` to the client. OpenInference handles the SDK's span itself since
@@ -91,15 +93,45 @@ processors:
 
 The same warning applies: a call through the SDK alone loses its token counts.
 
+## ST07: flag an error span without an error type
+
+The GenAI conventions require `error.type` when a call ends in an error. Some libraries set the
+span status to `ERROR` and leave `error.type` out. OpenLLMetry does so for a dropped Anthropic
+stream (`anthropic/async-stream-dropped` in the
+[results of 2026-11-03](../../results/2026-11-03-pinned.json)). A panel that groups errors by
+`error.type` then does not show the call.
+
+This recipe sets `error.type` to `_OTHER`, the value the conventions give when no other value
+fits. The real type is lost, so the recipe flags the call and does not restore its cause:
+
+```yaml
+# recipe: st07-flag-missing-error-type
+processors:
+  transform/st07_flag_missing_error_type:
+    error_mode: ignore
+    trace_statements:
+      - set(span.attributes["error.type"], "_OTHER") where span.status.code == STATUS_CODE_ERROR and span.attributes["error.type"] == nil
+```
+
+It never replaces an `error.type` that a span already has. It cannot help a span whose status
+does not say that the call failed: that span looks like a good one.
+
 ## How the recipes are tested
 
 [`tests/test_remedies.py`](../../tests/test_remedies.py) reads every `# recipe:` block on this
 page. For each one it starts the Collector with an OTLP receiver, the recipe and a file exporter.
-It sends spans as OTLP, and it checks the spans that the file exporter writes. The spans are the
-span records of the [double-span measurement](../../results/2026-11-06-double-spans/README.md), as
-each library exported them (`spans-x2-phoenix.jsonl`).
+It sends spans as OTLP, and it checks the spans that the file exporter writes. The spans come
+from two places:
 
-To run the test, download the Collector and check its sha256:
+- The span records of the
+  [double-span measurement](../../results/2026-11-06-double-spans/README.md), as each library
+  exported them (`spans-x2-phoenix.jsonl`).
+- The attributes and the status that a [results document](../../results/2026-11-03-pinned.json)
+  records for each check: the attribute name (`where`) and its value (`got`). The test builds a
+  span from them.
+
+To run the test, download the Collector and check its sha256. The script downloads the linux
+amd64 build only:
 
 ```sh
 docs/remedies/fetch-otelcol.sh

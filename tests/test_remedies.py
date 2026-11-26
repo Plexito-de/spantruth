@@ -2,7 +2,8 @@
 
 The page promises that each recipe was tested on a named Collector version. So the test reads the
 recipes from the page itself, runs each one in otelcol-contrib, and checks what the file exporter
-writes. The input spans are the ones spantruth recorded, never spans made up for the test.
+writes. The input spans come from what spantruth recorded: span records as a library exported
+them, or a span built from the attribute values that a results document records for each check.
 
 The Collector tests are marked `collector` and skipped when the binary is absent. The `remedies`
 job in CI downloads it with docs/remedies/fetch-otelcol.sh, which checks its sha256, and sets
@@ -37,6 +38,7 @@ REPO = Path(__file__).resolve().parents[1]
 PAGE = REPO / "docs" / "remedies" / "README.md"
 FETCH = REPO / "docs" / "remedies" / "fetch-otelcol.sh"
 DOUBLE_SPANS = REPO / "results" / "2026-11-06-double-spans" / "spans-x2-phoenix.jsonl"
+PINNED = REPO / "results" / "2026-11-03-pinned.json"
 SDK_SCOPE = "com.anthropic.sdk.python"
 
 
@@ -71,6 +73,37 @@ def recorded(*projects: str) -> list[dict]:
     found = [s for s in spans if s["project"] in projects]
     assert {s["project"] for s in found} == set(projects)
     return found
+
+
+def from_results(scenario: str, *subjects: str) -> list[dict]:
+    """One span per subject, built from what the checks of one cell of a results document read.
+
+    Each check with an attribute name (`where`) gives that attribute its value (`got`). The
+    `error.status` check gives the status, and the `error.type` check the value of `error.type`.
+    """
+    doc = json.loads(PINNED.read_text())
+    out = []
+    for subject in subjects:
+        checks = {c["id"]: c for c in doc["subjects"][subject]["cells"][scenario]["checks"]}
+        attributes = {
+            c["where"]: c["got"] for c in checks.values() if c["where"] and c["got"] is not None
+        }
+        if checks.get("error.type", {}).get("got"):
+            attributes["error.type"] = checks["error.type"]["got"]
+        status = (checks.get("error.status", {}).get("got") or ["UNSET"])[0]
+        out.append(
+            {
+                "project": subject,
+                "scope": f"spantruth.results/{subject}",
+                "name": scenario,
+                "trace_id": f"{len(out) + 1:032x}",
+                "span_id": f"{len(out) + 1:016x}",
+                "parent": None,
+                "status": status,
+                "attributes": attributes,
+            }
+        )
+    return out
 
 
 def any_value(v) -> common_pb2.AnyValue:
@@ -139,10 +172,14 @@ def _hex_ids_to_base64(node):
     return node
 
 
-def run_collector(binary: Path, recipe: str, spans: list[dict], tmp: Path) -> list[SpanRecord]:
-    """Send the spans through a Collector that runs only this recipe, and read what it wrote."""
+def run_collector(
+    binary: Path, pipeline: list[str], spans: list[dict], tmp: Path
+) -> list[SpanRecord]:
+    """Send the spans through a Collector that runs these recipes in order, and read the output."""
     port, out = free_port(), tmp / "out.jsonl"
-    processors = yaml.safe_load(recipe)["processors"]
+    processors = {}
+    for recipe in pipeline:
+        processors.update(yaml.safe_load(recipe)["processors"])
     config = {
         "receivers": {"otlp": {"protocols": {"http": {"endpoint": f"127.0.0.1:{port}"}}}},
         "processors": processors,
@@ -237,9 +274,36 @@ def check_st02_strip(out: list[SpanRecord]) -> None:
     assert input_total(by_service(out, "x2-base-C-sdk")) == 0
 
 
-CASES: dict[str, tuple[Callable[[], list[dict]], Callable[[list[SpanRecord]], None]]] = {
-    "st02-drop-sdk-span": (lambda: recorded(*DOUBLED, "x2-base-C-sdk"), check_st02_drop),
-    "st02-strip-sdk-usage": (lambda: recorded(*DOUBLED, "x2-base-C-sdk"), check_st02_strip),
+def check_st07(out: list[SpanRecord]) -> None:
+    (library,) = by_service(out, "openllmetry")  # ERROR, and no error.type
+    assert library.attributes["error.type"] == "_OTHER"
+    (honest,) = by_service(out, "control-honest")  # ERROR, with its own error.type
+    assert honest.attributes["error.type"] == "RemoteProtocolError"
+    (faulty,) = by_service(out, "control-faulty")  # UNSET: a false OK cannot be flagged
+    assert "error.type" not in faulty.attributes
+
+
+Case = tuple[tuple[str, ...], Callable[[], list[dict]], Callable[[list[SpanRecord]], None]]
+
+# Each case: the recipes of the pipeline in order, the spans it gets, and what must come out.
+CASES: dict[str, Case] = {
+    "st02-drop-sdk-span": (
+        ("st02-drop-sdk-span",),
+        lambda: recorded(*DOUBLED, "x2-base-C-sdk"),
+        check_st02_drop,
+    ),
+    "st02-strip-sdk-usage": (
+        ("st02-strip-sdk-usage",),
+        lambda: recorded(*DOUBLED, "x2-base-C-sdk"),
+        check_st02_strip,
+    ),
+    "st07-flag-missing-error-type": (
+        ("st07-flag-missing-error-type",),
+        lambda: from_results(
+            "anthropic/async-stream-dropped", "openllmetry", "control-honest", "control-faulty"
+        ),
+        check_st07,
+    ),
 }
 
 
@@ -247,7 +311,7 @@ CASES: dict[str, tuple[Callable[[], list[dict]], Callable[[list[SpanRecord]], No
 
 
 def test_every_recipe_on_the_page_has_a_case_and_every_case_a_recipe():
-    assert set(recipes()) == set(CASES)
+    assert set(recipes()) == {name for pipeline, _, _ in CASES.values() for name in pipeline}
 
 
 def test_every_recipe_is_a_processors_block():
@@ -272,9 +336,9 @@ def test_recipe_in_the_collector(name, tmp_path):
         [str(binary), "--version"], capture_output=True, text=True, check=True
     ).stdout
     assert version.split()[-1] == pinned_version()
-    spans, check = CASES[name]
+    pipeline, spans, check = CASES[name]
     sent = spans()
-    out = run_collector(binary, recipes()[name], sent, tmp_path)
-    if name != "st02-drop-sdk-span":
+    out = run_collector(binary, [recipes()[r] for r in pipeline], sent, tmp_path)
+    if "st02-drop-sdk-span" not in pipeline:
         assert len(out) == len(sent)
     check(out)

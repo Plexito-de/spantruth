@@ -12,7 +12,9 @@ ARCHIVE="otelcol-contrib_${VERSION}_linux_amd64.tar.gz"
 URL="https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v${VERSION}/${ARCHIVE}"
 DEST="${1:-${XDG_CACHE_HOME:-$HOME/.cache}/spantruth/otelcol-contrib-${VERSION}}"
 
-if [ -x "$DEST/otelcol-contrib" ]; then
+# The archive is not kept, so a binary already in place is checked by its version only.
+if [ -x "$DEST/otelcol-contrib" ] &&
+  "$DEST/otelcol-contrib" --version | grep -qx "otelcol-contrib version $VERSION"; then
   echo "$DEST/otelcol-contrib"
   exit 0
 fi
