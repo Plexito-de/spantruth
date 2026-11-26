@@ -6,6 +6,11 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Pydantic Logfire is a subject (`logfire==5.4.0`), instrumenting the OpenAI and Anthropic SDKs
+  with no Logfire account.
+
 ### Fixed
 
 - `doctor` read no pin from a `requirements.txt` compiled with `--generate-hashes`, and graded

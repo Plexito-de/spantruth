@@ -243,7 +243,8 @@ endpoint per library, at `https://plexito-de.github.io/spantruth/badges/<subject
 - **Subjects:** the [OpenTelemetry GenAI instrumentation](https://github.com/open-telemetry/opentelemetry-python-genai),
   [OpenLLMetry](https://github.com/traceloop/openllmetry),
   [OpenInference](https://github.com/Arize-ai/openinference),
-  [OpenLIT](https://github.com/openlit/openlit), the
+  [OpenLIT](https://github.com/openlit/openlit),
+  [Pydantic Logfire](https://github.com/pydantic/logfire), the
   [Sentry SDK](https://github.com/getsentry/sentry-python),
   [Datadog ddtrace](https://github.com/DataDog/dd-trace-py),
   [MLflow Tracing](https://github.com/mlflow/mlflow), and the built-in tracing of the
@@ -251,7 +252,7 @@ endpoint per library, at `https://plexito-de.github.io/spantruth/badges/<subject
   ddtrace do not export OpenTelemetry spans, so a small local adapter copies their span data unchanged, and
   each subject's notes say what the adapter decides.
 
-Next, from the [plan](PLAN.md): Logfire, the bug classes that repeat (tool calls and
+Next, from the [plan](PLAN.md): the bug classes that repeat (tool calls and
 reasoning tokens in a stream, the SDK helpers such as `messages.stream()`, the rest of the OpenAI
 Responses API), Google Gemini, frameworks such as LiteLLM and Pydantic AI, and the JavaScript
 libraries. [Help is welcome](CONTRIBUTING.md#ways-to-help).
