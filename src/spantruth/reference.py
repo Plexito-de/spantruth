@@ -36,6 +36,14 @@ def _parts(text: str) -> list[dict[str, str]]:
     return [{"type": "text", "content": text}]
 
 
+def _message(message: Any) -> dict:
+    """A message of the prompt as a dict. An agent loop sends back the SDK's own message object."""
+    if isinstance(message, dict):
+        return message
+    dump = getattr(message, "model_dump", None)
+    return dump() if callable(dump) else {}
+
+
 class _Call:
     """The span of one call and the facts gathered for it."""
 
@@ -65,9 +73,10 @@ class _Call:
             "content-ignores-off" in faults
         )
         if self.capture and isinstance(prompt, list):
+            sent = [_message(m) for m in prompt]
             messages = [
                 {"role": m["role"], "parts": _parts(m["content"])}
-                for m in prompt
+                for m in sent
                 if isinstance(m.get("content"), str)
             ]
             self.set("gen_ai.input.messages", json.dumps(messages))
