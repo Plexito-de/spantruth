@@ -1,6 +1,7 @@
-"""The app calls a LangChain chat model, as LangChain's documentation shows first: `ChatOpenAI` or
-`ChatAnthropic` with `base_url` pointed at the fake provider, then `invoke`, `stream`, `ainvoke`
-or `astream`. A tool scenario binds the tools with `bind_tools` and makes one model call.
+"""The app calls a LangChain chat model: `ChatOpenAI` or `ChatAnthropic` with `base_url` pointed
+at the fake provider, then `invoke`, `stream`, `ainvoke` or `astream`. A tool scenario binds the
+tools with `bind_tools` and makes one model call. The LangChain v1 docs show `init_chat_model`
+first. For these providers it builds this same `ChatOpenAI` or `ChatAnthropic` object.
 
 An app that stops reading a stream early leaves the loop and closes the generator, as `calls.py`
 closes the SDK stream. A streamed chunk carries no provider id, only LangChain's run id, which
