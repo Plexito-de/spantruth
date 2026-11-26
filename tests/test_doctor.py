@@ -690,6 +690,22 @@ def test_a_single_project_with_a_lock_file_in_its_fixtures_is_read_as_before(tmp
     assert doctor.read_versions(tmp_path).source == "pyproject.toml"
 
 
+def test_a_project_with_no_covered_library_and_a_fixture_lock_is_still_one_project(tmp_path):
+    fixture = tmp_path / "tests" / "fixtures" / "x"
+    fixture.mkdir(parents=True)
+    (fixture / "uv.lock").write_text(UV_LOCK)
+    project(tmp_path, pyproject__toml='[project]\nname = "x"\ndependencies = ["rich"]\n')
+    assert doctor.read_versions(tmp_path).source == "pyproject.toml"
+
+
+def test_a_requirements_file_name_cannot_send_a_terminal_escape(tmp_path):
+    project(tmp_path, **{"requirements-\x1b[31mRED\nNEWLINE.txt": "openai==1.0\n"})
+    found = doctor.read_versions(tmp_path)
+    assert "\x1b" not in found.source and "\n" not in found.source
+    text = doctor.render_text(found, doctor.summarize(result_doc()), "x")
+    assert "\x1b" not in text and "\nNEWLINE" not in text
+
+
 def test_a_uv_workspace_root_names_its_members_even_with_dependencies(tmp_path):
     monorepo(tmp_path)
     (tmp_path / "pyproject.toml").write_text(

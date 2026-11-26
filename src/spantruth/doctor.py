@@ -192,8 +192,9 @@ def _monorepo_error(directory: Path, found: list[tuple[Path, str]]) -> DoctorErr
 def _is_workspace_root(directory: Path) -> bool:
     """True when the root pyproject.toml grades nothing alone, so its subprojects are the answer.
 
-    That is no pyproject.toml, a uv workspace, or one that names no library doctor runs. A single
-    project with a lock file in its test fixtures is read as before.
+    That is no pyproject.toml, a uv workspace, or one with no [project] table. A project with a
+    [project] table is one project, even with lock files in its test fixtures, so it is read as
+    before.
     """
     path = directory / "pyproject.toml"
     if not path.is_file():
@@ -204,7 +205,7 @@ def _is_workspace_root(directory: Path) -> bool:
         return False  # Read it as before, and say that it cannot be read.
     if "workspace" in data.get("tool", {}).get("uv", {}):
         return True
-    return not match(_pyproject(path))
+    return "project" not in data
 
 
 def read_versions(directory: Path) -> Found:
@@ -225,7 +226,8 @@ def read_versions(directory: Path) -> Found:
     wanted = sorted(directory.glob("requirements*.txt"))
     if wanted:
         return Found(
-            wanted[0].name if len(wanted) == 1 else "requirements*.txt", _requirements(wanted)
+            _line(wanted[0].name) if len(wanted) == 1 else "requirements*.txt",
+            _requirements(wanted),
         )
     packages = sorted(directory.glob(".venv/lib/python*/site-packages"))
     if packages:
