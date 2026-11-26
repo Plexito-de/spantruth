@@ -5,3 +5,10 @@ notes = "The SDK's own spans, with no instrumentation library. On by default sin
 
 [env]
 ANTHROPIC_OPEN_TELEMETRY = "true"
+
+[content]
+switch = "ANTHROPIC_OPEN_TELEMETRY_TRACES_CONTENT_MODE"
+docs = "https://github.com/anthropics/anthropic-sdk-python/blob/5752c132041af71055584632caab5ca2325cae5e/src/anthropic/_types.py#L129-L133"
+default = "off"
+off = { ANTHROPIC_OPEN_TELEMETRY_TRACES_CONTENT_MODE = "metadata_only" }
+on = { ANTHROPIC_OPEN_TELEMETRY_TRACES_CONTENT_MODE = "content" }

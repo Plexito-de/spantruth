@@ -198,6 +198,8 @@ BY_CHECK = {
 # Checks that are not one of the ten. They still show as findings, under their check ID.
 UNCLASSIFIED = frozenset(
     {
+        "content.off_respected",
+        "content.output_matches",
         "harness",
         "request_model",
         "response_id",

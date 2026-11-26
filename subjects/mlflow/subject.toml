@@ -13,3 +13,10 @@ notes = "MLflow's own OTLP export with its own option MLFLOW_ENABLE_OTEL_GENAI_S
 MLFLOW_ENABLE_OTEL_GENAI_SEMCONV = "true"
 MLFLOW_USE_DEFAULT_TRACER_PROVIDER = "false"
 MLFLOW_DISABLE_TELEMETRY = "true"
+
+# Autolog always records inputs and outputs.
+[content]
+switch = "none in mlflow.openai.autolog() and mlflow.anthropic.autolog()"
+docs = "https://github.com/mlflow/mlflow/blob/ba41106d110b67096384da12b6b85473457598db/mlflow/tracing/export/genai_semconv/translator.py#L64-L93"
+default = "on"
+on = {}

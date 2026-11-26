@@ -40,7 +40,9 @@ def driver_path(directory: Path) -> Path:
     return directory
 
 
-def _env(subject: subjects.Subject, otlp: str, shim: Path) -> dict[str, str]:
+def _env(
+    subject: subjects.Subject, otlp: str, shim: Path, content: dict[str, str] | None = None
+) -> dict[str, str]:
     keep = {k: v for k, v in os.environ.items() if k in ("PATH", "HOME", "LANG", "TMPDIR")}
     return (
         keep
@@ -54,6 +56,7 @@ def _env(subject: subjects.Subject, otlp: str, shim: Path) -> dict[str, str]:
         }
         | subjects.base().get("env", {})
         | subject.env
+        | (content or {})
     )
 
 
@@ -96,6 +99,8 @@ def run_subject(
         "ref": subject.ref,
         "cells": {},
     }
+    if subject.content:
+        out["content"] = {k: subject.content[k] for k in ("switch", "docs", "default")}
     if not ids:
         return out
     try:
@@ -133,6 +138,8 @@ def _cell(subject, sid, py, mock, tmp: Path, shim: Path, base: dict | None) -> d
     sc = scenarios.get(sid)
     obs_file = tmp / f"{sc.key}.json"
     stderr = ""
+    # A content scenario sets the library's own switch. Without one, the scenario runs as is.
+    content = subject.content_env(sc.content) if sc.content else None
     with Receiver() as rx:
         try:
             proc = _driver(
@@ -149,15 +156,16 @@ def _cell(subject, sid, py, mock, tmp: Path, shim: Path, base: dict | None) -> d
                     "--out",
                     str(obs_file),
                 ],
-                _env(subject, rx.url, shim),
+                _env(subject, rx.url, shim, content),
                 tmp,
             )
             stderr = proc.stderr[-2000:]
         except subprocess.TimeoutExpired:
             stderr = "the cell timed out"
-        spans = list(rx.spans)
+        spans, logs = list(rx.spans), list(rx.logs)
     obs = _read(obs_file)
-    result = checks.grade(sc, scenarios.truth(sc), base, obs, spans)
+    switch = subject.content.get("switch") if content is not None else None
+    result = checks.grade(sc, scenarios.truth(sc), base, obs, spans, logs, switch)
     return {
         "verdict": checks.cell_verdict(result),
         "checks": [c.as_dict() for c in result],
@@ -165,6 +173,7 @@ def _cell(subject, sid, py, mock, tmp: Path, shim: Path, base: dict | None) -> d
             {"name": s.name, "scope": s.scope, "status": s.status, "attributes": s.attributes}
             for s in spans
         ],
+        **({"logs": [asdict(rec) for rec in logs]} if logs else {}),
         "stderr": stderr if (obs is None or "instrument_error" in (obs or {})) else "",
     }
 

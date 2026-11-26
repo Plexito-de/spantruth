@@ -3,3 +3,10 @@ homepage = "https://github.com/pydantic/logfire"
 providers = ["openai", "anthropic"]
 packages = ["logfire==5.4.0"]
 track = ["logfire"]
+
+# instrument_openai() and instrument_anthropic() always record the messages.
+[content]
+switch = "none in instrument_openai() and instrument_anthropic()"
+docs = "https://github.com/pydantic/logfire/blob/723f5d6ba924f63ba44f403d4c9843d73e3e1151/logfire-sdk/logfire/_internal/main.py#L1398-L1407"
+default = "on"
+on = {}

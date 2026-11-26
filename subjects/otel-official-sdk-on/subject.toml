@@ -9,3 +9,11 @@ detect = []
 
 [env]
 ANTHROPIC_OPEN_TELEMETRY = "true"
+
+# The instrumentation's switch. The SDK's own spans keep their default, metadata_only.
+[content]
+switch = "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT"
+docs = "https://github.com/open-telemetry/opentelemetry-python-genai/blob/e25770aa361043fc5b4902c82eceb9ce86dc103e/util/opentelemetry-util-genai/README.rst#L182-L189"
+default = "off"
+off = { OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT = "NO_CONTENT" }
+on = { OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT = "SPAN_AND_EVENT" }

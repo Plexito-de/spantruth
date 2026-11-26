@@ -7,6 +7,7 @@ reported as lost. It copies the keys and values of the span's data unchanged, an
 """
 
 import json
+import os
 
 SCOPE = "sentry_sdk.adapter"
 
@@ -62,4 +63,7 @@ def instrument(tracer_provider, otlp_endpoint):
     tracing.Span.finish = finish(tracing.Span.finish)
     tracing.Transaction.finish = finish(tracing.Transaction.finish)
 
-    sentry_sdk.init(traces_sample_rate=1.0)
+    # A content scenario sets the documented switch, send_default_pii. Others leave it.
+    mode = os.environ.get("SPANTRUTH_CONTENT")
+    content = {"send_default_pii": mode == "on"} if mode else {}
+    sentry_sdk.init(traces_sample_rate=1.0, **content)

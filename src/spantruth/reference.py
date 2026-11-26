@@ -4,9 +4,15 @@ It exists to test the suite, not to be used. `control-honest` runs it as written
 pass every check. `control-faulty` runs it with known faults switched on and has to fail
 exactly the checks those faults target. If either control moves, the suite is broken.
 
+Content capture follows OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT, off by default, as
+in the OpenTelemetry GenAI instrumentations: `true`, `span_only` or `span_and_event` records the
+prompt and the completion text as `gen_ai.input.messages` and `gen_ai.output.messages`.
+
 Faults:
     anthropic-raw-input   report Anthropic's wire `input_tokens`, without cache tokens
     close-leaks-span      `stream.close()` does not end the span
+    content-first-chunk   a stream's recorded completion text is its first chunk only
+    content-ignores-off   prompt and completion text are recorded with the switch off
     errors-as-success     exceptions are not recorded on the span
     estimate-tokens       a stream without usage gets an estimate from the text length
     retry-as-error        a retried operation that succeeds still sets Error status
@@ -15,15 +21,26 @@ Faults:
 from __future__ import annotations
 
 import functools
+import json
+import os
 from typing import Any
 
 from opentelemetry.trace import SpanKind, Status, StatusCode, Tracer
+
+CONTENT_SWITCH = "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT"
+CONTENT_ON = {"true", "span_only", "span_and_event"}
+
+
+def _parts(text: str) -> list[dict[str, str]]:
+    return [{"type": "text", "content": text}]
 
 
 class _Call:
     """The span of one call and the facts gathered for it."""
 
-    def __init__(self, tracer: Tracer, provider: str, model: str, faults: set[str]) -> None:
+    def __init__(
+        self, tracer: Tracer, provider: str, model: str, faults: set[str], prompt: Any = None
+    ) -> None:
         self.span = tracer.start_span(
             f"chat {model}",
             kind=SpanKind.CLIENT,
@@ -36,6 +53,17 @@ class _Call:
         self.provider, self.faults = provider, faults
         self.finish: list[str] = []
         self.text = ""
+        self.chunks: list[str] = []
+        self.capture = os.environ.get(CONTENT_SWITCH, "").lower() in CONTENT_ON or (
+            "content-ignores-off" in faults
+        )
+        if self.capture and isinstance(prompt, list):
+            messages = [
+                {"role": m["role"], "parts": _parts(m["content"])}
+                for m in prompt
+                if isinstance(m.get("content"), str)
+            ]
+            self.set("gen_ai.input.messages", json.dumps(messages))
         self.usage_seen = False
         self.ended = False
         self.response_id = ""
@@ -58,6 +86,19 @@ class _Call:
         self.set("gen_ai.usage.cache_write.input_tokens", write or None)
         self.set("gen_ai.usage.reasoning.output_tokens", reasoning or None)
 
+    def add_text(self, chunk: str) -> None:
+        self.text += chunk
+        self.chunks.append(chunk)
+
+    def _record_output(self) -> None:
+        text = self.text
+        if "content-first-chunk" in self.faults and self.chunks:
+            text = self.chunks[0]
+        message = {"role": "assistant", "parts": _parts(text)}
+        if self.finish:
+            message["finish_reason"] = self.finish[0]
+        self.set("gen_ai.output.messages", json.dumps([message]))
+
     def fail(self, exc: BaseException) -> None:
         if "errors-as-success" not in self.faults:
             self.span.set_status(Status(StatusCode.ERROR, str(exc)[:200]))
@@ -70,6 +111,8 @@ class _Call:
         self.ended = True
         if self.finish:
             self.set("gen_ai.response.finish_reasons", self.finish)
+        if self.capture and self.text:
+            self._record_output()
         if not self.usage_seen and self.text and "estimate-tokens" in self.faults:
             self.set("gen_ai.usage.output_tokens", max(1, len(self.text) // 4))
         if "retry-as-error" in self.faults and (
@@ -83,6 +126,8 @@ def _openai_response(call: _Call, r: Any) -> None:
     call.set("gen_ai.response.model", r.model)
     call.set("gen_ai.response.id", r.id)
     call.finish = [c.finish_reason for c in r.choices]
+    if r.choices and r.choices[0].message.content:
+        call.add_text(r.choices[0].message.content)
     _openai_usage(call, r.usage)
 
 
@@ -100,7 +145,7 @@ def _openai_chunk(call: _Call, c: Any) -> None:
     call.set("gen_ai.response.id", c.id)
     for choice in c.choices:
         if choice.delta.content:
-            call.text += choice.delta.content
+            call.add_text(choice.delta.content)
         if choice.finish_reason:
             call.finish.append(choice.finish_reason)
     if c.usage:
@@ -120,13 +165,16 @@ def _responses_event(call: _Call, e: Any) -> None:
             reasoning=u.output_tokens_details.reasoning_tokens or 0,
         )
     elif e.type == "response.output_text.delta":
-        call.text += e.delta
+        call.add_text(e.delta)
 
 
 def _anthropic_response(call: _Call, r: Any) -> None:
     call.set("gen_ai.response.model", r.model)
     call.set("gen_ai.response.id", r.id)
     call.finish = [r.stop_reason]
+    for block in r.content:
+        if block.type == "text":
+            call.add_text(block.text)
     u = r.usage
     thinking = getattr(getattr(u, "output_tokens_details", None), "thinking_tokens", 0) or 0
     call.usage(
@@ -158,7 +206,7 @@ def _anthropic_event(call: _Call, e: Any) -> None:
         if e.delta.stop_reason:
             call.finish = [e.delta.stop_reason]
     elif e.type == "content_block_delta" and e.delta.type == "text_delta":
-        call.text += e.delta.text
+        call.add_text(e.delta.text)
 
 
 class _Stream:
@@ -238,7 +286,8 @@ class _Stream:
 
 def _wrap(tracer: Tracer, provider: str, faults: set[str], on_result, on_event, create, is_async):
     def begin(kwargs: dict) -> _Call:
-        return _Call(tracer, provider, kwargs.get("model", ""), faults)
+        prompt = kwargs.get("messages", kwargs.get("input"))
+        return _Call(tracer, provider, kwargs.get("model", ""), faults, prompt)
 
     # Decided by class, not by inspection: the SDKs wrap async methods in sync decorators.
     if is_async:

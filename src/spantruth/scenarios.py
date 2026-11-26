@@ -496,8 +496,33 @@ def _with_async(scenarios: list[Scenario]) -> list[Scenario]:
     return scenarios + extra
 
 
+# Content capture: the basic call and the full stream again, with the library's own switch for
+# recording prompt and completion text set off, and set on. The other scenarios leave it alone.
+CONTENT_PATTERNS = {"basic": "content", "stream": "stream-content"}
+
+
+def _with_content(scenarios: list[Scenario]) -> list[Scenario]:
+    extra = []
+    for s in scenarios:
+        provider, name = s.id.split("/", 1)
+        if name in CONTENT_PATTERNS:
+            for mode in ("off", "on"):
+                extra.append(
+                    replace(
+                        s,
+                        id=f"{provider}/{CONTENT_PATTERNS[name]}-{mode}",
+                        content=mode,
+                        title=f"{s.title}, content capture switched {mode}",
+                        catches="prompt and completion text recorded against the switch"
+                        if mode == "off"
+                        else "completion text that differs from what the app read",
+                    )
+                )
+    return scenarios + extra
+
+
 SCENARIOS: dict[str, Scenario] = {
-    s.id: s for s in _with_async(_with_block(_openai() + _anthropic())) + _recorded()
+    s.id: s for s in _with_content(_with_async(_with_block(_openai() + _anthropic()))) + _recorded()
 }
 
 

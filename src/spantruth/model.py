@@ -85,6 +85,8 @@ class Scenario:
     calling `close()`.
     `stream_usage` False leaves out OpenAI's `include_usage`, so the stream carries no usage.
     `api` is the OpenAI API the app calls: `chat` (Chat Completions) or `responses`.
+    `content` is `off` or `on` for a scenario that sets the library's own switch for recording
+    prompt and completion text, as the subject declares it. Empty: the switch is left alone.
     """
 
     id: str
@@ -104,6 +106,7 @@ class Scenario:
     tags: tuple[str, ...] = field(default_factory=tuple)
     responses: tuple[Response, ...] = ()
     retries: int = 0
+    content: str = ""
 
     def __post_init__(self) -> None:
         if not self.responses:
