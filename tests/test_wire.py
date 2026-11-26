@@ -9,8 +9,9 @@ import openai.types.responses
 import pydantic
 import pytest
 
-from spantruth import calls, impact, scenarios
+from spantruth import calls, impact, recorded, scenarios
 from spantruth import wire_anthropic as an
+from spantruth import wire_openai as oa
 from spantruth.mockserver import MockServer
 from spantruth.model import Event, Response
 
@@ -141,7 +142,8 @@ def test_fixture_truth_values_are_distinct(sc):
         # The two parts of a cache write. A library can report one of them alone.
         values += [long_write, t.cache_write_tokens - long_write]
     assert len(values) == len(set(values)), f"{sc.id} repeats a token value: {values}"
-    if t.response_model is not None:
+    if t.response_model is not None and sc.id not in RECORDED:
+        # A real server can echo the requested name, so only built fixtures keep the two apart.
         assert t.response_model != t.request_model
 
 
@@ -345,6 +347,10 @@ def test_no_fixture_sends_a_field_the_cost_figure_does_not_price(sc):
     holders = [h for r in sc.responses for h in _billed(r) if isinstance(h.get("usage"), dict)]
     if scenarios.truth(sc).input_tokens is not None:
         assert holders, f"{sc.id} has token counts, but this test found no usage to read"
+    if sc.id in RECORDED and sc.request_model not in impact.load_prices():
+        # A replayed body from a server with no list price here: impact.cell_cost gives no cost
+        # figure for its model, so a field it does not price cannot make a figure wrong.
+        return
     for holder in holders:
         assert impact.unpriced(sc.provider, holder) == [], (
             f"{sc.id} sends fields that change the price and that impact.py does not price. "
@@ -380,3 +386,110 @@ def test_openai_prompt_tokens_include_cache_reads_and_writes(sid, tokens):
 
 def test_an_openai_fixture_without_cache_writes_has_none():
     assert scenarios.truth(scenarios.get("openai/cache-hit")).cache_write_tokens is None
+
+
+def _usage_of(sid):
+    r = scenarios.get(sid).response
+    if r.body is not None:
+        return r.body["usage"]
+    return next(e.data["usage"] for e in r.events if isinstance(e.data, dict) and e.data["usage"])
+
+
+def test_a_compatible_server_can_leave_out_the_details():
+    usage = _usage_of("openai/compat-no-details")
+    assert set(usage) == {"prompt_tokens", "completion_tokens", "total_tokens"}
+    assert set(_usage_of("openai/compat-stream-no-details")) == set(usage)
+    nulls = _usage_of("openai/compat-null-details")
+    assert nulls["prompt_tokens_details"] is None and nulls["completion_tokens_details"] is None
+
+
+@pytest.mark.parametrize(
+    "sid",
+    ["openai/compat-no-details", "openai/compat-null-details", "openai/compat-stream-no-details"],
+)
+def test_a_usage_without_details_has_no_cache_or_reasoning_count(sid):
+    t = scenarios.truth(scenarios.get(sid))
+    assert t.input_tokens and t.output_tokens
+    assert t.cache_read_tokens is None and t.reasoning_tokens is None
+    assert t.uncounted == ("cache_read_tokens", "reasoning_tokens")
+
+
+def test_a_zero_count_is_not_an_absent_count():
+    # OpenAI sends `cached_tokens: 0`: zero is a count, so a span that reports a cache read
+    # is wrong for another reason than invention, and is not graded here.
+    assert scenarios.truth(scenarios.get("openai/basic")).uncounted == ()
+
+
+def test_partial_details_count_only_what_they_hold():
+    t = scenarios.truth(scenarios.get("openai/compat-partial-details"))
+    assert (t.input_tokens, t.cache_read_tokens, t.output_tokens) == (32, 28, 16)
+    assert t.uncounted == ("reasoning_tokens",)
+
+
+def test_a_usage_without_details_refuses_cache_counts():
+    with pytest.raises(ValueError, match="details"):
+        oa.completion(
+            id="x",
+            model="m",
+            text="t",
+            finish="stop",
+            prompt=3,
+            completion_tokens=2,
+            cached=1,
+            details="absent",
+        )
+
+
+def test_usage_on_the_finish_chunk_replaces_the_usage_chunk():
+    events = [e.data for e in scenarios.get("openai/compat-stream-usage-on-finish").response.events]
+    chunks = [e for e in events if isinstance(e, dict)]
+    with_usage = [c for c in chunks if c["usage"]]
+    assert len(with_usage) == 1 and with_usage[0]["choices"][0]["finish_reason"] == "stop"
+    assert all(c["choices"] for c in chunks)
+    t = scenarios.truth(scenarios.get("openai/compat-stream-usage-on-finish"))
+    assert (t.input_tokens, t.output_tokens, t.cache_read_tokens) == (1489, 331, 1063)
+
+
+@pytest.mark.parametrize(
+    ("sid", "undeclared"),
+    [
+        ("openai/compat-partial-details", []),
+        (
+            "openai/compat-extra-cache-fields",
+            ["usage.prompt_cache_hit_tokens", "usage.prompt_cache_miss_tokens"],
+        ),
+        (
+            "openai/compat-extra-timing-fields",
+            [
+                "usage.completion_time",
+                "usage.prompt_time",
+                "usage.queue_time",
+                "usage.total_time",
+                "x_groq",
+            ],
+        ),
+    ],
+)
+def test_a_replayed_compatible_body_sends_exactly_its_documented_extra_fields(sid, undeclared):
+    # These scenarios are exempt from the undeclared-field check because their bytes come from a
+    # file with provenance. This pins what the exemption lets through, field by field.
+    body = scenarios.get(sid).response.body
+    parsed = openai.types.chat.ChatCompletion.model_validate(body)
+    assert _undeclared(parsed) == undeclared
+
+
+def test_an_extra_cache_field_does_not_replace_the_standard_count():
+    t = scenarios.truth(scenarios.get("openai/compat-extra-cache-fields"))
+    assert (t.input_tokens, t.cache_read_tokens, t.output_tokens) == (1931, 1408, 397)
+
+
+def test_every_fixture_file_names_its_source():
+    for path in recorded.FIXTURES.rglob("*.json"):
+        doc = json.loads(path.read_text())
+        prov = doc["provenance"]
+        if doc["tier"] == "documented":
+            assert prov["source_url"].startswith("https://") and prov["notes"], path
+        elif doc["tier"] == "recorded":
+            assert prov["recorded_at"] and len(prov["raw_sha256"]) == 64, path
+        else:
+            assert doc["derived_from"]["evidence_url"].startswith("https://"), path

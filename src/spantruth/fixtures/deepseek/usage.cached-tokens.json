@@ -1,0 +1,95 @@
+{
+  "format": "wiretruth.fixture/v1",
+  "id": "deepseek/usage.cached-tokens",
+  "scenario": "usage.cached-tokens",
+  "provider": "deepseek",
+  "tier": "documented",
+  "provenance": {
+    "requested_model": "deepseek-flash",
+    "returned_model": "deepseek-flash",
+    "request": {
+      "model": "deepseek-flash",
+      "messages": [
+        {
+          "role": "user",
+          "content": "What is the capital of France?"
+        }
+      ]
+    },
+    "source_url": "https://api-docs.deepseek.com/api/create-chat-completion",
+    "notes": "Transcribed on 2026-11-26 from the example response of the DeepSeek API reference, Create Chat Completion. Kept as documented: every field name, the nesting, and prompt_cache_hit_tokens and prompt_cache_miss_tokens at the top of usage, next to prompt_tokens_details.cached_tokens. Filled in by spantruth: the id, the system_fingerprint, the message text and the token counts, which are a cache hit with distinct counts instead of the documented 7, 11, 0 and 7."
+  },
+  "derived_from": null,
+  "exchanges": [
+    {
+      "match": {
+        "method": "POST",
+        "path": "/chat/completions"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "json": {
+            "id": "9f3c2a71-5b8e-4d0a-a6c4-2e17d8b0f5a3",
+            "object": "chat.completion",
+            "created": 1793084842,
+            "model": "deepseek-flash",
+            "choices": [
+              {
+                "index": 0,
+                "message": {
+                  "role": "assistant",
+                  "content": "The capital of France is Paris."
+                },
+                "logprobs": null,
+                "finish_reason": "stop"
+              }
+            ],
+            "usage": {
+              "prompt_tokens": 1931,
+              "completion_tokens": 397,
+              "total_tokens": 2328,
+              "prompt_tokens_details": {
+                "cached_tokens": 1408
+              },
+              "prompt_cache_hit_tokens": 1408,
+              "prompt_cache_miss_tokens": 523
+            },
+            "system_fingerprint": "fp_wt_deepseek"
+          }
+        },
+        "end": "clean"
+      }
+    }
+  ],
+  "truth": {
+    "finish": "stop",
+    "raw_finish": "stop",
+    "text": "The capital of France is Paris.",
+    "tool_calls": [],
+    "structured": null,
+    "error": null,
+    "stream_completed": null,
+    "usage": {
+      "input": 1931,
+      "cached_input": 1408,
+      "output": 397,
+      "reasoning": null,
+      "total": 2328,
+      "alternatives": {},
+      "raw": {
+        "prompt_tokens": 1931,
+        "completion_tokens": 397,
+        "total_tokens": 2328,
+        "prompt_tokens_details": {
+          "cached_tokens": 1408
+        },
+        "prompt_cache_hit_tokens": 1408,
+        "prompt_cache_miss_tokens": 523
+      }
+    }
+  }
+}

@@ -18,6 +18,9 @@ OPENAI_SERVED = "gpt-5-mini-2026-08-07"
 # GPT-5.6 and later bill a prompt-cache write and report it, so the cache-write scenarios use one.
 OPENAI_CACHE_MODEL = "gpt-5.6-luna"
 OPENAI_CACHE_SERVED = "gpt-5.6-luna-2026-10-14"
+# An open-weights model behind an OpenAI-compatible server, such as vLLM or Ollama.
+COMPAT_MODEL = "qwen3.5-27b"
+COMPAT_SERVED = "Qwen/Qwen3.5-27B-Instruct"
 ANTHROPIC_MODEL = "claude-sonnet-5-5"
 ANTHROPIC_SERVED = "claude-sonnet-5-5-20260915"
 PARTS = ("The capital", " of France", " is Paris.")
@@ -230,9 +233,119 @@ def _openai() -> list[Scenario]:
     ]
 
 
+def _compat() -> list[Scenario]:
+    """OpenAI-compatible servers, called with the openai SDK: vLLM, Ollama, LiteLLM, Together.
+
+    Their usage leaves out the details objects, or sends null for them. The API reference marks
+    both as optional, so the shape is valid, and a library must still report input and output
+    tokens and must not report a cache count that the response does not carry.
+    """
+
+    def sc(name: str, title: str, catches: str, response, **kw) -> Scenario:
+        return Scenario(
+            id=f"openai/compat-{name}",
+            provider="openai",
+            title=title,
+            catches=catches,
+            request_model=COMPAT_MODEL,
+            response=response,
+            **kw,
+        )
+
+    body = dict(model=COMPAT_SERVED, text="The capital of France is Paris.", finish="stop")
+    stream = dict(model=COMPAT_SERVED, parts=PARTS, finish="stop")
+    return [
+        sc(
+            "no-details",
+            "OpenAI-compatible server, usage without details",
+            "a crash or an invented cache count when prompt_tokens_details is absent",
+            oa.completion(
+                id="chatcmpl-wt-cnodet",
+                prompt=1129,
+                completion_tokens=241,
+                details="absent",
+                **body,
+            ),
+        ),
+        sc(
+            "null-details",
+            "OpenAI-compatible server, details sent as null",
+            "a crash or an invented cache count when prompt_tokens_details is null",
+            oa.completion(
+                id="chatcmpl-wt-cnull", prompt=1213, completion_tokens=277, details="null", **body
+            ),
+        ),
+        sc(
+            "stream-no-details",
+            "OpenAI-compatible server, streamed usage without details",
+            "usage lost in a stream whose final chunk has no details",
+            oa.chunks(
+                id="chatcmpl-wt-csnodet",
+                prompt=1361,
+                completion_tokens=293,
+                details="absent",
+                **stream,
+            ),
+            stream=True,
+        ),
+        sc(
+            "stream-usage-on-finish",
+            "Usage on the chunk with the finish reason",
+            "usage lost when it is not in a chunk of its own",
+            oa.chunks(
+                id="chatcmpl-wt-csfinish",
+                prompt=1489,
+                completion_tokens=331,
+                cached=1063,
+                usage_on_finish=True,
+                **stream,
+            ),
+            stream=True,
+        ),
+    ]
+
+
+def _replayed(name: str, path, title: str, catches: str) -> Scenario:
+    """An OpenAI-compatible response replayed from a fixture file, tagged with its tier."""
+    return Scenario(
+        id=f"openai/compat-{name}",
+        provider="openai",
+        title=title,
+        catches=catches,
+        request_model=recorded.requested_model(path),
+        response=recorded.load(path),
+        tags=("recorded", recorded.tier(path)),
+    )
+
+
 def _recorded() -> list[Scenario]:
-    """Scenarios replayed from recorded provider streams, rather than built in code."""
+    """Scenarios replayed from fixture files, rather than built in code.
+
+    A file is the way to send a field that the SDK types do not declare, such as DeepSeek's
+    `prompt_cache_hit_tokens`: its provenance says where the shape comes from, so the fixture
+    check need not accept invented fields in built fixtures.
+    """
     abort = recorded.FIXTURES / "openai-responses" / "stream.missing-finish-abort.json"
+    compat = [
+        _replayed(
+            "partial-details",
+            recorded.FIXTURES / "ollama-openai" / "truncation.text.json",
+            "Ollama, details with a cache count only",
+            "a crash or a lost cache count when the details hold only cached_tokens",
+        ),
+        _replayed(
+            "extra-cache-fields",
+            recorded.FIXTURES / "deepseek" / "usage.cached-tokens.json",
+            "DeepSeek, cache counts in its own fields too",
+            "the standard cache count lost next to provider fields",
+        ),
+        _replayed(
+            "extra-timing-fields",
+            recorded.FIXTURES / "groq" / "usage.timings.json",
+            "Groq, timings in usage and no details",
+            "a crash or an invented count when usage holds timings",
+        ),
+    ]
     return [
         Scenario(
             id="openai/responses-stream-missing-finish-abort",
@@ -244,7 +357,8 @@ def _recorded() -> list[Scenario]:
             response=recorded.load(abort),
             stream=True,
             tags=("recorded",),
-        )
+        ),
+        *compat,
     ]
 
 
@@ -497,7 +611,7 @@ def _with_async(scenarios: list[Scenario]) -> list[Scenario]:
 
 
 SCENARIOS: dict[str, Scenario] = {
-    s.id: s for s in _with_async(_with_block(_openai() + _anthropic())) + _recorded()
+    s.id: s for s in _with_async(_with_block(_openai() + _anthropic())) + _compat() + _recorded()
 }
 
 

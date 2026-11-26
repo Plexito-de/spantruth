@@ -1,0 +1,96 @@
+{
+  "format": "wiretruth.fixture/v1",
+  "id": "groq/usage.timings",
+  "scenario": "usage.timings",
+  "provider": "groq",
+  "tier": "documented",
+  "provenance": {
+    "requested_model": "llama-3.3-70b-versatile",
+    "returned_model": "openai/gpt-oss-20b",
+    "request": {
+      "model": "llama-3.3-70b-versatile",
+      "messages": [
+        {
+          "role": "user",
+          "content": "What is the capital of France?"
+        }
+      ]
+    },
+    "source_url": "https://console.groq.com/docs/api-reference",
+    "notes": "Transcribed on 2026-11-26 from the example response of the Groq API reference, Create chat completion. Kept as documented: the id, created, model, system_fingerprint, x_groq, the finish reason and the whole usage, with its four timing fields and no details objects. The example asks for llama-3.3-70b-versatile and reports openai/gpt-oss-20b, as documented. Filled in by spantruth: the message text, which the reference gives as a long answer about fast language models."
+  },
+  "derived_from": null,
+  "exchanges": [
+    {
+      "match": {
+        "method": "POST",
+        "path": "/openai/v1/chat/completions"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "json": {
+            "id": "chatcmpl-f51b2cd2-bef7-417e-964e-a08f0b513c22",
+            "object": "chat.completion",
+            "created": 1730241104,
+            "model": "openai/gpt-oss-20b",
+            "choices": [
+              {
+                "index": 0,
+                "message": {
+                  "role": "assistant",
+                  "content": "The capital of France is Paris."
+                },
+                "logprobs": null,
+                "finish_reason": "stop"
+              }
+            ],
+            "usage": {
+              "queue_time": 0.037493756,
+              "prompt_tokens": 18,
+              "prompt_time": 0.000680594,
+              "completion_tokens": 556,
+              "completion_time": 0.463333333,
+              "total_tokens": 574,
+              "total_time": 0.464013927
+            },
+            "system_fingerprint": "fp_179b0f92c9",
+            "x_groq": {
+              "id": "req_01jbd6g2qdfw2adyrt2az8hz4w"
+            }
+          }
+        },
+        "end": "clean"
+      }
+    }
+  ],
+  "truth": {
+    "finish": "stop",
+    "raw_finish": "stop",
+    "text": "The capital of France is Paris.",
+    "tool_calls": [],
+    "structured": null,
+    "error": null,
+    "stream_completed": null,
+    "usage": {
+      "input": 18,
+      "cached_input": null,
+      "output": 556,
+      "reasoning": null,
+      "total": 574,
+      "alternatives": {},
+      "raw": {
+        "queue_time": 0.037493756,
+        "prompt_tokens": 18,
+        "prompt_time": 0.000680594,
+        "completion_tokens": 556,
+        "completion_time": 0.463333333,
+        "total_tokens": 574,
+        "total_time": 0.464013927
+      }
+    }
+  }
+}

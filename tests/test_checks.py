@@ -377,3 +377,40 @@ def test_a_cache_scenario_without_a_ttl_breakdown_gets_no_new_guess():
     t = scenarios.truth(scenarios.get("anthropic/cache-hit"))
     assert _formula("cache_write_tokens", 2 * t.cache_write_tokens, t) == ""
     assert _formula("input_tokens", t.input_tokens + t.cache_write_tokens, t) == ""
+
+
+@pytest.mark.parametrize("sid", ["openai/compat-no-details", "openai/compat-extra-timing-fields"])
+def test_a_cache_count_the_usage_has_no_field_for_is_invented(sid):
+    sc = scenarios.get(sid)
+    t, attrs = honest(sc.id)
+    attrs["gen_ai.usage.cache_read.input_tokens"] = t.input_tokens
+    c = by_id(grade(sc, t, BASE, obs(), [span(attrs)]))["cache_read_tokens"]
+    assert (c.verdict, c.got) == ("wrong", t.input_tokens)
+    assert c.detail == "invented: the usage has no field for it"
+
+
+@pytest.mark.parametrize("value", [0, None])
+def test_a_zero_or_no_cache_count_on_a_usage_without_details_is_not_graded(value):
+    sc = scenarios.get("openai/compat-null-details")
+    t, attrs = honest(sc.id)
+    if value is not None:
+        attrs["gen_ai.usage.cache_read.input_tokens"] = value
+    checks = grade(sc, t, BASE, obs(), [span(attrs)])
+    assert by_id(checks)["cache_read_tokens"].verdict == "n/a"
+    assert cell_verdict(checks) == "pass"
+
+
+def test_a_cache_count_where_the_wire_sends_zero_is_still_not_graded():
+    # `cached_tokens: 0` is a field, so no invention can be shown: the check keeps its old verdict.
+    sc = scenarios.get("openai/basic")
+    t, attrs = honest(sc.id)
+    attrs["gen_ai.usage.cache_read.input_tokens"] = 97
+    assert by_id(grade(sc, t, BASE, obs(), [span(attrs)]))["cache_read_tokens"].verdict == "n/a"
+
+
+def test_a_cache_count_in_partial_details_passes():
+    sc = scenarios.get("openai/compat-partial-details")
+    t, attrs = honest(sc.id)
+    checks = grade(sc, t, BASE, obs(), [span(attrs)])
+    assert by_id(checks)["cache_read_tokens"].verdict == "pass"
+    assert cell_verdict(checks) == "pass"
