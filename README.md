@@ -78,20 +78,29 @@ price. The run behind the table is committed as
   checkout or a pull request with `--with`, gate CI with `--expect` and the GitHub Action, get a comment
   on each pull request, and show a badge.
 - **You wrote your own wrapper around the OpenAI or Anthropic SDK.**
-  [Test your wrapper in five minutes](https://github.com/Plexito-de/spantruth/blob/main/docs/test-your-wrapper.md).
+  [Test your wrapper in five minutes](https://github.com/Plexito-de/spantruth/blob/main/docs/test-your-wrapper.md),
+  or grade it in your own test suite with the
+  [pytest plugin](https://github.com/Plexito-de/spantruth/blob/main/docs/pytest.md).
+- **You cannot run anything right now.** Paste your lock file into the
+  [checker](https://plexito-de.github.io/spantruth/check.html). It reads the file in your browser
+  and sends nothing.
 - **You want a coding agent to check it.** In Claude Code, run
   `/plugin marketplace add Plexito-de/spantruth`, then `/plugin install spantruth@spantruth`. The
   [skill](https://github.com/Plexito-de/spantruth/blob/main/skills/spantruth/SKILL.md) runs `doctor` and reads its result.
 
 [How it works](https://github.com/Plexito-de/spantruth/blob/main/docs/how-it-works.md) explains the fake provider, the checks, the two controls that
-prove the suite, and the verdicts. It needs no API key. The first run downloads each library once,
+prove the suite, and the verdicts. [Remedies](https://github.com/Plexito-de/spantruth/blob/main/docs/remedies/README.md)
+say what an OpenTelemetry Collector can fix for each bug class, and the
+[receipts](https://plexito-de.github.io/spantruth/receipts.html) show each bug as the wrong
+number it puts in a real backend. It needs no API key. The first run downloads each library once,
 and after that it needs no network.
 
 ## Coverage
 
-OpenAI Chat Completions and Anthropic Messages, sync and async, and a first OpenAI Responses API
-scenario: 45 scenarios in all, such as streams the app leaves early, dropped connections, 429s and
-prompt-cache hits. [How it works](https://github.com/Plexito-de/spantruth/blob/main/docs/how-it-works.md#coverage) lists them.
+OpenAI Chat Completions, Anthropic Messages, Google Gemini and Azure OpenAI, sync and async, and a
+first OpenAI Responses API scenario: 81 scenarios in all, such as streams the app leaves early,
+dropped connections, 429s, prompt-cache hits, agent loops, concurrent calls, content capture and
+token metrics. [How it works](https://github.com/Plexito-de/spantruth/blob/main/docs/how-it-works.md#coverage) lists them.
 
 The subjects are the [OpenTelemetry GenAI instrumentation](https://github.com/open-telemetry/opentelemetry-python-genai),
 [OpenLLMetry](https://github.com/traceloop/openllmetry),
@@ -101,13 +110,15 @@ The subjects are the [OpenTelemetry GenAI instrumentation](https://github.com/op
 [Langfuse](https://github.com/langfuse/langfuse-python), the
 [Sentry SDK](https://github.com/getsentry/sentry-python),
 [Datadog ddtrace](https://github.com/DataDog/dd-trace-py),
-[MLflow Tracing](https://github.com/mlflow/mlflow), and the built-in tracing of the
-[Anthropic SDK](https://github.com/anthropics/anthropic-sdk-python), plus the two controls.
+[MLflow Tracing](https://github.com/mlflow/mlflow), the built-in tracing of the
+[Anthropic SDK](https://github.com/anthropics/anthropic-sdk-python), and the frameworks
+[LiteLLM](https://github.com/BerriAI/litellm), [Pydantic AI](https://github.com/pydantic/pydantic-ai),
+the [OpenAI Agents SDK](https://github.com/openai/openai-agents-python) and
+[LangChain](https://github.com/langchain-ai/langchain) (with OpenInference and with OpenLLMetry),
+plus the two controls.
 
-Next, from the [plan](PLAN.md): the bug classes that repeat (tool calls and
-reasoning tokens in a stream, the SDK helpers such as `messages.stream()`, the rest of the OpenAI
-Responses API), Google Gemini, frameworks such as LiteLLM and Pydantic AI, and the JavaScript
-libraries. [Help is welcome](CONTRIBUTING.md#ways-to-help).
+Next, from the [plan](PLAN.md): the rest of the OpenAI Responses API, the SDK helpers such as
+`messages.stream()`, AWS Bedrock, and the JavaScript libraries. [Help is welcome](CONTRIBUTING.md#ways-to-help).
 
 ## Related work
 

@@ -1,7 +1,9 @@
 # PLAN_FEAT: the adoption wave (50 ideas, 2026-11-26)
 
-Status: started 2026-11-26 under Christopher's `/do` ("ok lets do all of them pls", "do in parallel as
-much as possible"). Parent plan: [PLAN.md](../PLAN.md). The ranked list of 50 ideas is in the session that
+Status: built on 2026-11-26 under Christopher's `/do` ("ok lets do all of them pls", "do in parallel as
+much as possible"). Every stream was reviewed by a separate instance, and its blocking findings were
+fixed before the merge. The streams land together in one integration pull request, because the
+GitHub-write grant ran out after 100 writes (see "What landed"). Parent plan: [PLAN.md](../PLAN.md). The ranked list of 50 ideas is in the session that
 wrote this plan. This file maps every idea to a work stream, a file set and an outcome.
 
 ## Why
@@ -78,3 +80,26 @@ the subject's app instead of to `calls.py`, and a subject lists the scenarios it
   the dead proxy, and the stream checks for raw-socket calls.
 - **Outward posts share one pace budget with the running OSS sweep**: one spantruth link per day across the
   maintainer groups. W12 and W13 prepare and register, and post only what `oss-pace-gate.py` allows.
+
+## What landed
+
+| Stream | Result |
+| --- | --- |
+| W1 doctor | Built: uncovered libraries, fix first, first-run messages, `doctor --base` and `command: doctor` in the action. Opened issues #76 to #89, one per uncovered library. |
+| W2 history | Built: `spantruth history`, the shipped version table, `check.html`, dated snapshots, `doctor --fast`. |
+| W3 site | Built: dates and fixes in `known_issues.toml`, the fixes page, a page per bug class, the method page, preview cards. |
+| W4 providers | Built: Gemini and Azure OpenAI. Not built: Bedrock. |
+| W5 scenarios | Built: OpenAI-compatible usage shapes, agent loops, concurrent calls. |
+| W6 checks | Built: content capture, token metrics (graded only where the library documents them). |
+| W7 frameworks | Built: the `app.py` hook, LiteLLM, Pydantic AI, the OpenAI Agents SDK, LangChain twice. |
+| W8 devtools | Built: pytest plugin, scenario pack, results schema, `new subject`, `--quick`, mutation tests. |
+| W9 remedies | Built: Collector recipes, tested in otelcol-contrib 0.166.0. |
+| W10 docs | Built: README landing page and guides, the `doctor` recording, plugin marketplace, container image. |
+| W11 receipts | Built: six bug classes in Phoenix, MLflow and Jaeger. Not measured: Langfuse, Tempo, Opik. |
+| W12 outreach | Drafts and a dated schedule in `plexito-oss-contribution/.drafts/`. Nothing posted: the pace caps were full on 2026-11-26. |
+| W13 upstream | Every open finding already had a fix in flight, so one new fix is ready (mlflow, Anthropic finish reasons), not posted. The action is proven on an OpenInference checkout. |
+| W14 sentry | Added during the wave: the Sentry subject reads Sentry SDK 3.x. |
+
+Found while merging: content capture and the agent loop met in the reference instrumentation (an SDK
+message object in the prompt), two planted faults met on Gemini's thinking cells (a negative histogram
+value), and the history table did not map Azure to the OpenAI packages. Each fix has a test.

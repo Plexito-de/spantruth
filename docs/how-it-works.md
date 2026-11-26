@@ -32,8 +32,8 @@ spantruth run
 ## The controls
 
 Two subjects run the suite's own small reference instrumentation. `control-honest` has to pass
-every check. `control-faulty` carries four planted faults and has to fail exactly the checks
-they target. CI runs both end to end on every change. If either moves, the suite is wrong, not a
+every check. `control-faulty` carries nine planted faults and has to fail exactly the checks
+they target. The [method page](https://plexito-de.github.io/spantruth/method.html) lists them. CI runs both end to end on every change. If either moves, the suite is wrong, not a
 library.
 
 ## Verdicts
@@ -56,16 +56,21 @@ them on, as your application does.
 
 ## Coverage
 
-- **Providers:** OpenAI Chat Completions and Anthropic Messages, sync and async. The OpenAI
-  Responses API has its first scenario, a stream replayed from a recording.
-- **Scenarios (45):** plain call, stream, stream without usage, prompt-cache hit (plain, streamed,
+- **Providers:** OpenAI Chat Completions, Anthropic Messages, Google Gemini through `google-genai`,
+  and Azure OpenAI, sync and async. The OpenAI Responses API has its first scenario, a stream
+  replayed from a recording.
+- **Scenarios (81):** plain call, stream, stream without usage, prompt-cache hit (plain, streamed,
   with cumulative counts in `message_delta`, with a 1-hour cache write next to a 5-minute one, and
   an OpenAI cache write on GPT-5.6), parallel tool calls, reasoning tokens, HTTP 429,
   a stream the app leaves early (by `close()` and by a `with` block), a dropped connection, and
   Anthropic's mid-stream `error` event. Streams and failures run sync and async. A Responses API
   stream cut after eight recorded events replays kartsan03/wiretruth's
-  `stream.missing-finish-abort` fixture, vendored unchanged with its provenance.
+  `stream.missing-finish-abort` fixture, vendored unchanged with its provenance. Gemini adds
+  thinking tokens and a context cache hit. Further families: the usage shapes of OpenAI-compatible
+  servers (`openai/compat-*`), an agent loop of three calls, two concurrent streams, content
+  capture with each library's own switch off and on, and the token usage metrics of each call.
   `uvx spantruth list` prints every scenario ID.
 - **Subjects:** the libraries that the [README](../README.md#coverage) lists, plus the two controls.
   Sentry and ddtrace do not export OpenTelemetry spans, so a small local adapter copies their span data
-  unchanged, and each subject's notes say what the adapter decides.
+  unchanged, and each subject's notes say what the adapter decides. A framework subject brings an
+  `app.py` that makes each call through the framework, and it runs only the scenarios it lists.

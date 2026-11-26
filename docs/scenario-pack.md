@@ -16,7 +16,7 @@ The output has no date in it, so one spantruth version always writes the same by
 ```json
 {
  "format": 1,
- "spantruth": "0.5.0",
+ "spantruth": "0.6.0",
  "semconv_genai": "6fd0d763",
  "scenarios": {
   "anthropic/stream-dropped": {

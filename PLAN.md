@@ -16,6 +16,16 @@ are in [`.plans/`](.plans/), and the research behind this plan is in
   [PLAN_FEAT_cache-ttl-pricing.md](.plans/PLAN_FEAT_cache-ttl-pricing.md). Open: OpenAI bills a
   cache write on GPT-5.6 and later, and no scenario covers it.
 
+- **2026-11-26.** The adoption wave ([PLAN_FEAT_adoption-wave.md](.plans/PLAN_FEAT_adoption-wave.md))
+  lands as release 0.6.0. It ships ahead of this plan's calendar: Gemini and Azure OpenAI (E4,
+  Bedrock still open), framework subjects for LiteLLM, Pydantic AI, the OpenAI Agents SDK and
+  LangChain (E6), token metrics (E7), content capture (E9), dated snapshots, preview cards and the
+  fixes page (second half of E2), and from E3 the OpenAI-compatible usage shapes, agent loops and
+  concurrent calls. For application engineers it adds `doctor --base` in the action, `doctor
+  --fast`, a lock-file checker in the browser, a pytest plugin, Collector remedies and backend
+  receipts. 81 scenarios, 16 library subjects. Still open: Bedrock (#4), the JavaScript driver (#74,
+  a contributor's), and every outreach item, which waits for the pace caps and for Christopher.
+
 ## The goal
 
 spantruth is the default answer to one question: does this LLM telemetry report the numbers that the
