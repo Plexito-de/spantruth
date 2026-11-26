@@ -17,7 +17,8 @@ import openai.resources.responses as orr
 import pytest
 
 from spantruth import expectations, reference, scenarios
-from spantruth.pytest_plugin import NOT_COMPARED, scenario_ids
+from spantruth.inprocess import NOT_COMPARED
+from spantruth.pytest_plugin import scenario_ids
 from spantruth.subjects import SUBJECTS
 
 REPO = Path(__file__).resolve().parents[1]
@@ -121,3 +122,15 @@ def test_the_documented_example_runs(tmp_path):
 def test_the_documentation_shows_the_example_as_it_runs():
     doc = (REPO / "docs" / "pytest.md").read_text()
     assert (EXAMPLE / "tests" / "test_spans.py").read_text() in doc
+
+
+def test_loading_the_plugin_imports_nothing_heavy():
+    """pytest loads the plugin in every session where spantruth is installed. Loading it must
+    cost nothing, and a broken import further in must not break an unrelated test suite."""
+    probe = (
+        "import sys, spantruth.pytest_plugin; "
+        "print(sorted(m for m in ('google.protobuf', 'spantruth.scenarios', "
+        "'spantruth.inprocess', 'opentelemetry') if m in sys.modules))"
+    )
+    proc = subprocess.run([sys.executable, "-c", probe], capture_output=True, text=True, check=True)
+    assert proc.stdout.strip() == "[]"

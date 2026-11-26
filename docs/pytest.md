@@ -131,9 +131,17 @@ How the plugin works:
 - **Tracing.** If your test suite has not set a global tracer provider, the plugin sets an SDK
   provider. If it has, the plugin adds one span processor to it. A wrapper that calls
   `trace.get_tracer()` then reports to the receiver with no change. A wrapper that takes a provider
-  gets `spantruth.tracer_provider`.
+  gets `spantruth.tracer_provider`. The provider stays for the whole session, because
+  OpenTelemetry cannot unset a global provider. At the end of the session, the plugin's processor
+  stops exporting.
+- **Loading costs nothing.** pytest loads the plugin in every session where spantruth is installed.
+  It imports the fake provider, the receiver and the OpenTelemetry SDK only when a test uses a
+  fixture. If the SDK is not installed, that test stops with a message that says what to install.
+- **One test at a time.** A result holds the spans that arrived during its call. Do not run two
+  calls at the same time in one process, for example from threads.
 - **The same environment as a subject.** The plugin sets the variables from `subjects/_base.toml`
   that you have not set. For example, it turns off the Anthropic SDK's own spans
   (`ANTHROPIC_OPEN_TELEMETRY=false`), so your code is graded on its own spans.
+  They stay set for the whole session, and go away when it ends.
 - **One check is `n/a`.** `app.unchanged` compares an instrumented run with an uninstrumented run in
   another process. A test has only the instrumented run. Use `spantruth run` for that check.
