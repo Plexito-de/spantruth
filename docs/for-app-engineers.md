@@ -116,6 +116,10 @@ read its JSON. This repository is a Claude Code plugin marketplace that ships it
 /plugin install spantruth@spantruth
 ```
 
+Claude Code names a plugin's skills with the plugin's name as a prefix, so the skill is
+`spantruth:spantruth`. Claude uses it by itself after a change to LLM tracing, and you can run it as
+`/spantruth:spantruth`.
+
 The skill runs the spantruth version that the plugin names, so a new spantruth release cannot change
 what it runs until you update the plugin. For another agent, copy the skill directory into the agent's
 skills directory.

@@ -39,3 +39,34 @@ def test_the_install_names_are_the_documented_ones():
     # The docs tell users to run `/plugin install spantruth@spantruth`.
     assert MARKETPLACE["name"] == "spantruth"
     assert _plugin()["name"] == "spantruth"
+
+
+def _keys(value, prefix=""):
+    """Every key in a JSON value, alone and as a path with `[]` for a list item."""
+    if isinstance(value, dict):
+        for key, inner in value.items():
+            yield key
+            yield f"{prefix}{key}"
+            yield from _keys(inner, f"{prefix}{key}.")
+    elif isinstance(value, list):
+        for item in value:
+            yield from _keys(item, prefix.rstrip(".") + "[].")
+
+
+def test_every_field_the_skill_names_is_in_the_doctor_json(monkeypatch):
+    # The skill tells an agent which fields of `doctor --json` to read. A field that this version
+    # does not print sends the agent after nothing.
+    from test_doctor import FIXED, REPORTED, result_doc
+
+    from spantruth import doctor, report
+
+    monkeypatch.setattr(report, "known_issues", lambda: [FIXED, REPORTED])
+    summary = doctor.summarize(result_doc())
+    printed = set(_keys({"source": "", "results": "", "exit_code": 1, "subjects": summary}))
+    assert "subjects[].classes[].upstream_issues[].status" in printed
+
+    skill = (REPO / "skills" / "spantruth" / "SKILL.md").read_text()
+    section = skill[skill.index("## A project that uses") : skill.index("## A wrapper")]
+    named = set(re.findall(r"`([a-z_]+(?:\[\]\.[a-z_]+)*)`", section))
+    assert named, "the skill names no field"
+    assert named <= printed, sorted(named - printed)
